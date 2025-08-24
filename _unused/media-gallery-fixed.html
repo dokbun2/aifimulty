@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>미디어 갤러리 - AIFI</title>
+    <style>
+        :root {
+            --dark-bg: #000;
+            --dark-text: #fff;
+            --apple-blue: #007AFF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--dark-bg);
+            color: var(--dark-text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            padding-top: 60px;
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        .apple-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 48px;
+            background: rgba(29, 29, 31, 0.72);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-content {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 0 22px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-brand {
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+        }
+
+        /* Header */
+        .gallery-header {
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(20px);
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            position: sticky;
+            top: 48px;
+            z-index: 100;
+        }
+        
+        .gallery-header-content {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 0 22px;
+        }
+        
+        .gallery-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .gallery-header-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.9);
+        }
+        
+        .header-subtitle {
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+            margin-top: 4px;
+        }
+        
+        .gallery-header-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .compact-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.9);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .compact-btn:hover {
+            background: rgba(255,255,255,0.12);
+            border-color: rgba(255,255,255,0.25);
+        }
+        
+        .compact-btn-primary {
+            background: var(--apple-blue);
+            border-color: var(--apple-blue);
+            color: white;
+        }
+
+        /* Main Layout */
+        .gallery-main-layout {
+            display: flex;
+            gap: 30px;
+            max-width: 1440px;
+            margin: 30px auto;
+            padding: 0 22px;
+        }
+        
+        /* Sidebar */
+        .gallery-sidebar {
+            width: 300px;
+            flex-shrink: 0;
+        }
+        
+        .filter-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(20px);
+        }
+        
+        .filter-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Tab Buttons */
+        .tab-buttons {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 20px;
+        }
+        
+        .tab-button {
+            flex: 1;
+            padding: 8px 12px;
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        
+        .tab-button:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .tab-button.active {
+            background: var(--apple-blue);
+            color: white;
+        }
+        
+        .tab-button .count {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 1px 5px;
+            border-radius: 8px;
+            font-size: 10px;
+        }
+        
+        /* Filter Group */
+        .filter-group {
+            margin-bottom: 20px;
+        }
+        
+        .filter-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Dropdown */
+        .custom-dropdown {
+            position: relative;
+            width: 100%;
+        }
+        
+        .dropdown-selected {
+            width: 100%;
+            padding: 8px 35px 8px 12px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        
+        .dropdown-selected::after {
+            content: "▼";
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.6);
+            transition: transform 0.2s;
+        }
+        
+        .custom-dropdown.active .dropdown-selected::after {
+            transform: translateY(-50%) rotate(180deg);
+        }
+        
+        .dropdown-selected:hover {
+            border-color: var(--apple-blue);
+            background: rgba(0, 0, 0, 0.7);
+        }
+        
+        .dropdown-options {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgb(30, 30, 30);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            margin-top: 4px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+        }
+        
+        .custom-dropdown.active .dropdown-options {
+            display: block;
+        }
+        
+        .dropdown-option {
+            padding: 10px 12px;
+            color: rgba(255, 255, 255, 0.9);
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 13px;
+        }
+        
+        .dropdown-option:hover {
+            background: rgba(0, 122, 255, 0.3);
+            color: white;
+        }
+        
+        .dropdown-option.selected {
+            background: rgba(0, 122, 255, 0.2);
+            color: var(--apple-blue);
+        }
+        
+        /* Content Area */
+        .gallery-content {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 30px;
+            min-height: 600px;
+        }
+        
+        .content-header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .content-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: white;
+            margin: 0 0 8px 0;
+        }
+        
+        .content-subtitle {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        /* Gallery Grid - 반응형 그리드 */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px;
+            min-height: 400px;
+        }
+        
+        .gallery-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .gallery-item:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+        
+        .gallery-item-image {
+            width: 100%;
+            height: 150px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.4);
+        }
+        
+        .gallery-item-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .gallery-item-info {
+            padding: 10px;
+        }
+        
+        .gallery-item-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .gallery-item-subtitle {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .empty-state-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Lightbox */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .lightbox.active {
+            display: flex;
+        }
+        
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .lightbox-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: rotate(90deg);
+        }
+        
+        .lightbox-content {
+            max-width: 90%;
+            max-height: 90vh;
+        }
+        
+        .lightbox-image {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .gallery-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .gallery-main-layout {
+                flex-direction: column;
+            }
+            
+            .gallery-sidebar {
+                width: 100%;
+            }
+            
+            .gallery-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="apple-nav">
+        <div class="nav-content">
+            <a href="index.html" class="nav-brand">MEDIA GALLERY</a>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <div class="gallery-header">
+        <div class="gallery-header-content">
+            <div class="gallery-header-top">
+                <div>
+                    <h1 class="gallery-header-title">미디어 갤러리</h1>
+                    <p class="header-subtitle">스토리보드와 컨셉아트의 모든 이미지와 영상을 한 곳에서</p>
+                </div>
+                <div class="gallery-header-buttons">
+                    <button class="compact-btn compact-btn-primary" id="refreshBtn">
+                        🔄 전체 새로고침
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Layout -->
+    <div class="gallery-main-layout">
+        <!-- Sidebar -->
+        <aside class="gallery-sidebar">
+            <div class="filter-section">
+                <div class="filter-title">갤러리 선택</div>
+                
+                <!-- Tab Buttons -->
+                <div class="tab-buttons">
+                    <button class="tab-button active" data-tab="storyboard">
+                        🎬 스토리보드
+                        <span class="count" id="storyboard-count">0</span>
+                    </button>
+                    <button class="tab-button" data-tab="conceptart">
+                        🎨 컨셉아트
+                        <span class="count" id="conceptart-count">0</span>
+                    </button>
+                </div>
+                
+                <!-- Filters -->
+                <div class="filter-group">
+                    <label class="filter-label">카테고리</label>
+                    <div class="custom-dropdown" id="category-dropdown">
+                        <div class="dropdown-selected">샷</div>
+                        <div class="dropdown-options">
+                            <div class="dropdown-option" data-value="all">전체</div>
+                            <div class="dropdown-option" data-value="sequence">시퀀스</div>
+                            <div class="dropdown-option" data-value="scene">씬</div>
+                            <div class="dropdown-option selected" data-value="shot">샷</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">미디어 유형</label>
+                    <div class="custom-dropdown" id="type-dropdown">
+                        <div class="dropdown-selected">전체</div>
+                        <div class="dropdown-options">
+                            <div class="dropdown-option selected" data-value="all">전체</div>
+                            <div class="dropdown-option" data-value="image">이미지</div>
+                            <div class="dropdown-option" data-value="video">영상</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">정렬</label>
+                    <div class="custom-dropdown" id="sort-dropdown">
+                        <div class="dropdown-selected">최신순</div>
+                        <div class="dropdown-options">
+                            <div class="dropdown-option selected" data-value="newest">최신순</div>
+                            <div class="dropdown-option" data-value="oldest">오래된순</div>
+                            <div class="dropdown-option" data-value="name">이름순</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Content Area -->
+        <main class="gallery-content">
+            <!-- Storyboard Tab -->
+            <div id="storyboard-tab" class="tab-content active">
+                <div class="content-header">
+                    <h2 class="content-title">스토리보드 갤러리</h2>
+                    <p class="content-subtitle">시퀀스, 씬, 샷의 모든 미디어 자료</p>
+                </div>
+                <div class="gallery-grid" id="storyboard-gallery">
+                    <!-- 갤러리 아이템들이 여기에 동적으로 로드됩니다 -->
+                </div>
+            </div>
+
+            <!-- Concept Art Tab -->
+            <div id="conceptart-tab" class="tab-content">
+                <div class="content-header">
+                    <h2 class="content-title">컨셉아트 갤러리</h2>
+                    <p class="content-subtitle">캐릭터, 장소, 소품의 모든 컨셉아트</p>
+                </div>
+                <div class="gallery-grid" id="conceptart-gallery">
+                    <!-- 갤러리 아이템들이 여기에 동적으로 로드됩니다 -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox">
+        <span class="lightbox-close" id="lightbox-close">&times;</span>
+        <div class="lightbox-content">
+            <img class="lightbox-image" id="lightbox-image" src="" alt="">
+        </div>
+    </div>
+
+    <script>
+        // 드롭다운 관리
+        document.querySelectorAll('.dropdown-selected').forEach(dropdown => {
+            dropdown.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const parentDropdown = this.parentElement;
+                
+                // 다른 드롭다운 닫기
+                document.querySelectorAll('.custom-dropdown').forEach(d => {
+                    if (d !== parentDropdown) {
+                        d.classList.remove('active');
+                    }
+                });
+                
+                // 현재 드롭다운 토글
+                parentDropdown.classList.toggle('active');
+            });
+        });
+
+        // 드롭다운 옵션 선택
+        document.querySelectorAll('.dropdown-option').forEach(option => {
+            option.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const dropdown = this.closest('.custom-dropdown');
+                const selected = dropdown.querySelector('.dropdown-selected');
+                
+                // 선택된 텍스트 업데이트
+                selected.textContent = this.textContent;
+                
+                // selected 클래스 업데이트
+                dropdown.querySelectorAll('.dropdown-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                
+                // 드롭다운 닫기
+                dropdown.classList.remove('active');
+                
+                // 필터 적용
+                applyFilters();
+            });
+        });
+
+        // 외부 클릭 시 드롭다운 닫기
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.custom-dropdown')) {
+                document.querySelectorAll('.custom-dropdown').forEach(dropdown => {
+                    dropdown.classList.remove('active');
+                });
+            }
+        });
+
+        // 탭 전환
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', function() {
+                // 버튼 활성화
+                document.querySelectorAll('.tab-button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                this.classList.add('active');
+                
+                // 탭 컨텐츠 전환
+                const tabName = this.dataset.tab;
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(`${tabName}-tab`).classList.add('active');
+                
+                // 필터 업데이트
+                updateFiltersForTab(tabName);
+            });
+        });
+
+        // 라이트박스
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImage = document.getElementById('lightbox-image');
+        const lightboxClose = document.getElementById('lightbox-close');
+
+        function openLightbox(src) {
+            lightboxImage.src = src;
+            lightbox.classList.add('active');
+        }
+
+        function closeLightbox() {
+            lightbox.classList.remove('active');
+            lightboxImage.src = '';
+        }
+
+        lightboxClose.addEventListener('click', closeLightbox);
+        lightbox.addEventListener('click', function(e) {
+            if (e.target === lightbox) {
+                closeLightbox();
+            }
+        });
+
+        // 갤러리 아이템 생성
+        function createGalleryItem(item) {
+            return `
+                <div class="gallery-item" data-type="${item.type}">
+                    <div class="gallery-item-image" onclick="openLightbox('${item.url}')">
+                        <img src="${item.url}" alt="${item.title}" loading="lazy">
+                    </div>
+                    <div class="gallery-item-info">
+                        <div class="gallery-item-title">${item.title}</div>
+                        ${item.subtitle ? `<div class="gallery-item-subtitle">${item.subtitle}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 스토리보드 미디어 로드
+        function loadStoryboardMedia() {
+            const gallery = document.getElementById('storyboard-gallery');
+            let mediaCount = 0;
+            let html = '';
+            
+            // localStorage에서 데이터 가져오기
+            const keys = Object.keys(localStorage);
+            const breakdownKeys = keys.filter(key => key.startsWith('breakdownData_'));
+            
+            if (breakdownKeys.length === 0) {
+                gallery.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎬</div>
+                        <div class="empty-state-title">스토리보드 미디어가 없습니다</div>
+                    </div>
+                `;
+                document.getElementById('storyboard-count').textContent = '0';
+                return;
+            }
+            
+            breakdownKeys.forEach(key => {
+                const data = localStorage.getItem(key);
+                if (data) {
+                    try {
+                        const parsed = JSON.parse(data);
+                        
+                        // breakdown_data.shots 처리
+                        if (parsed.breakdown_data && parsed.breakdown_data.shots) {
+                            parsed.breakdown_data.shots.forEach(shot => {
+                                // image_prompts 처리
+                                if (shot.image_prompts) {
+                                    ['midjourney', 'ideogram', 'leonardo', 'imagefx', 'openart'].forEach(tool => {
+                                        if (shot.image_prompts[tool] && shot.image_prompts[tool].images) {
+                                            Object.entries(shot.image_prompts[tool].images).forEach(([id, img]) => {
+                                                if (img && img.url) {
+                                                    mediaCount++;
+                                                    html += createGalleryItem({
+                                                        url: img.url,
+                                                        title: `${shot.shot_number || '샷'} - ${tool}`,
+                                                        subtitle: shot.shot_title || '',
+                                                        type: 'image'
+                                                    });
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.error('Error parsing data:', e);
+                    }
+                }
+            });
+            
+            if (html) {
+                gallery.innerHTML = html;
+            } else {
+                gallery.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎬</div>
+                        <div class="empty-state-title">스토리보드 미디어가 없습니다</div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('storyboard-count').textContent = mediaCount;
+        }
+
+        // 컨셉아트 미디어 로드
+        function loadConceptArtMedia() {
+            const gallery = document.getElementById('conceptart-gallery');
+            let mediaCount = 0;
+            let html = '';
+            
+            const conceptData = localStorage.getItem('conceptArtManagerData_v1.2');
+            
+            if (conceptData) {
+                try {
+                    const parsed = JSON.parse(conceptData);
+                    
+                    ['characters', 'locations', 'props'].forEach(category => {
+                        if (parsed[category] && Array.isArray(parsed[category])) {
+                            parsed[category].forEach(item => {
+                                if (item.image_url) {
+                                    mediaCount++;
+                                    html += createGalleryItem({
+                                        url: item.image_url,
+                                        title: item.name || '이름 없음',
+                                        subtitle: category === 'characters' ? '캐릭터' : 
+                                                 category === 'locations' ? '장소' : '소품',
+                                        type: 'image'
+                                    });
+                                }
+                            });
+                        }
+                    });
+                } catch (e) {
+                    console.error('Error parsing concept art data:', e);
+                }
+            }
+            
+            if (html) {
+                gallery.innerHTML = html;
+            } else {
+                gallery.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎨</div>
+                        <div class="empty-state-title">컨셉아트가 없습니다</div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('conceptart-count').textContent = mediaCount;
+        }
+
+        // 필터 적용
+        function applyFilters() {
+            // 필터 로직은 나중에 구현
+            console.log('Filters applied');
+        }
+
+        // 탭별 필터 업데이트
+        function updateFiltersForTab(tabName) {
+            const categoryDropdown = document.getElementById('category-dropdown');
+            const options = categoryDropdown.querySelector('.dropdown-options');
+            
+            if (tabName === 'storyboard') {
+                options.innerHTML = `
+                    <div class="dropdown-option" data-value="all">전체</div>
+                    <div class="dropdown-option" data-value="sequence">시퀀스</div>
+                    <div class="dropdown-option" data-value="scene">씬</div>
+                    <div class="dropdown-option selected" data-value="shot">샷</div>
+                `;
+                categoryDropdown.querySelector('.dropdown-selected').textContent = '샷';
+            } else {
+                options.innerHTML = `
+                    <div class="dropdown-option selected" data-value="all">전체</div>
+                    <div class="dropdown-option" data-value="character">캐릭터</div>
+                    <div class="dropdown-option" data-value="location">장소</div>
+                    <div class="dropdown-option" data-value="prop">소품</div>
+                `;
+                categoryDropdown.querySelector('.dropdown-selected').textContent = '전체';
+            }
+            
+            // 이벤트 리스너 재등록
+            options.querySelectorAll('.dropdown-option').forEach(option => {
+                option.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const dropdown = this.closest('.custom-dropdown');
+                    const selected = dropdown.querySelector('.dropdown-selected');
+                    
+                    selected.textContent = this.textContent;
+                    
+                    dropdown.querySelectorAll('.dropdown-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    this.classList.add('selected');
+                    
+                    dropdown.classList.remove('active');
+                    applyFilters();
+                });
+            });
+        }
+
+        // 새로고침 버튼
+        document.getElementById('refreshBtn').addEventListener('click', function() {
+            loadStoryboardMedia();
+            loadConceptArtMedia();
+        });
+
+        // 초기 로드
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStoryboardMedia();
+            loadConceptArtMedia();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>미디어 갤러리 진단 도구</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+            margin: 0;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #007AFF;
+            border-bottom: 2px solid #007AFF;
+            padding-bottom: 10px;
+        }
+        
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .section h2 {
+            color: #40d372;
+            margin-top: 0;
+        }
+        
+        pre {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            padding: 15px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        
+        .success {
+            color: #40d372;
+        }
+        
+        .error {
+            color: #ff453a;
+        }
+        
+        .warning {
+            color: #ffd60a;
+        }
+        
+        .info {
+            color: #007AFF;
+        }
+        
+        button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        button:hover {
+            background: #0051D5;
+        }
+        
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .image-item {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 10px;
+        }
+        
+        .image-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .image-info {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.4;
+        }
+        
+        .highlight {
+            background: rgba(255, 255, 0, 0.2);
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 미디어 갤러리 진단 도구</h1>
+        
+        <div class="section">
+            <h2>1. localStorage 키 검사</h2>
+            <button onclick="checkLocalStorageKeys()">localStorage 키 확인</button>
+            <button onclick="checkStoryboardData()">storyboardData 구조 확인</button>
+            <button onclick="findAllImages()">모든 이미지 찾기</button>
+            <div id="localStorage-keys"></div>
+        </div>
+        
+        <div class="section">
+            <h2>2. 스토리보드 데이터 구조 분석</h2>
+            <div id="data-structure"></div>
+        </div>
+        
+        <div class="section">
+            <h2>3. 이미지 필드 매핑</h2>
+            <div id="image-mapping"></div>
+        </div>
+        
+        <div class="section">
+            <h2>4. 발견된 이미지 미리보기</h2>
+            <div id="found-images"></div>
+        </div>
+        
+        <div class="section">
+            <h2>5. 문제 진단 결과</h2>
+            <div id="diagnosis"></div>
+        </div>
+    </div>
+    
+    <script>
+        // localStorage 키 확인
+        function checkLocalStorageKeys() {
+            const output = document.getElementById('localStorage-keys');
+            let html = '<h3>발견된 localStorage 키:</h3><ul>';
+            
+            const keys = Object.keys(localStorage);
+            keys.forEach(key => {
+                const size = localStorage.getItem(key).length;
+                const sizeKB = (size / 1024).toFixed(2);
+                
+                if (key.toLowerCase().includes('storyboard') || 
+                    key.toLowerCase().includes('breakdown') || 
+                    key.toLowerCase().includes('shot')) {
+                    html += `<li class="success"><strong>${key}</strong> (${sizeKB} KB)</li>`;
+                } else {
+                    html += `<li>${key} (${sizeKB} KB)</li>`;
+                }
+            });
+            
+            html += '</ul>';
+            output.innerHTML = html;
+        }
+        
+        // storyboardData 구조 확인
+        function checkStoryboardData() {
+            const output = document.getElementById('data-structure');
+            const storyboardData = localStorage.getItem('storyboardData');
+            
+            if (!storyboardData) {
+                output.innerHTML = '<p class="error">❌ storyboardData가 localStorage에 없습니다!</p>';
+                return;
+            }
+            
+            try {
+                const data = JSON.parse(storyboardData);
+                let html = '<h3>storyboardData 구조:</h3>';
+                
+                // 데이터 구조 분석
+                html += '<h4>최상위 키:</h4><ul>';
+                Object.keys(data).forEach(key => {
+                    html += `<li class="info">${key}`;
+                    
+                    if (key === 'breakdown_data' && data[key]) {
+                        html += '<ul>';
+                        Object.keys(data[key]).forEach(subKey => {
+                            if (subKey === 'shots' && Array.isArray(data[key][subKey])) {
+                                html += `<li class="success"><strong>${subKey}</strong> (배열, ${data[key][subKey].length}개 항목)</li>`;
+                                
+                                // 첫 번째 샷의 구조 표시
+                                if (data[key][subKey].length > 0) {
+                                    const firstShot = data[key][subKey][0];
+                                    html += '<li>첫 번째 샷의 키들:<ul>';
+                                    Object.keys(firstShot).forEach(shotKey => {
+                                        const value = firstShot[shotKey];
+                                        const type = Array.isArray(value) ? 'array' : typeof value;
+                                        
+                                        if (shotKey.includes('image') || shotKey.includes('video')) {
+                                            html += `<li class="warning"><strong>${shotKey}</strong> (${type})</li>`;
+                                        } else {
+                                            html += `<li>${shotKey} (${type})</li>`;
+                                        }
+                                    });
+                                    html += '</ul></li>';
+                                }
+                            } else {
+                                html += `<li>${subKey}</li>`;
+                            }
+                        });
+                        html += '</ul>';
+                    }
+                    
+                    html += '</li>';
+                });
+                html += '</ul>';
+                
+                // 전체 데이터를 JSON으로 표시
+                html += '<h4>전체 데이터 (축약):</h4>';
+                html += `<pre>${JSON.stringify(data, null, 2).substring(0, 2000)}...</pre>`;
+                
+                output.innerHTML = html;
+            } catch (e) {
+                output.innerHTML = `<p class="error">❌ 파싱 오류: ${e.message}</p>`;
+            }
+        }
+        
+        // 모든 이미지 찾기
+        function findAllImages() {
+            const output = document.getElementById('image-mapping');
+            const imagesDiv = document.getElementById('found-images');
+            const diagnosisDiv = document.getElementById('diagnosis');
+            
+            const storyboardData = localStorage.getItem('storyboardData');
+            
+            if (!storyboardData) {
+                output.innerHTML = '<p class="error">❌ storyboardData가 없습니다!</p>';
+                return;
+            }
+            
+            try {
+                const data = JSON.parse(storyboardData);
+                let foundImages = [];
+                let imageFields = new Set();
+                let problems = [];
+                
+                // 재귀적으로 모든 URL 찾기
+                function findUrls(obj, path = '') {
+                    if (!obj) return;
+                    
+                    if (typeof obj === 'string') {
+                        // URL 패턴 체크
+                        if ((obj.includes('http://') || obj.includes('https://') || obj.includes('data:image')) && 
+                            (obj.includes('.jpg') || obj.includes('.jpeg') || obj.includes('.png') || 
+                             obj.includes('.gif') || obj.includes('.webp') || obj.includes('data:image'))) {
+                            foundImages.push({
+                                url: obj,
+                                path: path
+                            });
+                            imageFields.add(path.split('.').pop());
+                        }
+                    } else if (Array.isArray(obj)) {
+                        obj.forEach((item, index) => {
+                            findUrls(item, `${path}[${index}]`);
+                        });
+                    } else if (typeof obj === 'object') {
+                        Object.keys(obj).forEach(key => {
+                            findUrls(obj[key], path ? `${path}.${key}` : key);
+                        });
+                    }
+                }
+                
+                findUrls(data);
+                
+                // 결과 표시
+                let html = '<h3>이미지 필드 분석:</h3>';
+                html += `<p class="success">✅ 발견된 이미지: ${foundImages.length}개</p>`;
+                
+                if (foundImages.length > 0) {
+                    html += '<h4>이미지가 저장된 필드들:</h4><ul>';
+                    imageFields.forEach(field => {
+                        html += `<li class="info">${field}</li>`;
+                    });
+                    html += '</ul>';
+                    
+                    html += '<h4>이미지 경로 예시 (처음 5개):</h4><ul>';
+                    foundImages.slice(0, 5).forEach(img => {
+                        html += `<li><span class="highlight">${img.path}</span><br>`;
+                        html += `<small>${img.url.substring(0, 100)}...</small></li>`;
+                    });
+                    html += '</ul>';
+                } else {
+                    problems.push('이미지 URL이 전혀 발견되지 않았습니다.');
+                }
+                
+                output.innerHTML = html;
+                
+                // 이미지 미리보기
+                if (foundImages.length > 0) {
+                    let imageHtml = '<h3>발견된 이미지 미리보기:</h3>';
+                    imageHtml += '<div class="image-grid">';
+                    
+                    foundImages.slice(0, 12).forEach((img, idx) => {
+                        imageHtml += `
+                            <div class="image-item">
+                                <img src="${img.url}" alt="Image ${idx + 1}" onerror="this.src='data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"200\" height=\"150\"><rect width=\"200\" height=\"150\" fill=\"%23333\"/><text x=\"50%\" y=\"50%\" text-anchor=\"middle\" dy=\".3em\" fill=\"%23999\">로드 실패</text></svg>'">
+                                <div class="image-info">
+                                    <strong>경로:</strong> ${img.path}<br>
+                                    <strong>URL:</strong> ${img.url.substring(0, 50)}...
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    imageHtml += '</div>';
+                    imagesDiv.innerHTML = imageHtml;
+                }
+                
+                // 진단 결과
+                let diagnosisHtml = '<h3>진단 결과:</h3>';
+                
+                if (foundImages.length === 0) {
+                    diagnosisHtml += '<p class="error">❌ 이미지가 전혀 발견되지 않았습니다.</p>';
+                    diagnosisHtml += '<p>가능한 원인:</p><ul>';
+                    diagnosisHtml += '<li>스토리보드에 이미지가 추가되지 않았음</li>';
+                    diagnosisHtml += '<li>이미지 URL 필드명이 예상과 다름</li>';
+                    diagnosisHtml += '<li>데이터 저장이 제대로 되지 않음</li>';
+                    diagnosisHtml += '</ul>';
+                } else {
+                    diagnosisHtml += `<p class="success">✅ ${foundImages.length}개의 이미지를 발견했습니다.</p>`;
+                    diagnosisHtml += '<p>미디어 갤러리가 찾아야 할 필드:</p><ul>';
+                    
+                    // 실제 필드 경로 분석
+                    const fieldPaths = {};
+                    foundImages.forEach(img => {
+                        const parts = img.path.split('.');
+                        const key = parts.slice(-2).join('.');
+                        fieldPaths[key] = (fieldPaths[key] || 0) + 1;
+                    });
+                    
+                    Object.entries(fieldPaths).forEach(([path, count]) => {
+                        diagnosisHtml += `<li class="warning">${path} (${count}개)</li>`;
+                    });
+                    diagnosisHtml += '</ul>';
+                    
+                    diagnosisHtml += '<p class="info">💡 미디어 갤러리 코드를 이 필드들을 읽도록 수정해야 합니다.</p>';
+                }
+                
+                diagnosisDiv.innerHTML = diagnosisHtml;
+                
+            } catch (e) {
+                output.innerHTML = `<p class="error">❌ 오류: ${e.message}</p>`;
+                console.error(e);
+            }
+        }
+        
+        // 페이지 로드시 자동 실행
+        window.addEventListener('DOMContentLoaded', () => {
+            checkLocalStorageKeys();
+            checkStoryboardData();
+            findAllImages();
+        });
+    </script>
+</body>
+</html>

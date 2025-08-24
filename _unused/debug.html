@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>스토리보드 디버깅</title>
+    <style>
+        body {
+            background: #1a1a1a;
+            color: white;
+            font-family: monospace;
+            padding: 20px;
+        }
+        pre {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>스토리보드 데이터 구조 확인</h1>
+    <div id="output"></div>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        // localStorage에서 데이터 가져오기
+        const storedData = localStorage.getItem('storyboardData');
+        if (storedData) {
+            try {
+                const data = JSON.parse(storedData);
+                
+                // 데이터 구조 확인
+                output.innerHTML = `
+                    <h2>현재 로드된 데이터 구조:</h2>
+                    <pre>프로젝트 정보: ${data.project_info ? 'O' : 'X'}</pre>
+                    <pre>breakdown_data: ${data.breakdown_data ? 'O' : 'X'}</pre>
+                    ${data.breakdown_data ? `
+                        <pre>시퀀스 개수: ${data.breakdown_data.sequences ? data.breakdown_data.sequences.length : 0}</pre>
+                        <pre>씬 개수: ${data.breakdown_data.scenes ? data.breakdown_data.scenes.length : 0}</pre>
+                        <pre>샷 개수: ${data.breakdown_data.shots ? data.breakdown_data.shots.length : 0}</pre>
+                        
+                        <h3>시퀀스 목록:</h3>
+                        <pre>${JSON.stringify(data.breakdown_data.sequences, null, 2)}</pre>
+                        
+                        <h3>씬 목록 (첫 5개):</h3>
+                        <pre>${JSON.stringify(data.breakdown_data.scenes?.slice(0, 5), null, 2)}</pre>
+                        
+                        <h3>샷 목록 (첫 5개):</h3>
+                        <pre>${JSON.stringify(data.breakdown_data.shots?.slice(0, 5), null, 2)}</pre>
+                    ` : ''}
+                `;
+            } catch (e) {
+                output.innerHTML = `<pre>Error parsing data: ${e.message}</pre>`;
+            }
+        } else {
+            output.innerHTML = '<pre>No data in localStorage</pre>';
+        }
+    </script>
+</body>
+</html>

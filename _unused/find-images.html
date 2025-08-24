@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>이미지 URL 찾기</title>
+    <style>
+        body {
+            background: #1a1a1a;
+            color: white;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        .found-image {
+            background: rgba(0,255,0,0.1);
+            border: 1px solid #0f0;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        .image-preview {
+            max-width: 200px;
+            max-height: 200px;
+            border: 1px solid #666;
+            margin: 10px 0;
+        }
+        pre {
+            background: #000;
+            padding: 10px;
+            overflow-x: auto;
+        }
+        button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>스토리보드 이미지 URL 찾기</h1>
+    
+    <button onclick="findAllImages()">모든 이미지 찾기</button>
+    <button onclick="findMidjourneyImages()">Midjourney 이미지만 찾기</button>
+    <button onclick="checkBreakdownData()">breakdown_data 구조 확인</button>
+    
+    <div id="output"></div>
+    
+    <script>
+        function findAllImages() {
+            const output = document.getElementById('output');
+            let html = '<h2>발견된 이미지 URL들:</h2>';
+            let imageCount = 0;
+            
+            // localStorage의 모든 키 확인
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('breakdownData_')) {
+                    const data = localStorage.getItem(key);
+                    if (data) {
+                        // 모든 URL 패턴 찾기
+                        const urlRegex = /https?:\/\/[^\s"'<>]+\.(jpg|jpeg|png|gif|webp)/gi;
+                        const matches = data.match(urlRegex);
+                        
+                        if (matches) {
+                            html += `<div class="found-image">`;
+                            html += `<h3>${key}에서 발견: ${matches.length}개</h3>`;
+                            
+                            // 중복 제거
+                            const uniqueUrls = [...new Set(matches)];
+                            
+                            uniqueUrls.forEach(url => {
+                                imageCount++;
+                                html += `<div>`;
+                                html += `<p><strong>URL ${imageCount}:</strong> ${url}</p>`;
+                                html += `<img src="${url}" class="image-preview" onerror="this.src='data:image/svg+xml,<svg xmlns=\\"http://www.w3.org/2000/svg\\" width=\\"200\\" height=\\"150\\"><rect fill=\\"%23333\\" width=\\"200\\" height=\\"150\\"/><text fill=\\"%23999\\" x=\\"50%\\" y=\\"50%\\" text-anchor=\\"middle\\">로드 실패</text></svg>'">`;
+                                html += `</div>`;
+                            });
+                            
+                            html += `</div>`;
+                        }
+                    }
+                }
+            });
+            
+            html += `<p>총 ${imageCount}개의 이미지 URL 발견</p>`;
+            output.innerHTML = html;
+        }
+        
+        function findMidjourneyImages() {
+            const output = document.getElementById('output');
+            let html = '<h2>Midjourney 이미지:</h2>';
+            let imageCount = 0;
+            
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('breakdownData_')) {
+                    const data = localStorage.getItem(key);
+                    if (data && data.includes('cdn.midjourney.com')) {
+                        const urlRegex = /https?:\/\/cdn\.midjourney\.com[^\s"'<>]+/gi;
+                        const matches = data.match(urlRegex);
+                        
+                        if (matches) {
+                            const uniqueUrls = [...new Set(matches)];
+                            
+                            html += `<div class="found-image">`;
+                            html += `<h3>${key}에서 Midjourney 이미지 ${uniqueUrls.length}개 발견</h3>`;
+                            
+                            uniqueUrls.forEach(url => {
+                                imageCount++;
+                                html += `<div>`;
+                                html += `<p><strong>Midjourney ${imageCount}:</strong></p>`;
+                                html += `<input type="text" value="${url}" style="width: 100%; padding: 5px; margin: 5px 0;" readonly>`;
+                                html += `<img src="${url}" class="image-preview">`;
+                                html += `</div>`;
+                            });
+                            
+                            html += `</div>`;
+                        }
+                    }
+                }
+            });
+            
+            html += `<p>총 ${imageCount}개의 Midjourney 이미지 발견</p>`;
+            output.innerHTML = html;
+        }
+        
+        function checkBreakdownData() {
+            const output = document.getElementById('output');
+            let html = '<h2>breakdown_data 구조 분석:</h2>';
+            
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('breakdownData_')) {
+                    const data = localStorage.getItem(key);
+                    if (data) {
+                        try {
+                            const parsed = JSON.parse(data);
+                            html += `<div class="found-image">`;
+                            html += `<h3>${key}</h3>`;
+                            
+                            if (parsed.breakdown_data && parsed.breakdown_data.shots) {
+                                const shots = parsed.breakdown_data.shots;
+                                html += `<p>shots 배열: ${shots.length}개</p>`;
+                                
+                                // 첫 번째 샷 분석
+                                if (shots.length > 0) {
+                                    const firstShot = shots[0];
+                                    html += `<h4>첫 번째 샷 구조:</h4>`;
+                                    html += `<pre>${JSON.stringify(Object.keys(firstShot), null, 2)}</pre>`;
+                                    
+                                    // image_prompts 확인
+                                    if (firstShot.image_prompts) {
+                                        html += `<h4>image_prompts 구조:</h4>`;
+                                        html += `<pre>${JSON.stringify(firstShot.image_prompts, null, 2).substring(0, 1000)}...</pre>`;
+                                    }
+                                    
+                                    // 이미지 URL 필드 찾기
+                                    const findImageUrls = (obj, path = '') => {
+                                        let urls = [];
+                                        if (typeof obj === 'string' && obj.includes('http')) {
+                                            urls.push({path, url: obj});
+                                        } else if (typeof obj === 'object' && obj !== null) {
+                                            Object.keys(obj).forEach(key => {
+                                                const newPath = path ? `${path}.${key}` : key;
+                                                urls = urls.concat(findImageUrls(obj[key], newPath));
+                                            });
+                                        }
+                                        return urls;
+                                    };
+                                    
+                                    const imageUrls = findImageUrls(firstShot);
+                                    if (imageUrls.length > 0) {
+                                        html += `<h4>발견된 이미지 URL 경로:</h4>`;
+                                        imageUrls.forEach(item => {
+                                            html += `<p><strong>${item.path}:</strong><br>${item.url}</p>`;
+                                        });
+                                    }
+                                }
+                            }
+                            
+                            html += `</div>`;
+                        } catch (e) {
+                            html += `<p style="color: red;">파싱 오류: ${e.message}</p>`;
+                        }
+                    }
+                }
+            });
+            
+            output.innerHTML = html;
+        }
+        
+        // 페이지 로드시 자동 실행
+        window.onload = () => {
+            findAllImages();
+        };
+    </script>
+</body>
+</html>

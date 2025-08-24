@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 프롬프트 빌더 - AIFI</title>
+    <link rel="stylesheet" href="apple-design-system.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--apple-bg-primary);
+            color: var(--apple-text-primary);
+            padding-top: var(--header-height);
+            min-height: 100vh;
+        }
+
+        /* Prompt Builder Specific Styles */
+        .builder-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--spacing-2xl) var(--spacing-lg);
+        }
+
+        /* Category Tabs */
+        .category-tabs {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-xl);
+            border-bottom: 1px solid var(--apple-border);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .category-tab {
+            padding: var(--spacing-sm) var(--spacing-lg);
+            background: transparent;
+            border: none;
+            color: var(--apple-text-secondary);
+            font-size: var(--font-size-body);
+            font-weight: 500;
+            cursor: pointer;
+            position: relative;
+            white-space: nowrap;
+            transition: color var(--transition-fast);
+        }
+
+        .category-tab:hover {
+            color: var(--apple-text-primary);
+        }
+
+        .category-tab.active {
+            color: var(--apple-blue);
+        }
+
+        .category-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--apple-blue);
+        }
+
+        /* Prompt Elements Grid */
+        .prompt-elements {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .prompt-element {
+            padding: var(--spacing-md);
+            background: var(--apple-bg-secondary);
+            border: 1px solid var(--apple-border);
+            border-radius: var(--radius-md);
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            font-size: var(--font-size-caption);
+        }
+
+        .prompt-element:hover {
+            border-color: var(--apple-blue);
+            transform: scale(1.02);
+        }
+
+        .prompt-element.selected {
+            background: var(--apple-blue);
+            color: white;
+            border-color: var(--apple-blue);
+        }
+
+        .prompt-element-icon {
+            font-size: 1.5rem;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        /* Prompt Preview */
+        .prompt-preview {
+            background: var(--apple-bg-secondary);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-xl);
+            margin-bottom: var(--spacing-xl);
+            min-height: 200px;
+        }
+
+        .prompt-preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .prompt-preview-title {
+            font-size: var(--font-size-heading);
+            font-weight: 600;
+        }
+
+        .prompt-preview-actions {
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+
+        .prompt-text {
+            background: var(--apple-bg-primary);
+            border: 1px solid var(--apple-border);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            min-height: 100px;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+            font-size: var(--font-size-caption);
+            line-height: 1.6;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .prompt-text:empty::before {
+            content: '여기에 프롬프트가 생성됩니다...';
+            color: var(--apple-text-secondary);
+        }
+
+        /* Custom Input Section */
+        .custom-input-section {
+            background: var(--apple-bg-secondary);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-xl);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .custom-input {
+            width: 100%;
+            padding: var(--spacing-md);
+            background: var(--apple-bg-primary);
+            border: 1px solid var(--apple-border);
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-body);
+            resize: vertical;
+            min-height: 80px;
+            font-family: inherit;
+        }
+
+        .custom-input:focus {
+            outline: none;
+            border-color: var(--apple-blue);
+        }
+
+        /* Templates Section */
+        .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .template-card {
+            background: var(--apple-bg-secondary);
+            border: 1px solid var(--apple-border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .template-card:hover {
+            border-color: var(--apple-blue);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .template-card-title {
+            font-size: var(--font-size-body);
+            font-weight: 600;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .template-card-description {
+            font-size: var(--font-size-caption);
+            color: var(--apple-text-secondary);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .template-card-preview {
+            font-size: var(--font-size-small);
+            color: var(--apple-text-secondary);
+            background: var(--apple-bg-primary);
+            padding: var(--spacing-sm);
+            border-radius: var(--radius-sm);
+            font-family: 'SF Mono', monospace;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Floating Action Buttons */
+        .floating-actions {
+            position: fixed;
+            bottom: var(--spacing-xl);
+            right: var(--spacing-xl);
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+            z-index: 100;
+        }
+
+        .fab {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--apple-blue);
+            color: white;
+            border: none;
+            cursor: pointer;
+            box-shadow: var(--shadow-lg);
+            transition: all var(--transition-fast);
+            font-size: 1.5rem;
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .fab-secondary {
+            background: var(--apple-bg-secondary);
+            color: var(--apple-text-primary);
+            border: 1px solid var(--apple-border);
+        }
+
+        /* History Sidebar */
+        .history-sidebar {
+            position: fixed;
+            right: -400px;
+            top: var(--header-height);
+            width: 400px;
+            height: calc(100vh - var(--header-height));
+            background: var(--apple-bg-secondary);
+            border-left: 1px solid var(--apple-border);
+            transition: right var(--transition-base);
+            overflow-y: auto;
+            z-index: 99;
+        }
+
+        .history-sidebar.open {
+            right: 0;
+        }
+
+        .history-header {
+            padding: var(--spacing-lg);
+            border-bottom: 1px solid var(--apple-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-item {
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--apple-border);
+            cursor: pointer;
+            transition: background var(--transition-fast);
+        }
+
+        .history-item:hover {
+            background: var(--apple-bg-tertiary);
+        }
+
+        .history-item-time {
+            font-size: var(--font-size-small);
+            color: var(--apple-text-secondary);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .history-item-text {
+            font-size: var(--font-size-caption);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .builder-container {
+                padding: var(--spacing-lg) var(--spacing-md);
+            }
+
+            .prompt-elements {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+
+            .history-sidebar {
+                width: 100%;
+                right: -100%;
+            }
+
+            .floating-actions {
+                bottom: var(--spacing-md);
+                right: var(--spacing-md);
+            }
+        }
+
+        /* Dark Mode */
+        @media (prefers-color-scheme: dark) {
+            .prompt-text {
+                background: #1a1a1a;
+            }
+
+            .custom-input {
+                background: #1a1a1a;
+            }
+
+            .template-card-preview {
+                background: #1a1a1a;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="apple-nav">
+        <div class="apple-nav-content">
+            <a href="index-apple.html" class="apple-nav-logo">← AIFI</a>
+            <ul class="apple-nav-menu">
+                <li><a href="#" class="apple-nav-link">템플릿</a></li>
+                <li><a href="#" class="apple-nav-link">가이드</a></li>
+                <li><a href="#" class="apple-nav-link">히스토리</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="builder-container">
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <h1 class="display-title">AI 프롬프트 빌더</h1>
+            <p class="body-text mt-2">
+                간단한 클릭으로 전문적인 AI 이미지 프롬프트를 생성하세요
+            </p>
+        </div>
+
+        <!-- Category Tabs -->
+        <div class="category-tabs">
+            <button class="category-tab active" data-category="subject">주제</button>
+            <button class="category-tab" data-category="style">스타일</button>
+            <button class="category-tab" data-category="mood">분위기</button>
+            <button class="category-tab" data-category="lighting">조명</button>
+            <button class="category-tab" data-category="camera">카메라</button>
+            <button class="category-tab" data-category="color">색상</button>
+            <button class="category-tab" data-category="composition">구도</button>
+            <button class="category-tab" data-category="quality">품질</button>
+        </div>
+
+        <!-- Prompt Elements -->
+        <div id="subject-elements" class="prompt-elements">
+            <div class="prompt-element" data-value="portrait of a person">
+                <div class="prompt-element-icon">👤</div>
+                <div>인물 초상화</div>
+            </div>
+            <div class="prompt-element" data-value="landscape">
+                <div class="prompt-element-icon">🏞️</div>
+                <div>풍경</div>
+            </div>
+            <div class="prompt-element" data-value="fantasy character">
+                <div class="prompt-element-icon">🧙</div>
+                <div>판타지 캐릭터</div>
+            </div>
+            <div class="prompt-element" data-value="futuristic city">
+                <div class="prompt-element-icon">🌃</div>
+                <div>미래 도시</div>
+            </div>
+            <div class="prompt-element" data-value="abstract art">
+                <div class="prompt-element-icon">🎨</div>
+                <div>추상화</div>
+            </div>
+            <div class="prompt-element" data-value="animal">
+                <div class="prompt-element-icon">🦁</div>
+                <div>동물</div>
+            </div>
+            <div class="prompt-element" data-value="food photography">
+                <div class="prompt-element-icon">🍔</div>
+                <div>음식</div>
+            </div>
+            <div class="prompt-element" data-value="architecture">
+                <div class="prompt-element-icon">🏛️</div>
+                <div>건축물</div>
+            </div>
+        </div>
+
+        <div id="style-elements" class="prompt-elements" style="display: none;">
+            <div class="prompt-element" data-value="photorealistic">
+                <div class="prompt-element-icon">📷</div>
+                <div>포토리얼리스틱</div>
+            </div>
+            <div class="prompt-element" data-value="digital art">
+                <div class="prompt-element-icon">🖼️</div>
+                <div>디지털 아트</div>
+            </div>
+            <div class="prompt-element" data-value="oil painting">
+                <div class="prompt-element-icon">🎨</div>
+                <div>유화</div>
+            </div>
+            <div class="prompt-element" data-value="watercolor">
+                <div class="prompt-element-icon">💧</div>
+                <div>수채화</div>
+            </div>
+            <div class="prompt-element" data-value="anime style">
+                <div class="prompt-element-icon">⛩️</div>
+                <div>애니메이션</div>
+            </div>
+            <div class="prompt-element" data-value="3D render">
+                <div class="prompt-element-icon">🎮</div>
+                <div>3D 렌더</div>
+            </div>
+            <div class="prompt-element" data-value="minimalist">
+                <div class="prompt-element-icon">⬜</div>
+                <div>미니멀리즘</div>
+            </div>
+            <div class="prompt-element" data-value="cyberpunk">
+                <div class="prompt-element-icon">🤖</div>
+                <div>사이버펑크</div>
+            </div>
+        </div>
+
+        <!-- Custom Input Section -->
+        <div class="custom-input-section">
+            <h3 class="card-title mb-2">커스텀 설명 추가</h3>
+            <textarea class="custom-input" placeholder="추가로 원하는 설명을 입력하세요..." id="customInput"></textarea>
+        </div>
+
+        <!-- Prompt Preview -->
+        <div class="prompt-preview">
+            <div class="prompt-preview-header">
+                <h3 class="prompt-preview-title">생성된 프롬프트</h3>
+                <div class="prompt-preview-actions">
+                    <button class="apple-btn apple-btn-secondary" onclick="clearPrompt()">초기화</button>
+                    <button class="apple-btn apple-btn-primary" onclick="copyPrompt()">복사</button>
+                </div>
+            </div>
+            <div class="prompt-text" id="promptOutput"></div>
+        </div>
+
+        <!-- Templates -->
+        <h3 class="section-title mb-3">프롬프트 템플릿</h3>
+        <div class="templates-grid">
+            <div class="template-card" onclick="applyTemplate('cinematic')">
+                <div class="template-card-title">시네마틱 씬</div>
+                <div class="template-card-description">영화 같은 장면을 만들어냅니다</div>
+                <div class="template-card-preview">cinematic shot, dramatic lighting, film grain...</div>
+            </div>
+            <div class="template-card" onclick="applyTemplate('portrait')">
+                <div class="template-card-title">프로페셔널 초상화</div>
+                <div class="template-card-description">전문적인 인물 사진 스타일</div>
+                <div class="template-card-preview">professional portrait, studio lighting, sharp focus...</div>
+            </div>
+            <div class="template-card" onclick="applyTemplate('concept')">
+                <div class="template-card-title">컨셉 아트</div>
+                <div class="template-card-description">게임이나 영화용 컨셉 아트</div>
+                <div class="template-card-preview">concept art, digital painting, artstation...</div>
+            </div>
+            <div class="template-card" onclick="applyTemplate('product')">
+                <div class="template-card-title">제품 사진</div>
+                <div class="template-card-description">깔끔한 제품 이미지</div>
+                <div class="template-card-preview">product photography, white background, studio...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Buttons -->
+    <div class="floating-actions">
+        <button class="fab fab-secondary" onclick="toggleHistory()" title="히스토리">
+            📜
+        </button>
+        <button class="fab" onclick="generateImage()" title="이미지 생성">
+            ✨
+        </button>
+    </div>
+
+    <!-- History Sidebar -->
+    <div class="history-sidebar" id="historySidebar">
+        <div class="history-header">
+            <h3>프롬프트 히스토리</h3>
+            <button class="apple-btn apple-btn-text" onclick="toggleHistory()">✕</button>
+        </div>
+        <div id="historyList">
+            <!-- History items will be added here -->
+        </div>
+    </div>
+
+    <script>
+        // Prompt builder state
+        let promptParts = {
+            subject: [],
+            style: [],
+            mood: [],
+            lighting: [],
+            camera: [],
+            color: [],
+            composition: [],
+            quality: []
+        };
+
+        let currentCategory = 'subject';
+        let promptHistory = JSON.parse(localStorage.getItem('promptHistory')) || [];
+
+        // Category data
+        const categoryData = {
+            mood: [
+                { icon: '😊', text: '행복한', value: 'happy, joyful' },
+                { icon: '😢', text: '슬픈', value: 'sad, melancholic' },
+                { icon: '😨', text: '무서운', value: 'scary, horror' },
+                { icon: '😌', text: '평화로운', value: 'peaceful, calm' },
+                { icon: '🔥', text: '강렬한', value: 'intense, dramatic' },
+                { icon: '🌙', text: '신비로운', value: 'mysterious, mystical' },
+                { icon: '💭', text: '몽환적인', value: 'dreamy, surreal' },
+                { icon: '⚡', text: '에너지틱한', value: 'energetic, dynamic' }
+            ],
+            lighting: [
+                { icon: '☀️', text: '자연광', value: 'natural lighting' },
+                { icon: '🌅', text: '골든아워', value: 'golden hour' },
+                { icon: '🌃', text: '네온', value: 'neon lighting' },
+                { icon: '🕯️', text: '촛불', value: 'candlelight' },
+                { icon: '💡', text: '스튜디오', value: 'studio lighting' },
+                { icon: '🌙', text: '달빛', value: 'moonlight' },
+                { icon: '⚡', text: '드라마틱', value: 'dramatic lighting' },
+                { icon: '🔦', text: '백라이트', value: 'backlit' }
+            ],
+            camera: [
+                { icon: '📷', text: '광각', value: 'wide angle' },
+                { icon: '🔍', text: '클로즈업', value: 'close-up' },
+                { icon: '🎯', text: '매크로', value: 'macro lens' },
+                { icon: '🌐', text: '피쉬아이', value: 'fisheye lens' },
+                { icon: '📹', text: '시네마틱', value: 'cinematic shot' },
+                { icon: '🚁', text: '드론뷰', value: 'aerial view' },
+                { icon: '👁️', text: '아이레벨', value: 'eye level' },
+                { icon: '🔽', text: '로우앵글', value: 'low angle' }
+            ],
+            color: [
+                { icon: '🌈', text: '비비드', value: 'vivid colors' },
+                { icon: '⚫', text: '흑백', value: 'black and white' },
+                { icon: '🎨', text: '파스텔', value: 'pastel colors' },
+                { icon: '🌅', text: '웜톤', value: 'warm tones' },
+                { icon: '❄️', text: '쿨톤', value: 'cool tones' },
+                { icon: '🍂', text: '빈티지', value: 'vintage colors' },
+                { icon: '💜', text: '모노크롬', value: 'monochromatic' },
+                { icon: '✨', text: '메탈릭', value: 'metallic colors' }
+            ],
+            composition: [
+                { icon: '⚡', text: '삼분할', value: 'rule of thirds' },
+                { icon: '🎯', text: '중앙', value: 'centered composition' },
+                { icon: '🔄', text: '대칭', value: 'symmetrical' },
+                { icon: '↗️', text: '대각선', value: 'diagonal composition' },
+                { icon: '🌀', text: '황금비', value: 'golden ratio' },
+                { icon: '📐', text: '기하학적', value: 'geometric' },
+                { icon: '🌊', text: '리딩라인', value: 'leading lines' },
+                { icon: '🖼️', text: '프레임', value: 'framed' }
+            ],
+            quality: [
+                { icon: '✨', text: '마스터피스', value: 'masterpiece' },
+                { icon: '🏆', text: '최고품질', value: 'best quality' },
+                { icon: '📸', text: '8K', value: '8K resolution' },
+                { icon: '🎯', text: '디테일', value: 'highly detailed' },
+                { icon: '🔍', text: '선명한', value: 'sharp focus' },
+                { icon: '🎨', text: '아트스테이션', value: 'trending on artstation' },
+                { icon: '💎', text: '울트라', value: 'ultra realistic' },
+                { icon: '🏅', text: '수상작', value: 'award winning' }
+            ]
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Category tab listeners
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    switchCategory(this.dataset.category);
+                });
+            });
+
+            // Element click listeners
+            document.querySelectorAll('.prompt-element').forEach(element => {
+                element.addEventListener('click', function() {
+                    toggleElement(this);
+                });
+            });
+
+            // Custom input listener
+            document.getElementById('customInput').addEventListener('input', updatePrompt);
+
+            // Load history
+            loadHistory();
+        });
+
+        // Switch category
+        function switchCategory(category) {
+            currentCategory = category;
+            
+            // Update tab styles
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-category="${category}"]`).classList.add('active');
+            
+            // Hide all element grids
+            document.querySelectorAll('.prompt-elements').forEach(grid => {
+                grid.style.display = 'none';
+            });
+            
+            // Show or create category elements
+            let elementGrid = document.getElementById(`${category}-elements`);
+            if (!elementGrid) {
+                elementGrid = createElementGrid(category);
+            }
+            elementGrid.style.display = 'grid';
+        }
+
+        // Create element grid for category
+        function createElementGrid(category) {
+            const container = document.querySelector('.category-tabs').parentElement;
+            const grid = document.createElement('div');
+            grid.id = `${category}-elements`;
+            grid.className = 'prompt-elements';
+            grid.style.display = 'none';
+            
+            if (categoryData[category]) {
+                categoryData[category].forEach(item => {
+                    const element = document.createElement('div');
+                    element.className = 'prompt-element';
+                    element.dataset.value = item.value;
+                    element.innerHTML = `
+                        <div class="prompt-element-icon">${item.icon}</div>
+                        <div>${item.text}</div>
+                    `;
+                    element.addEventListener('click', function() {
+                        toggleElement(this);
+                    });
+                    grid.appendChild(element);
+                });
+            }
+            
+            // Insert after tabs
+            const existingGrids = container.querySelectorAll('.prompt-elements');
+            if (existingGrids.length > 0) {
+                existingGrids[0].parentElement.insertBefore(grid, existingGrids[0]);
+            } else {
+                container.appendChild(grid);
+            }
+            
+            return grid;
+        }
+
+        // Toggle element selection
+        function toggleElement(element) {
+            element.classList.toggle('selected');
+            const value = element.dataset.value;
+            
+            if (element.classList.contains('selected')) {
+                if (!promptParts[currentCategory].includes(value)) {
+                    promptParts[currentCategory].push(value);
+                }
+            } else {
+                const index = promptParts[currentCategory].indexOf(value);
+                if (index > -1) {
+                    promptParts[currentCategory].splice(index, 1);
+                }
+            }
+            
+            updatePrompt();
+        }
+
+        // Update prompt display
+        function updatePrompt() {
+            let prompt = [];
+            
+            // Add selected elements
+            Object.keys(promptParts).forEach(category => {
+                if (promptParts[category].length > 0) {
+                    prompt.push(...promptParts[category]);
+                }
+            });
+            
+            // Add custom input
+            const customText = document.getElementById('customInput').value.trim();
+            if (customText) {
+                prompt.push(customText);
+            }
+            
+            document.getElementById('promptOutput').textContent = prompt.join(', ');
+        }
+
+        // Clear prompt
+        function clearPrompt() {
+            promptParts = {
+                subject: [],
+                style: [],
+                mood: [],
+                lighting: [],
+                camera: [],
+                color: [],
+                composition: [],
+                quality: []
+            };
+            
+            document.querySelectorAll('.prompt-element').forEach(element => {
+                element.classList.remove('selected');
+            });
+            
+            document.getElementById('customInput').value = '';
+            document.getElementById('promptOutput').textContent = '';
+        }
+
+        // Copy prompt
+        function copyPrompt() {
+            const promptText = document.getElementById('promptOutput').textContent;
+            if (!promptText) {
+                alert('프롬프트를 먼저 생성해주세요!');
+                return;
+            }
+            
+            navigator.clipboard.writeText(promptText).then(() => {
+                // Save to history
+                saveToHistory(promptText);
+                
+                // Show feedback
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '복사됨!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // Apply template
+        function applyTemplate(type) {
+            const templates = {
+                cinematic: 'cinematic shot, dramatic lighting, film grain, anamorphic lens, depth of field, moody atmosphere, color grading, 8K resolution',
+                portrait: 'professional portrait, studio lighting, sharp focus, shallow depth of field, bokeh background, natural skin tones, high resolution, detailed',
+                concept: 'concept art, digital painting, trending on artstation, highly detailed, professional, dramatic lighting, fantasy art, epic composition',
+                product: 'product photography, white background, studio lighting, clean, minimalist, high resolution, commercial photography, sharp focus'
+            };
+            
+            document.getElementById('customInput').value = templates[type];
+            updatePrompt();
+        }
+
+        // Generate image (placeholder)
+        function generateImage() {
+            const promptText = document.getElementById('promptOutput').textContent;
+            if (!promptText) {
+                alert('프롬프트를 먼저 생성해주세요!');
+                return;
+            }
+            
+            saveToHistory(promptText);
+            alert('이미지 생성 기능은 준비 중입니다.\n\n생성된 프롬프트:\n' + promptText);
+        }
+
+        // Toggle history sidebar
+        function toggleHistory() {
+            document.getElementById('historySidebar').classList.toggle('open');
+        }
+
+        // Save to history
+        function saveToHistory(prompt) {
+            const historyItem = {
+                prompt: prompt,
+                timestamp: new Date().toISOString()
+            };
+            
+            promptHistory.unshift(historyItem);
+            if (promptHistory.length > 50) {
+                promptHistory = promptHistory.slice(0, 50);
+            }
+            
+            localStorage.setItem('promptHistory', JSON.stringify(promptHistory));
+            loadHistory();
+        }
+
+        // Load history
+        function loadHistory() {
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = '';
+            
+            if (promptHistory.length === 0) {
+                historyList.innerHTML = '<div style="padding: var(--spacing-lg); text-align: center; color: var(--apple-text-secondary);">히스토리가 없습니다</div>';
+                return;
+            }
+            
+            promptHistory.forEach(item => {
+                const historyDiv = document.createElement('div');
+                historyDiv.className = 'history-item';
+                historyDiv.onclick = () => {
+                    document.getElementById('customInput').value = item.prompt;
+                    updatePrompt();
+                    toggleHistory();
+                };
+                
+                const date = new Date(item.timestamp);
+                const timeString = date.toLocaleString('ko-KR');
+                
+                historyDiv.innerHTML = `
+                    <div class="history-item-time">${timeString}</div>
+                    <div class="history-item-text">${item.prompt}</div>
+                `;
+                
+                historyList.appendChild(historyDiv);
+            });
+        }
+    </script>
+</body>
+</html>

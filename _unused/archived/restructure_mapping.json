@@ -1,0 +1,117 @@
+{
+  "file_mappings": {
+    "html_files": [
+      {
+        "current": "your_title_storyboard_v9.4_c.html",
+        "new": "concept-art/index.html",
+        "css_updates": [
+          {"old": "design-system.css", "new": "../assets/css/core.css"},
+          {"old": "concept-art-styles-unified.css", "new": "concept-art.css"}
+        ]
+      },
+      {
+        "current": "concept-art-gallery.html",
+        "new": "concept-art/gallery.html",
+        "css_updates": [
+          {"old": "design-system.css", "new": "../assets/css/core.css"},
+          {"old": "concept-art-styles-unified.css", "new": "concept-art.css"}
+        ]
+      },
+      {
+        "current": "media-gallery.html",
+        "new": "media-gallery/index.html",
+        "css_updates": [
+          {"old": "design-system.css", "new": "../assets/css/core.css"},
+          {"old": "concept-art-styles-unified.css", "new": "media-gallery.css"}
+        ]
+      },
+      {
+        "current": "image_prompt_generator.html",
+        "new": "prompt-generator/index.html",
+        "css_updates": [
+          {"old": "design-system.css", "new": "../assets/css/core.css"},
+          {"old": "concept-art-styles-unified.css", "new": "prompt-generator.css"}
+        ]
+      }
+    ],
+    "js_files": [
+      {
+        "current": "script.js",
+        "new": "dashboard/dashboard.js"
+      },
+      {
+        "current": "simple_video_player.js",
+        "new": "assets/js/video-player.js"
+      },
+      {
+        "current": "concept-art-gallery.js",
+        "new": "concept-art/js/gallery.js"
+      },
+      {
+        "current": "concept-art-bundle.js",
+        "new": "concept-art/js/bundle.js"
+      }
+    ],
+    "css_files": [
+      {
+        "current": "design-system.css",
+        "new": "assets/css/core.css",
+        "action": "transform"
+      },
+      {
+        "current": "styles-dark.css",
+        "new": "dashboard/dashboard.css",
+        "action": "move_and_update"
+      },
+      {
+        "current": "concept-art-styles-unified.css",
+        "new": "concept-art/concept-art.css",
+        "action": "merge_with_modern"
+      },
+      {
+        "current": "concept-art-styles-modern.css",
+        "new": null,
+        "action": "merge_into_unified"
+      }
+    ],
+    "backup_files": [
+      {
+        "current": "backup/",
+        "new": "_archive/backups/"
+      },
+      {
+        "current": "archive/",
+        "new": "_archive/old-versions/"
+      }
+    ]
+  },
+  "url_redirects": [
+    {
+      "from": "/your_title_storyboard_v9.4_c.html",
+      "to": "/concept-art/"
+    },
+    {
+      "from": "/concept-art-gallery.html",
+      "to": "/concept-art/gallery.html"
+    },
+    {
+      "from": "/media-gallery.html",
+      "to": "/media-gallery/"
+    },
+    {
+      "from": "/image_prompt_generator.html",
+      "to": "/prompt-generator/"
+    }
+  ],
+  "navigation_updates": [
+    {
+      "file": "index.html",
+      "updates": [
+        {"old": "your_title_storyboard_v9.4_c.html", "new": "concept-art/"},
+        {"old": "concept-art-gallery.html", "new": "concept-art/gallery.html"},
+        {"old": "media-gallery.html", "new": "media-gallery/"},
+        {"old": "image_prompt_generator.html", "new": "prompt-generator/"}
+      ]
+    }
+  ]
+}

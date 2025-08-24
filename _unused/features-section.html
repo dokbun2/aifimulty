@@ -1,0 +1,164 @@
+    <!-- Features Section with Detailed Cards -->
+    <section class="features-section" id="features">
+        <div class="features-container">
+            <div class="features-grid-detailed">
+                <!-- Storyboard Card -->
+                <div class="feature-card-detailed">
+                    <div class="card-gradient-header">
+                        <div class="card-icon-large">🎬</div>
+                        <h3>영상 프레임워크 스토리보드</h3>
+                    </div>
+                    <div class="card-detailed-content">
+                        <p class="card-description">
+                            AI 기반 영상 제작을 위한 종합적인 스토리보드 관리 시스템입니다. 
+                            시퀀스, 씬, 샷 단위로 체계적으로 관리하며 다양한 AI 도구와 연동됩니다.
+                        </p>
+                        <ul class="feature-list">
+                            <li>✨ 시퀀스/씬/샷 계층 구조 관리</li>
+                            <li>✨ AI 영상 생성 도구 통합 (Luma, Kling, Veo2, Runway)</li>
+                            <li>✨ 이미지 및 오디오 관리</li>
+                            <li>✨ 프롬프트 엔지니어링 지원</li>
+                        </ul>
+                        <a href="storyboard/index.html" class="feature-button feature-button-green">
+                            ✓ 진행 데이터 준비 완료
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Concept Art Card -->
+                <div class="feature-card-detailed">
+                    <div class="card-gradient-header" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <div class="card-icon-large">🎨</div>
+                        <h3>컨셉아트 프롬프트 라이브러리</h3>
+                    </div>
+                    <div class="card-detailed-content">
+                        <p class="card-description">
+                            캐릭터, 장소, 소품의 컨셉아트 생성을 위한 프롬프트 관리 및 
+                            이미지 갤러리 시스템입니다.
+                        </p>
+                        <ul class="feature-list">
+                            <li>✨ 캐릭터/장소/소품 카테고리 관리</li>
+                            <li>✨ 다중 AI 도구 프롬프트 지원</li>
+                            <li>✨ 캐릭터 변형 프롬프트 생성</li>
+                            <li>✨ 이미지 갤러리 및 데이터 관리</li>
+                        </ul>
+                        <a href="concept-art/index.html" class="feature-button feature-button-purple">
+                            활성 프로젝트
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Prompt Generator Card -->
+                <div class="feature-card-detailed">
+                    <div class="card-gradient-header" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <div class="card-icon-large">📝</div>
+                        <h3>이미지 프롬프트 생성기</h3>
+                    </div>
+                    <div class="card-detailed-content">
+                        <p class="card-description">
+                            AI 이미지 생성을 위한 전문적인 프롬프트 작성 도구입니다.
+                            구조화된 프롬프트 편집기로 체계적으로 관리합니다.
+                        </p>
+                        <ul class="feature-list">
+                            <li>✨ 텍스트 및 이미지 기반 프롬프트 생성</li>
+                            <li>✨ 구조별 카드 편집기 (STYLE, MEDIUM, CAMERA)</li>
+                            <li>✨ 실시간 프롬프트 미리보기</li>
+                            <li>✨ CSV 내보내기 및 데이터 관리</li>
+                        </ul>
+                        <a href="prompt-builder.html" class="feature-button feature-button-blue">
+                            활성 프로젝트
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Media Gallery Card -->
+                <div class="feature-card-detailed">
+                    <div class="card-gradient-header" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                        <div class="card-icon-large">🖼️</div>
+                        <h3>미디어 갤러리</h3>
+                    </div>
+                    <div class="card-detailed-content">
+                        <p class="card-description">
+                            스토리보드와 컨셉아트의 모든 이미지와 영상을 한 곳에서 
+                            확인할 수 있는 통합 갤러리입니다.
+                        </p>
+                        <ul class="feature-list">
+                            <li>✨ 스토리보드 이미지/영상 모음</li>
+                            <li>✨ 컨셉아트 갤러리</li>
+                            <li>✨ 필터링 및 정렬 기능</li>
+                            <li>✨ 라이트박스 뷰어</li>
+                        </ul>
+                        <a href="media-gallery-apple.html" class="feature-button feature-button-yellow">
+                            활성 프로젝트
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stage Upload Section -->
+    <section class="stage-upload-section">
+        <div class="stage-upload-container">
+            <h2 class="stage-upload-title">프로젝트 스테이지 JSON 업로드</h2>
+            <button class="stage-upload-main-btn" onclick="startSequentialUpload()">
+                단계별 업로드 시작
+            </button>
+            
+            <div class="stage-cards-grid">
+                <div class="stage-upload-card" onclick="goToStoryboardWithImport()">
+                    <div class="stage-icon-wrapper">
+                        <span class="stage-number">2</span>
+                        <span class="stage-check">✓</span>
+                    </div>
+                    <h4>STAGE 2</h4>
+                    <p>시나리오 작성단계</p>
+                </div>
+                
+                <div class="stage-upload-card" onclick="goToConceptArtWithStage4Import()">
+                    <div class="stage-icon-wrapper">
+                        <span class="stage-number">4</span>
+                        <span class="stage-check">✓</span>
+                    </div>
+                    <h4>STAGE 4</h4>
+                    <p>컨셉아트 프롬프트 생성단계</p>
+                </div>
+                
+                <div class="stage-upload-card" onclick="goToStoryboardWithStage5Import()">
+                    <div class="stage-icon-wrapper">
+                        <span class="stage-number">5</span>
+                        <span class="stage-check">✓</span>
+                    </div>
+                    <h4>STAGE 5</h4>
+                    <p>장면 분할단계</p>
+                </div>
+                
+                <div class="stage-upload-card" onclick="goToStoryboardWithStage6Import()">
+                    <div class="stage-icon-wrapper">
+                        <span class="stage-number">6</span>
+                        <span class="stage-check">✓</span>
+                    </div>
+                    <h4>STAGE 6</h4>
+                    <p>샷이미지 프롬프트 생성단계</p>
+                </div>
+                
+                <div class="stage-upload-card" onclick="goToStoryboardWithStage7Import()">
+                    <div class="stage-icon-wrapper">
+                        <span class="stage-number">7</span>
+                        <span class="stage-check">✓</span>
+                    </div>
+                    <h4>STAGE 7</h4>
+                    <p>영상프롬프트 생성단계</p>
+                </div>
+                
+                <div class="stage-upload-card" onclick="goToStoryboardWithStage8Import()">
+                    <div class="stage-icon-wrapper">
+                        <span class="stage-number">8</span>
+                        <span class="stage-check">✓</span>
+                    </div>
+                    <h4>STAGE 8</h4>
+                    <p>오디오 프롬프트 생성단계</p>
+                </div>
+            </div>
+        </div>
+    </section>

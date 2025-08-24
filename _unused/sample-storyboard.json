@@ -1,0 +1,83 @@
+{
+  "project_info": {
+    "name": "샘플 프로젝트",
+    "description": "AIFI 스토리보드 샘플 데이터입니다"
+  },
+  "breakdown_data": {
+    "sequences": [
+      {
+        "id": "SEQ001",
+        "title": "시퀀스 1: 오프닝",
+        "description": "영화의 시작 부분"
+      },
+      {
+        "id": "SEQ002",
+        "title": "시퀀스 2: 전개",
+        "description": "이야기가 전개되는 부분"
+      }
+    ],
+    "scenes": [
+      {
+        "id": "S001",
+        "sequence_id": "SEQ001",
+        "title": "씬 1: 첫 장면",
+        "description": "주인공이 등장하는 첫 장면",
+        "location": "거리",
+        "time": "아침",
+        "characters": ["주인공", "조연1"]
+      },
+      {
+        "id": "S002",
+        "sequence_id": "SEQ001",
+        "title": "씬 2: 만남",
+        "description": "주인공과 조연의 만남",
+        "location": "카페",
+        "time": "오후",
+        "characters": ["주인공", "조연2"]
+      },
+      {
+        "id": "S003",
+        "sequence_id": "SEQ002",
+        "title": "씬 3: 갈등",
+        "description": "갈등이 시작되는 장면",
+        "location": "사무실",
+        "time": "저녁",
+        "characters": ["주인공", "반대자"]
+      }
+    ],
+    "shots": [
+      {
+        "id": "SH001",
+        "scene_id": "S001",
+        "title": "샷 1: 와이드 샷",
+        "shot_type": "Wide",
+        "camera_movement": "Fixed",
+        "description": "거리 전체를 보여주는 와이드 샷"
+      },
+      {
+        "id": "SH002",
+        "scene_id": "S001",
+        "title": "샷 2: 클로즈업",
+        "shot_type": "Close-up",
+        "camera_movement": "Dolly In",
+        "description": "주인공의 얼굴 클로즈업"
+      },
+      {
+        "id": "SH003",
+        "scene_id": "S002",
+        "title": "샷 3: 투샷",
+        "shot_type": "Medium",
+        "camera_movement": "Pan",
+        "description": "두 인물이 대화하는 투샷"
+      },
+      {
+        "id": "SH004",
+        "scene_id": "S003",
+        "title": "샷 4: 오버 더 숄더",
+        "shot_type": "Over-the-shoulder",
+        "camera_movement": "Fixed",
+        "description": "어깨 너머로 상대를 보는 샷"
+      }
+    ]
+  }
+}
