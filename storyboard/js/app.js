@@ -1755,23 +1755,42 @@ function createTestData() {
 										// image_design_plans 생성 (없는 경우)
 										if (!existingShot.image_design_plans) {
 											// 플랜 A용 이미지 데이터 (가장 단순 - 1개 이미지만)
-											const planAImages = newShotData.images.slice(0, 1).map((img, idx) => ({
-												id: img.image_id ? img.image_id.replace(/[BC]/, 'A') : `IMG_A_${String(idx + 1).padStart(3, '0')}`,
-												description: img.image_description || '',
-												csv_attributes: img.csv_data || {}
-											}));
+											const planAImages = newShotData.images.slice(0, 1).map((img, idx) => {
+												let id;
+												if (img.image_id) {
+													// S01.01-C-01 → S01.01-A-01
+													id = img.image_id.replace(/-[ABC]-/, '-A-');
+												} else {
+													id = `IMG_A_${String(idx + 1).padStart(3, '0')}`;
+												}
+												return {
+													id: id,
+													description: img.image_description || '',
+													csv_attributes: img.csv_data || {}
+												};
+											});
 											
 											// 플랜 B용 이미지 데이터 (중간 복잡도 - 2개 이미지)
 											const planBCount = Math.min(2, newShotData.images.length);
-											const planBImages = newShotData.images.slice(0, planBCount).map((img, idx) => ({
-												id: img.image_id ? img.image_id.replace(/[AC]/, 'B') : `IMG_B_${String(idx + 1).padStart(3, '0')}`,
-												description: img.image_description || '',
-												csv_attributes: img.csv_data || {}
-											}));
+											const planBImages = newShotData.images.slice(0, planBCount).map((img, idx) => {
+												let id;
+												if (img.image_id) {
+													// S01.01-C-01 → S01.01-B-01
+													const shotPrefix = img.image_id.split('-').slice(0, -2).join('-');
+													id = `${shotPrefix}-B-${String(idx + 1).padStart(2, '0')}`;
+												} else {
+													id = `IMG_B_${String(idx + 1).padStart(3, '0')}`;
+												}
+												return {
+													id: id,
+													description: img.image_description || '',
+													csv_attributes: img.csv_data || {}
+												};
+											});
 											
 											// 플랜 C용 이미지 데이터 (가장 복잡 - 3개 이상 또는 모든 이미지)
 											const planCImages = newShotData.images.map((img, idx) => ({
-												id: img.image_id ? img.image_id.replace(/[AB]/, 'C') : `IMG_C_${String(idx + 1).padStart(3, '0')}`,
+												id: img.image_id || `IMG_C_${String(idx + 1).padStart(3, '0')}`,
 												description: img.image_description || '',
 												csv_attributes: img.csv_data || {}
 											}));
@@ -1809,32 +1828,40 @@ function createTestData() {
 										// 각 이미지의 데이터를 shot_stage6_data에 저장
 										newShotData.images.forEach((img, idx) => {
 											const imageId = img.image_id || `IMG_${String(idx + 1).padStart(3, '0')}`;
-											
-											// 각 이미지의 Stage 6 데이터 저장
-											existingShot.shot_stage6_data[imageId] = {
+											const imageData = {
 												image_title: img.image_title || '',
 												image_description: img.image_description || '',
 												csv_data: img.csv_data || {},
 												prompts: img.prompts || {}
 											};
 											
-											// 플랜 A 이미지에 추가 (첫 번째 이미지)
-											if (idx === 0 && existingShot.image_design_plans?.plan_a?.images?.[0]) {
-												const planAImageId = existingShot.image_design_plans.plan_a.images[0].id;
-												existingShot.shot_stage6_data[planAImageId] = existingShot.shot_stage6_data[imageId];
+											// 원본 이미지 ID로 저장
+											existingShot.shot_stage6_data[imageId] = imageData;
+											
+											// 플랜 A 이미지 ID로도 저장 (첫 번째 이미지)
+											if (idx === 0) {
+												// S01.01-C-01 → S01.01-A-01
+												const planAId = imageId.replace(/-[ABC]-/, '-A-');
+												existingShot.shot_stage6_data[planAId] = imageData;
+												
+												// IMG_A_001 형식도 지원
+												existingShot.shot_stage6_data[`IMG_A_001`] = imageData;
 											}
 											
-											// 플랜 B 이미지에 추가 (처음 2개)
-											if (idx < 2 && existingShot.image_design_plans?.plan_b?.images?.[idx]) {
-												const planBImageId = existingShot.image_design_plans.plan_b.images[idx].id;
-												existingShot.shot_stage6_data[planBImageId] = existingShot.shot_stage6_data[imageId];
+											// 플랜 B 이미지 ID로도 저장 (처음 2개)
+											if (idx < 2) {
+												// S01.01-C-01 → S01.01-B-01, S01.01-C-02 → S01.01-B-02
+												const shotPrefix = imageId.split('-').slice(0, -2).join('-');
+												const planBId = `${shotPrefix}-B-${String(idx + 1).padStart(2, '0')}`;
+												existingShot.shot_stage6_data[planBId] = imageData;
+												
+												// IMG_B_001 형식도 지원
+												existingShot.shot_stage6_data[`IMG_B_${String(idx + 1).padStart(3, '0')}`] = imageData;
 											}
 											
-											// 플랜 C 이미지에 추가 (모든 이미지)
-											if (existingShot.image_design_plans?.plan_c?.images?.[idx]) {
-												const planCImageId = existingShot.image_design_plans.plan_c.images[idx].id;
-												existingShot.shot_stage6_data[planCImageId] = existingShot.shot_stage6_data[imageId];
-											}
+											// 플랜 C는 원본 ID 그대로 사용 (이미 C로 되어 있음)
+											// IMG_C_001 형식도 지원
+											existingShot.shot_stage6_data[`IMG_C_${String(idx + 1).padStart(3, '0')}`] = imageData;
 										});
 										
 										// image_prompts 초기화 (기존 데이터가 없을 때만)
