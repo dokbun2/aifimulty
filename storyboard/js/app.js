@@ -3918,11 +3918,30 @@ const imageAIs = [
 
 let aiSectionsHtml = '';
 
-   // 선택된 플랜의 이미지들에 대해 처리
-			if (selectedPlanData && selectedPlanData.images) {
+   // 모든 플랜(A, B, C)의 이미지들을 수집
+			const allPlanImages = [];
+			const planIds = ['A', 'B', 'C'];
+			
+			// 각 플랜의 이미지들을 수집
+			planIds.forEach(planId => {
+				const planData = imageDesignPlans[planId];
+				if (planData && planData.images) {
+					planData.images.forEach(image => {
+						allPlanImages.push({
+							...image,
+							planId: planId,
+							planDescription: planData.description
+						});
+					});
+				}
+			});
+			
+			console.log('📊 모든 플랜 이미지 수집:', allPlanImages.length, '개');
+			
+			if (allPlanImages.length > 0) {
 				// 프롬프트가 있는 AI 도구만 필터링
 				const validAIs = imageAIs.filter(ai => {
-					return selectedPlanData.images.some(planImage => {
+					return allPlanImages.some(planImage => {
 						const imageId = planImage.id;
 						const imageStage6Data = shotStage6Data[imageId] || {};
 						const imageCsvData = csvMapping[imageId] || {};
@@ -3960,9 +3979,17 @@ let aiSectionsHtml = '';
 				validAIs.forEach(ai => {
 					let aiHasContent = false;
 					let aiContentHtml = '';
-
-					selectedPlanData.images.forEach((planImage, imgIdx) => {
-						const imageId = planImage.id;
+					
+					// 플랜별로 그룹화하여 표시
+					planIds.forEach(planId => {
+						const planImages = allPlanImages.filter(img => img.planId === planId);
+						if (planImages.length === 0) return;
+						
+						let planHasContent = false;
+						let planContentHtml = '';
+						
+						planImages.forEach((planImage, imgIdx) => {
+							const imageId = planImage.id;
 						const imageStage6Data = shotStage6Data[imageId] || {};
 						const imageCsvData = csvMapping[imageId] || {};
 						console.log(`  🖼️ AI: ${ai.name}, Image ${imgIdx + 1}:`, imageId, 'has Stage6:', !!imageStage6Data.prompts, 'has Stage5:', !!imageCsvData.SCENE);
@@ -4020,6 +4047,7 @@ let aiSectionsHtml = '';
 						if (!hasPrompt && !editedPrompt) return;
 
 						aiHasContent = true;
+						planHasContent = true;
 						let mainPrompt = '';
 						let translatedPrompt = '';
 						let parameters = '';
@@ -4069,9 +4097,9 @@ let aiSectionsHtml = '';
 						// AI별 생성된 이미지 데이터
 						const imageData = aiGeneratedImages[ai.id]?.[imageId] || { url: '', description: '' };
 
-						aiContentHtml += `
+						planContentHtml += `
 							<div style="margin-bottom: 30px; padding: 15px; background: #1a1a1a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px;">
-								<h5 style="color: #ccc; margin-bottom: 10px;">📸 ${imageId}: ${planImage.description || '설명 없음'} 
+								<h5 style="color: #ccc; margin-bottom: 10px;">📸 [플랜 ${planImage.planId}] ${imageId}: ${planImage.description || '설명 없음'} 
 									${editedPrompt ? '<span style="background: #4ade80; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; margin-left: 10px;">수정됨</span>' : ''}
 									${isFromStage5 ? '<span style="background: #3b82f6; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; margin-left: 10px;">Stage 5</span>' : ''}
 								</h5>
@@ -4134,6 +4162,17 @@ let aiSectionsHtml = '';
 								</div>
 							</div>
 						`;
+						});
+						
+						// 플랜별 콘텐츠가 있으면 aiContentHtml에 추가
+						if (planHasContent) {
+							aiContentHtml += `
+								<div style="margin-bottom: 20px; padding: 10px; background: rgba(102, 126, 234, 0.1); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px;">
+									<h4 style="color: #667eea; margin-bottom: 15px;">📋 플랜 ${planId}: ${imageDesignPlans[planId]?.description || '설명 없음'}</h4>
+									${planContentHtml}
+								</div>
+							`;
+						}
 					});
 
 					if (aiHasContent) {
