@@ -219,7 +219,7 @@
                     </button>
                     
                     <div class="stage-cards-grid">
-                <div class="stage-upload-card" onclick="goToStoryboardWithImport()" title="시나리오">
+                <div class="stage-upload-card" data-stage-action="stage2" title="시나리오">
                     <div class="stage-icon-wrapper">
                         <span class="stage-emoji stage-icon-2"></span>
                     </div>
@@ -229,7 +229,7 @@
                     </div>
                 </div>
                 
-                <div class="stage-upload-card" onclick="goToConceptArtWithStage4Import()" title="컨셉아트">
+                <div class="stage-upload-card" data-stage-action="stage4" title="컨셉아트">
                     <div class="stage-icon-wrapper">
                         <span class="stage-emoji stage-icon-4"></span>
                     </div>
@@ -239,7 +239,7 @@
                     </div>
                 </div>
                 
-                <div class="stage-upload-card" onclick="goToStoryboardWithStage5Import()" title="장면분할">
+                <div class="stage-upload-card" data-stage-action="stage5" title="장면분할">
                     <div class="stage-icon-wrapper">
                         <span class="stage-emoji stage-icon-5"></span>
                     </div>
@@ -249,7 +249,7 @@
                     </div>
                 </div>
                 
-                <div class="stage-upload-card" onclick="goToStoryboardWithStage6Import()" title="샷이미지">
+                <div class="stage-upload-card" data-stage-action="stage6" title="샷이미지">
                     <div class="stage-icon-wrapper">
                         <span class="stage-emoji stage-icon-6"></span>
                     </div>
@@ -259,7 +259,7 @@
                     </div>
                 </div>
                 
-                <div class="stage-upload-card" onclick="goToStoryboardWithStage7Import()" title="영상">
+                <div class="stage-upload-card" data-stage-action="stage7" title="영상">
                     <div class="stage-icon-wrapper">
                         <span class="stage-emoji stage-icon-7"></span>
                     </div>
@@ -269,7 +269,7 @@
                     </div>
                 </div>
                 
-                <div class="stage-upload-card" onclick="goToStoryboardWithStage8Import()" title="오디오">
+                <div class="stage-upload-card" data-stage-action="stage8" title="오디오">
                     <div class="stage-icon-wrapper">
                         <span class="stage-emoji stage-icon-8"></span>
                     </div>
@@ -611,6 +611,24 @@
 
     <!-- Scripts -->
     <script src="script.js"></script>
+    <script>
+        // 함수들이 제대로 로드되었는지 확인
+        window.addEventListener('load', function() {
+            console.log('🔍 페이지 로드 완료');
+            console.log('goToStoryboardWithImport:', typeof window.goToStoryboardWithImport);
+            console.log('goToConceptArtWithStage4Import:', typeof window.goToConceptArtWithStage4Import);
+            console.log('goToStoryboardWithStage5Import:', typeof window.goToStoryboardWithStage5Import);
+            console.log('goToStoryboardWithStage6Import:', typeof window.goToStoryboardWithStage6Import);
+            console.log('goToStoryboardWithStage7Import:', typeof window.goToStoryboardWithStage7Import);
+            console.log('goToStoryboardWithStage8Import:', typeof window.goToStoryboardWithStage8Import);
+            
+            // 클릭 이벤트 수동 바인딩 (fallback)
+            const stage2Card = document.querySelector('.stage-upload-card[title="시나리오"]');
+            if (stage2Card && typeof window.goToStoryboardWithImport === 'undefined') {
+                console.warn('⚠️ goToStoryboardWithImport 함수가 정의되지 않음');
+            }
+        });
+    </script>
     <script>
         // Smooth scroll for anchor links with full viewport sections
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {

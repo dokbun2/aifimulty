@@ -2938,3 +2938,69 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+
+
+// Stage 카드 클릭 이벤트 리스너 추가
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🎯 Stage 카드 이벤트 리스너 설정 시작');
+    
+    // Stage 카드 클릭 이벤트 바인딩
+    const stageCards = document.querySelectorAll('[data-stage-action]');
+    console.log('찾은 Stage 카드 수:', stageCards.length);
+    
+    stageCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const action = this.getAttribute('data-stage-action');
+            console.log('🖱️ Stage 카드 클릭됨:', action);
+            
+            switch(action) {
+                case 'stage2':
+                    if (typeof window.goToStoryboardWithImport === 'function') {
+                        window.goToStoryboardWithImport();
+                    } else {
+                        console.error('goToStoryboardWithImport 함수를 찾을 수 없습니다');
+                    }
+                    break;
+                case 'stage4':
+                    if (typeof window.goToConceptArtWithStage4Import === 'function') {
+                        window.goToConceptArtWithStage4Import();
+                    } else {
+                        console.error('goToConceptArtWithStage4Import 함수를 찾을 수 없습니다');
+                    }
+                    break;
+                case 'stage5':
+                    if (typeof window.goToStoryboardWithStage5Import === 'function') {
+                        window.goToStoryboardWithStage5Import();
+                    } else {
+                        console.error('goToStoryboardWithStage5Import 함수를 찾을 수 없습니다');
+                    }
+                    break;
+                case 'stage6':
+                    if (typeof window.goToStoryboardWithStage6Import === 'function') {
+                        window.goToStoryboardWithStage6Import();
+                    } else {
+                        console.error('goToStoryboardWithStage6Import 함수를 찾을 수 없습니다');
+                    }
+                    break;
+                case 'stage7':
+                    if (typeof window.goToStoryboardWithStage7Import === 'function') {
+                        window.goToStoryboardWithStage7Import();
+                    } else {
+                        console.error('goToStoryboardWithStage7Import 함수를 찾을 수 없습니다');
+                    }
+                    break;
+                case 'stage8':
+                    if (typeof window.goToStoryboardWithStage8Import === 'function') {
+                        window.goToStoryboardWithStage8Import();
+                    } else {
+                        console.error('goToStoryboardWithStage8Import 함수를 찾을 수 없습니다');
+                    }
+                    break;
+                default:
+                    console.warn('알 수 없는 stage action:', action);
+            }
+        });
+    });
+    
+    console.log('✅ Stage 카드 이벤트 리스너 설정 완료');
+});
