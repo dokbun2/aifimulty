@@ -93,7 +93,7 @@
     <section class="features-section" id="features">
         <div class="features-container">
             <div class="features-header">
-                <h2 class="features-title">강력한 AI 창작 도구</h2>
+                <h2 class="features-title">AIFI Creative Platform</h2>
                 <button class="clear-temp-data-btn" onclick="clearAllTempData()" title="캐시 데이터 초기화">
                     <svg class="refresh-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M21 2v6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -103,24 +103,14 @@
                     </svg>
                 </button>
                 <p class="features-subtitle">
-                    당신의 아이디어를 현실로. AIFI FRAME WORK는 AI 기술과 창의성이 만나는 곳입니다.<br>
+                    당신의 아이디어를 현실로. AI 기술과 창의성이 만나는 곳입니다.<br>
                 </p>
-                <div class="features-stats">
-                    <div class="stat-item">
-                        <span class="stat-number">8+</span>
-                        <span class="stat-label">프로세스 단계</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number">4</span>
-                        <span class="stat-label">핵심 도구</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number">∞</span>
-                        <span class="stat-label">창작 가능성</span>
-                    </div>
-                </div>
             </div>
-            <div class="features-grid-detailed">
+            <div class="features-content-wrapper">
+                <!-- Left Section: AI Creation Tools -->
+                <div class="features-left-section">
+                    <h3 class="section-title">강력한 AI 창작 도구</h3>
+                    <div class="features-grid-detailed">
                 <!-- Storyboard Card -->
                 <div class="feature-card-detailed" id="video-production" onclick="window.location.href='storyboard/index.html'">
                     <div class="card-gradient-header card-header-dark">
@@ -213,39 +203,18 @@
                     </div>
                 </div>
 
-                <!-- Media Gallery Card -->
-                <div class="feature-card-detailed" onclick="window.location.href='media-gallery-apple.html'">
-                    <div class="card-gradient-header card-header-dark">
-                        <div class="card-icon-large" id="icon-gallery"></div>
-                        <h3>미디어 갤러리</h3>
-                    </div>
-                    <div class="card-detailed-content">
-                        <p class="card-description">
-                            스토리보드와 컨셉아트의 모든 이미지와 영상을 한 곳에서 
-                            확인할 수 있는 통합 갤러리입니다.
-                        </p>
-                        <ul class="feature-list">
-                            <li><span class="list-icon-check13"></span> 스토리보드 이미지/영상 모음</li>
-                            <li><span class="list-icon-check14"></span> 컨셉아트 갤러리</li>
-                            <li><span class="list-icon-check15"></span> 필터링 및 정렬 기능</li>
-                            <li><span class="list-icon-check16"></span> 라이트박스 뷰어</li>
-                        </ul>
-                        <div class="feature-button feature-button-primary">
-                            활성 프로젝트
-                        </div>
                     </div>
                 </div>
-            </div>
             
-            <!-- Workflow Integration -->
-            <div class="workflow-integration">
-                <h2 class="stage-upload-title">프로젝트 워크플로우</h2>
-                <p class="stage-subtitle">8단계의 체계적인 워크플로우로 프로젝트를 완성하세요</p>
-                <button class="stage-upload-main-btn" onclick="startSequentialUpload()">
-                    단계별 업로드 시작
-                </button>
-                
-                <div class="stage-cards-grid">
+                <!-- Right Section: Project Workflow -->
+                <div class="features-right-section">
+                    <h3 class="section-title">프로젝트 워크플로우</h3>
+                    <p class="section-subtitle">8단계의 체계적인 워크플로우</p>
+                    <button class="stage-upload-main-btn" onclick="startSequentialUpload()">
+                        단계별 업로드 시작
+                    </button>
+                    
+                    <div class="stage-cards-grid">
                 <div class="stage-upload-card" onclick="goToStoryboardWithImport()" title="시나리오">
                     <div class="stage-icon-wrapper">
                         <span class="stage-emoji stage-icon-2"></span>
@@ -304,8 +273,8 @@
                         <h4>STAGE 8</h4>
                         <p>오디오 생성</p>
                     </div>
+                    </div>
                 </div>
-            </div>
             </div>
         </div>
     </section>

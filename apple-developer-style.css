@@ -1360,7 +1360,7 @@ body {
    ========================================== */
 .features-header {
   text-align: center;
-  margin-bottom: 12px;
+  margin-bottom: 24px;
   width: 100%;
   position: relative;
 }
@@ -1489,10 +1489,85 @@ body {
   letter-spacing: 0.05em;
 }
 
+/* Features Content Wrapper - Horizontal Layout */
+.features-content-wrapper {
+  display: flex;
+  gap: 40px;
+  align-items: stretch;
+  margin-top: 20px;
+}
+
+.features-left-section {
+  flex: 1.2;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 28px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.features-left-section:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+              inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.features-right-section {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 28px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  justify-content: flex-start;
+}
+
+.features-right-section:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+              inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--dark-text);
+  margin-bottom: 16px;
+  margin-top: 0;
+  background: linear-gradient(180deg, #ffffff 0%, #86868b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+}
+
+.section-subtitle {
+  font-size: 13px;
+  color: var(--dark-text-secondary);
+  margin-bottom: 16px;
+  line-height: 1.4;
+  text-align: center;
+}
+
 .features-grid-detailed {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
   margin-top: 10px;
   margin-bottom: 0;
 }
@@ -1680,8 +1755,10 @@ body {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   display: inline-block;
+  width: 100%;
+  max-width: 250px;
 }
 
 .stage-upload-main-btn:hover {
@@ -1692,17 +1769,13 @@ body {
 
 .stage-cards-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
-  max-width: 1200px;
-  margin: 0 auto;
+  margin-top: 16px;
+  width: 100%;
+  max-width: 400px;
 }
 
-@media (max-width: 1200px) {
-  .stage-cards-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
 
 .stage-upload-card {
   background: rgba(30, 30, 35, 0.4);
@@ -1842,13 +1915,28 @@ body {
     grid-column: span 3;
   }
   
-  .features-grid-detailed {
-    grid-template-columns: repeat(4, 1fr);
+  .features-content-wrapper {
+    gap: 30px;
   }
 }
 
 @media (max-width: 1200px) {
+  .features-content-wrapper {
+    flex-direction: column;
+    gap: 24px;
+  }
+  
+  .features-left-section,
+  .features-right-section {
+    width: 100%;
+    padding: 24px;
+  }
+  
   .features-grid-detailed {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .stage-cards-grid {
     grid-template-columns: repeat(3, 1fr);
   }
   
@@ -1869,11 +1957,25 @@ body {
   .features-grid-detailed {
     grid-template-columns: repeat(2, 1fr);
   }
+  
+  .stage-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
   .nav-menu {
     display: none;
+  }
+  
+  .features-left-section,
+  .features-right-section {
+    padding: 20px;
+    border-radius: 16px;
+  }
+  
+  .features-content-wrapper {
+    gap: 20px;
   }
   
   .hero-title {
