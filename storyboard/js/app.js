@@ -3894,23 +3894,39 @@ const imageAIs = [
 
 let aiSectionsHtml = '';
 
-   // 선택된 플랜의 이미지들만 수집
+   // 이미지 수집 로직
 			const allPlanImages = [];
-			const planIds = [selectedPlan]; // 선택된 플랜만 처리하도록 수정
 			
-			// 각 플랜의 이미지들을 수집
-			planIds.forEach(planId => {
-				const planData = imageDesignPlans[planId];
-				if (planData && planData.images) {
-					planData.images.forEach(image => {
+			// Simple 샷인 경우 - single 플랜의 이미지 사용
+			if (complexity === 'simple' && imageDesignPlans.single) {
+				if (imageDesignPlans.single.images && imageDesignPlans.single.images.length > 0) {
+					imageDesignPlans.single.images.forEach(image => {
 						allPlanImages.push({
 							...image,
-							planId: planId,
-							planDescription: planData.description
+							planId: 'single',
+							planDescription: imageDesignPlans.single.description
 						});
 					});
 				}
-			});
+			} 
+			// Complex 샷인 경우 - 선택된 플랜(A, B, C)의 이미지 사용
+			else {
+				const planIds = [selectedPlan]; // 선택된 플랜만 처리
+				
+				// 각 플랜의 이미지들을 수집
+				planIds.forEach(planId => {
+					const planData = imageDesignPlans[planId];
+					if (planData && planData.images) {
+						planData.images.forEach(image => {
+							allPlanImages.push({
+								...image,
+								planId: planId,
+								planDescription: planData.description
+							});
+						});
+					}
+				});
+			}
 			
 			console.log('📊 선택된 플랜:', selectedPlan, '플랜 데이터:', imageDesignPlans[selectedPlan]);
 			console.log('📊 모든 플랜 이미지 수집:', allPlanImages.length, '개', allPlanImages);
@@ -3922,9 +3938,15 @@ let aiSectionsHtml = '';
 				const validAIs = imageAIs.filter(ai => {
 					return allPlanImages.some(planImage => {
 						const imageId = planImage.id;
-						// Plan C의 데이터를 기반으로 다른 플랜의 데이터 찾기
+						// 데이터 조회를 위한 ID 매핑
 						let dataLookupId = imageId;
-						if (selectedPlan === 'A' || selectedPlan === 'B') {
+						
+						// Simple 샷의 경우 이미지 ID를 그대로 사용
+						if (complexity === 'simple') {
+							dataLookupId = imageId;
+						}
+						// Complex 샷의 Plan A/B의 경우 Plan C ID로 매핑
+						else if (selectedPlan === 'A' || selectedPlan === 'B') {
 							const baseId = imageId.split('-').slice(0, -2).join('-');
 							const imageNum = imageId.split('-').pop();
 							dataLookupId = `${baseId}-C-${imageNum}`;
@@ -3967,7 +3989,10 @@ let aiSectionsHtml = '';
 					let aiContentHtml = '';
 					
 					// 플랜별로 그룹화하여 표시
-					planIds.forEach(planId => {
+					// Simple 샷의 경우 'single'로, Complex 샷의 경우 선택된 플랜 ID로 그룹화
+					const groupPlanIds = complexity === 'simple' ? ['single'] : [selectedPlan];
+					
+					groupPlanIds.forEach(planId => {
 						const planImages = allPlanImages.filter(img => img.planId === planId);
 						if (planImages.length === 0) return;
 						
@@ -3977,10 +4002,16 @@ let aiSectionsHtml = '';
 						planImages.forEach((planImage, imgIdx) => {
 							const imageId = planImage.id;
 						
-						// Plan C의 데이터를 기반으로 다른 플랜의 데이터 찾기
-						// 예: S01.01-A-01 -> S01.01-C-01로 매핑하여 데이터 조회
+						// 데이터 조회를 위한 ID 매핑
 						let dataLookupId = imageId;
-						if (planId === 'A' || planId === 'B') {
+						
+						// Simple 샷의 경우 이미지 ID를 그대로 사용 (S01.02-single-01 형식)
+						if (complexity === 'simple') {
+							// Simple 샷은 이미 올바른 ID를 가지고 있음
+							dataLookupId = imageId;
+						}
+						// Complex 샷의 Plan A/B의 경우 Plan C ID로 매핑
+						else if (planId === 'A' || planId === 'B') {
 							// Plan A/B의 경우 대응하는 Plan C ID로 변환하여 데이터 조회
 							// S01.01-A-01 -> S01.01-C-01
 							const baseId = imageId.split('-').slice(0, -2).join('-'); // S01.01
