@@ -1826,6 +1826,7 @@ function createTestData() {
 										}
 										
 										// 각 이미지의 데이터를 shot_stage6_data에 저장
+										// JSON 파일의 이미지 ID를 그대로 사용 (이미 플랜별로 구분되어 있음)
 										newShotData.images.forEach((img, idx) => {
 											const imageId = img.image_id || `IMG_${String(idx + 1).padStart(3, '0')}`;
 											const imageData = {
@@ -1835,33 +1836,8 @@ function createTestData() {
 												prompts: img.prompts || {}
 											};
 											
-											// 원본 이미지 ID로 저장
+											// 원본 ID 그대로 저장
 											existingShot.shot_stage6_data[imageId] = imageData;
-											
-											// 플랜 A 이미지 ID로도 저장 (첫 번째 이미지)
-											if (idx === 0) {
-												// S01.01-C-01 → S01.01-A-01
-												const planAId = imageId.replace(/-[ABC]-/, '-A-');
-												existingShot.shot_stage6_data[planAId] = imageData;
-												
-												// IMG_A_001 형식도 지원
-												existingShot.shot_stage6_data[`IMG_A_001`] = imageData;
-											}
-											
-											// 플랜 B 이미지 ID로도 저장 (처음 2개)
-											if (idx < 2) {
-												// S01.01-C-01 → S01.01-B-01, S01.01-C-02 → S01.01-B-02
-												const shotPrefix = imageId.split('-').slice(0, -2).join('-');
-												const planBId = `${shotPrefix}-B-${String(idx + 1).padStart(2, '0')}`;
-												existingShot.shot_stage6_data[planBId] = imageData;
-												
-												// IMG_B_001 형식도 지원
-												existingShot.shot_stage6_data[`IMG_B_${String(idx + 1).padStart(3, '0')}`] = imageData;
-											}
-											
-											// 플랜 C는 원본 ID 그대로 사용 (이미 C로 되어 있음)
-											// IMG_C_001 형식도 지원
-											existingShot.shot_stage6_data[`IMG_C_${String(idx + 1).padStart(3, '0')}`] = imageData;
 										});
 										
 										// image_prompts 초기화 (기존 데이터가 없을 때만)
@@ -3918,9 +3894,9 @@ const imageAIs = [
 
 let aiSectionsHtml = '';
 
-   // 모든 플랜(A, B, C)의 이미지들을 수집
+   // 선택된 플랜의 이미지들만 수집
 			const allPlanImages = [];
-			const planIds = ['A', 'B', 'C'];
+			const planIds = [selectedPlan]; // 선택된 플랜만 처리하도록 수정
 			
 			// 각 플랜의 이미지들을 수집
 			planIds.forEach(planId => {
@@ -3936,15 +3912,25 @@ let aiSectionsHtml = '';
 				}
 			});
 			
-			console.log('📊 모든 플랜 이미지 수집:', allPlanImages.length, '개');
+			console.log('📊 선택된 플랜:', selectedPlan, '플랜 데이터:', imageDesignPlans[selectedPlan]);
+			console.log('📊 모든 플랜 이미지 수집:', allPlanImages.length, '개', allPlanImages);
+			console.log('📊 Stage 6 데이터 확인:', shotStage6Data);
+			console.log('📊 CSV 매핑 데이터 확인:', csvMapping);
 			
 			if (allPlanImages.length > 0) {
 				// 프롬프트가 있는 AI 도구만 필터링
 				const validAIs = imageAIs.filter(ai => {
 					return allPlanImages.some(planImage => {
 						const imageId = planImage.id;
-						const imageStage6Data = shotStage6Data[imageId] || {};
-						const imageCsvData = csvMapping[imageId] || {};
+						// Plan C의 데이터를 기반으로 다른 플랜의 데이터 찾기
+						let dataLookupId = imageId;
+						if (selectedPlan === 'A' || selectedPlan === 'B') {
+							const baseId = imageId.split('-').slice(0, -2).join('-');
+							const imageNum = imageId.split('-').pop();
+							dataLookupId = `${baseId}-C-${imageNum}`;
+						}
+						const imageStage6Data = shotStage6Data[dataLookupId] || {};
+						const imageCsvData = csvMapping[dataLookupId] || {};
 						
 						// Stage 5 CSV 데이터 확인
 						let hasStage5Prompt = false;
@@ -3990,9 +3976,22 @@ let aiSectionsHtml = '';
 						
 						planImages.forEach((planImage, imgIdx) => {
 							const imageId = planImage.id;
-						const imageStage6Data = shotStage6Data[imageId] || {};
-						const imageCsvData = csvMapping[imageId] || {};
-						console.log(`  🖼️ AI: ${ai.name}, Image ${imgIdx + 1}:`, imageId, 'has Stage6:', !!imageStage6Data.prompts, 'has Stage5:', !!imageCsvData.SCENE);
+						
+						// Plan C의 데이터를 기반으로 다른 플랜의 데이터 찾기
+						// 예: S01.01-A-01 -> S01.01-C-01로 매핑하여 데이터 조회
+						let dataLookupId = imageId;
+						if (planId === 'A' || planId === 'B') {
+							// Plan A/B의 경우 대응하는 Plan C ID로 변환하여 데이터 조회
+							// S01.01-A-01 -> S01.01-C-01
+							const baseId = imageId.split('-').slice(0, -2).join('-'); // S01.01
+							const imageNum = imageId.split('-').pop(); // 01
+							dataLookupId = `${baseId}-C-${imageNum}`;
+						}
+						
+						// 직접 해당 ID의 데이터를 조회 (JSON에 이미 플랜별로 저장됨)
+						const imageStage6Data = shotStage6Data[dataLookupId] || {};
+						const imageCsvData = csvMapping[dataLookupId] || {};
+						console.log(`  🖼️ AI: ${ai.name}, Plan ${planImage.planId}, Image ${imgIdx + 1}:`, imageId, 'has Stage6:', !!imageStage6Data.prompts, 'has Stage5:', !!imageCsvData.SCENE);
 						
 						let imagePrompts = imageStage6Data.prompts?.[ai.id] || {};
 						
