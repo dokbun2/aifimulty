@@ -1798,83 +1798,115 @@ function createTestData() {
 											};
 										}
 
-										// prompts가 있는 첫 번째 이미지 찾기
-										const imageWithPrompts = newShotData.images.find(img => img.prompts);
-
-										if (imageWithPrompts && imageWithPrompts.prompts) {
-											// image_prompts 초기화 (기존 데이터가 없을 때만)
-											if (!existingShot.image_prompts) {
-												existingShot.image_prompts = {};
-											}
-
-											// Stage 6에 있는 AI 도구들만 업데이트 (기존 데이터 보존하면서 병합)
-											Object.keys(imageWithPrompts.prompts).forEach(aiTool => {
-												const promptData = imageWithPrompts.prompts[aiTool];
-
-												// universal 타입 처리 (Stage 6 v3.0 형식)
-												if (aiTool === 'universal') {
-													const universalPrompt = typeof promptData === 'string' ? promptData : (promptData.prompt || promptData);
-													const universalTranslated = imageWithPrompts.prompts.universal_translated || '';
-													const csvParams = imageWithPrompts.csv_data?.PARAMETERS || '';
-													
-													// universal 프롬프트 저장
-													existingShot.image_prompts.universal = {
-														...(existingShot.image_prompts.universal || {}),
-														main_prompt: universalPrompt || existingShot.image_prompts.universal?.main_prompt || '',
-														main_prompt_translated: universalTranslated || existingShot.image_prompts.universal?.main_prompt_translated || '',
-														parameters: csvParams || existingShot.image_prompts.universal?.parameters || ''
-													};
-													
-													// 호환성을 위해 midjourney 등 다른 형식으로도 저장
-													existingShot.image_prompts.midjourney = {
-														...(existingShot.image_prompts.midjourney || {}),
-														main_prompt: universalPrompt || existingShot.image_prompts.midjourney?.main_prompt || '',
-														main_prompt_translated: universalTranslated || existingShot.image_prompts.midjourney?.main_prompt_translated || '',
-														parameters: csvParams || existingShot.image_prompts.midjourney?.parameters || ''
-													};
-													
-													existingShot.image_prompts.dalle3 = {
-														...(existingShot.image_prompts.dalle3 || {}),
-														main_prompt: universalPrompt || existingShot.image_prompts.dalle3?.main_prompt || '',
-														main_prompt_translated: universalTranslated || existingShot.image_prompts.dalle3?.main_prompt_translated || '',
-														parameters: ''
-													};
-													
-													existingShot.image_prompts.stable_diffusion = {
-														...(existingShot.image_prompts.stable_diffusion || {}),
-														main_prompt: universalPrompt || existingShot.image_prompts.stable_diffusion?.main_prompt || '',
-														main_prompt_translated: universalTranslated || existingShot.image_prompts.stable_diffusion?.main_prompt_translated || '',
-														parameters: ''
-													};
-												} else if (aiTool === 'universal_translated') {
-													// universal_translated는 이미 universal에서 처리됨
-													return;
-												} else if (aiTool === 'midjourney') {
-													// 기존 midjourney 데이터와 병합
-													existingShot.image_prompts.midjourney = {
-														...(existingShot.image_prompts.midjourney || {}),
-														main_prompt: promptData.prompt || existingShot.image_prompts.midjourney?.main_prompt || '',
-														main_prompt_translated: promptData.prompt_translated || existingShot.image_prompts.midjourney?.main_prompt_translated || '',
-														parameters: promptData.parameters || existingShot.image_prompts.midjourney?.parameters || ''
-													};
-												} else {
-													// 다른 AI 도구들도 기존 데이터와 병합
-													let parameters = '';
-													if (promptData.negative_prompt) {
-														parameters = `Negative: ${promptData.negative_prompt}`;
-													}
-													if (promptData.aspect_ratio) {
-														parameters += parameters ? `; Aspect Ratio: ${promptData.aspect_ratio}` : `Aspect Ratio: ${promptData.aspect_ratio}`;
-													}
-
-													existingShot.image_prompts[aiTool] = {
-														...(existingShot.image_prompts[aiTool] || {}),
-														main_prompt: promptData.prompt || existingShot.image_prompts[aiTool]?.main_prompt || '',
-														main_prompt_translated: promptData.prompt_translated || existingShot.image_prompts[aiTool]?.main_prompt_translated || '',
-														parameters: parameters || existingShot.image_prompts[aiTool]?.parameters || ''
-													};
+										// 각 플랜에 해당하는 이미지들의 프롬프트 할당
+										// 플랜 A: 첫 번째 이미지 (1개)
+										// 플랜 B: 처음 2개 이미지
+										// 플랜 C: 모든 이미지 (3개 이상)
+										
+										// 플랜별로 프롬프트를 병합하여 저장
+										const planPrompts = {
+											plan_a: [],
+											plan_b: [],
+											plan_c: []
+										};
+										
+										// 각 이미지의 프롬프트를 수집
+										newShotData.images.forEach((img, idx) => {
+											if (img.prompts && img.prompts.universal) {
+												const prompt = img.prompts.universal;
+												const translatedPrompt = img.prompts.universal_translated || '';
+												
+												// 플랜 A: 첫 번째 이미지만
+												if (idx === 0) {
+													planPrompts.plan_a.push({
+														prompt: prompt,
+														translated: translatedPrompt
+													});
 												}
-											});
+												
+												// 플랜 B: 처음 2개 이미지
+												if (idx < 2) {
+													planPrompts.plan_b.push({
+														prompt: prompt,
+														translated: translatedPrompt
+													});
+												}
+												
+												// 플랜 C: 모든 이미지
+												planPrompts.plan_c.push({
+													prompt: prompt,
+													translated: translatedPrompt
+												});
+											}
+										});
+										
+										// image_prompts 초기화 (기존 데이터가 없을 때만)
+										if (!existingShot.image_prompts) {
+											existingShot.image_prompts = {};
+										}
+										
+										// 각 플랜의 프롬프트를 병합하여 저장
+										if (planPrompts.plan_a.length > 0) {
+											const planAPrompt = planPrompts.plan_a.map(p => p.prompt).join(' | ');
+											const planATranslated = planPrompts.plan_a.map(p => p.translated).join(' | ');
+											
+											existingShot.image_prompts.plan_a = {
+												main_prompt: planAPrompt,
+												main_prompt_translated: planATranslated,
+												parameters: '--ar 16:9',
+												image_count: 1
+											};
+										}
+										
+										if (planPrompts.plan_b.length > 0) {
+											const planBPrompt = planPrompts.plan_b.map(p => p.prompt).join(' | ');
+											const planBTranslated = planPrompts.plan_b.map(p => p.translated).join(' | ');
+											
+											existingShot.image_prompts.plan_b = {
+												main_prompt: planBPrompt,
+												main_prompt_translated: planBTranslated,
+												parameters: '--ar 16:9',
+												image_count: planPrompts.plan_b.length
+											};
+										}
+										
+										if (planPrompts.plan_c.length > 0) {
+											const planCPrompt = planPrompts.plan_c.map(p => p.prompt).join(' | ');
+											const planCTranslated = planPrompts.plan_c.map(p => p.translated).join(' | ');
+											
+											existingShot.image_prompts.plan_c = {
+												main_prompt: planCPrompt,
+												main_prompt_translated: planCTranslated,
+												parameters: '--ar 16:9',
+												image_count: planPrompts.plan_c.length
+											};
+										}
+										
+										// 호환성을 위해 universal과 다른 AI 도구 형식으로도 저장 (플랜 C 기준)
+										if (planPrompts.plan_c.length > 0) {
+											existingShot.image_prompts.universal = {
+												main_prompt: planPrompts.plan_c[0].prompt,
+												main_prompt_translated: planPrompts.plan_c[0].translated,
+												parameters: '--ar 16:9'
+											};
+											
+											existingShot.image_prompts.midjourney = {
+												main_prompt: planPrompts.plan_c[0].prompt,
+												main_prompt_translated: planPrompts.plan_c[0].translated,
+												parameters: '--ar 16:9'
+											};
+											
+											existingShot.image_prompts.dalle3 = {
+												main_prompt: planPrompts.plan_c[0].prompt,
+												main_prompt_translated: planPrompts.plan_c[0].translated,
+												parameters: ''
+											};
+											
+											existingShot.image_prompts.stable_diffusion = {
+												main_prompt: planPrompts.plan_c[0].prompt,
+												main_prompt_translated: planPrompts.plan_c[0].translated,
+												parameters: ''
+											};
 										}
 									}
 
