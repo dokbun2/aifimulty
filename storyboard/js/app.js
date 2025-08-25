@@ -1754,28 +1754,46 @@ function createTestData() {
 									if (newShotData.images && newShotData.images.length > 0) {
 										// image_design_plans 생성 (없는 경우)
 										if (!existingShot.image_design_plans) {
+											// 플랜 A의 이미지 데이터 생성
+											const planAImages = newShotData.images.map((img, idx) => ({
+												id: img.image_id || `IMG_A_${String(idx + 1).padStart(3, '0')}`,
+												description: img.image_description || '',
+												csv_attributes: img.csv_data || {}
+											}));
+											
+											// 플랜 B용 이미지 데이터 (중간 복잡도 - 절반 또는 최소 1개)
+											const planBCount = Math.max(1, Math.ceil(newShotData.images.length / 2));
+											const planBImages = newShotData.images.slice(0, planBCount).map((img, idx) => ({
+												id: img.image_id ? img.image_id.replace(/A/, 'B') : `IMG_B_${String(idx + 1).padStart(3, '0')}`,
+												description: img.image_description || '',
+												csv_attributes: img.csv_data || {}
+											}));
+											
+											// 플랜 C용 이미지 데이터 (단순 표현 - 첫 번째 이미지만)
+											const planCImages = newShotData.images.slice(0, 1).map((img, idx) => ({
+												id: img.image_id ? img.image_id.replace(/A/, 'C') : `IMG_C_${String(idx + 1).padStart(3, '0')}`,
+												description: img.image_description || '',
+												csv_attributes: img.csv_data || {}
+											}));
+											
 											existingShot.image_design_plans = {
 												plan_a: {
 													description: `${newShotData.images.length}개 이미지로 전체 표현`,
 													image_count: newShotData.images.length,
 													complexity: "high",
-													images: newShotData.images.map((img, idx) => ({
-														id: img.image_id || `IMG_A_${String(idx + 1).padStart(3, '0')}`,
-														description: img.image_description || '',
-														csv_attributes: img.csv_data || {}
-													}))
+													images: planAImages
 												},
 												plan_b: {
 													description: "중간 복잡도 표현",
-													image_count: Math.ceil(newShotData.images.length / 2),
+													image_count: planBCount,
 													complexity: "medium",
-													images: []
+													images: planBImages
 												},
 												plan_c: {
 													description: "단순 표현",
 													image_count: 1,
 													complexity: "low",
-													images: []
+													images: planCImages
 												}
 											};
 										}
