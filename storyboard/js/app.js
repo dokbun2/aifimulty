@@ -5326,26 +5326,32 @@ try {
 	function processVideoUrl(url) {
 		if (!url) return url;
 		
-		// 드롭박스 URL 처리
-		if (url.includes('dropbox.com')) {
-			// dl=0을 dl=1로 변경하여 직접 다운로드 URL로 변환
-			if (url.includes('dl=0')) {
-				return url.replace('dl=0', 'raw=1');
-			} else if (!url.includes('raw=')) {
-				// raw 파라미터가 없으면 추가
-				const separator = url.includes('?') ? '&' : '?';
-				return url + separator + 'raw=1';
+		// 일반 HTTP/HTTPS URL 처리 (비디오 파일 직접 링크)
+		if (url.startsWith('http://') || url.startsWith('https://')) {
+			// 드롭박스 URL 처리
+			if (url.includes('dropbox.com')) {
+				// dl=0을 dl=1로 변경하여 직접 다운로드 URL로 변환
+				if (url.includes('dl=0')) {
+					return url.replace('dl=0', 'raw=1');
+				} else if (!url.includes('raw=')) {
+					// raw 파라미터가 없으면 추가
+					const separator = url.includes('?') ? '&' : '?';
+					return url + separator + 'raw=1';
+				}
+				return url;
 			}
+			
+			// Google Drive URL 처리
+			if (url.includes('drive.google.com')) {
+				const fileId = extractGoogleDriveFileId(url);
+				if (fileId) {
+					// Google Drive 임베드 URL로 변환
+					return `https://drive.google.com/file/d/${fileId}/preview`;
+				}
+			}
+			
+			// 기타 일반 URL은 그대로 반환 (prompthero.com 등)
 			return url;
-		}
-		
-		// Google Drive URL 처리
-		if (url.includes('drive.google.com')) {
-			const fileId = extractGoogleDriveFileId(url);
-			if (fileId) {
-				// Google Drive 임베드 URL로 변환
-				return `https://drive.google.com/file/d/${fileId}/preview`;
-			}
 		}
 		
 		// Windows 경로 형식 (C:\path\to\file.mp4) 처리
