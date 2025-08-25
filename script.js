@@ -199,20 +199,42 @@ function appendExistingStageParams(baseUrl) {
 
 // DOM Content Loaded Event
 document.addEventListener('DOMContentLoaded', function() {
-    // 업로드 알림 섹션 숨기기
-    const notificationSection = document.getElementById('upload-notification-section');
-    if (notificationSection) {
-        notificationSection.style.display = 'none';
+    try {
+        // 업로드 알림 섹션 숨기기
+        const notificationSection = document.getElementById('upload-notification-section');
+        if (notificationSection) {
+            notificationSection.style.display = 'none';
+        }
+        
+        // 각 함수가 존재하는지 확인 후 실행
+        if (typeof initializeAnimations === 'function') {
+            initializeAnimations();
+        }
+        
+        if (typeof setupCardClickHandlers === 'function') {
+            setupCardClickHandlers();
+        }
+        
+        // 비디오 import 기능은 해당 요소가 있는 페이지에서만 실행
+        if (document.getElementById('google-drive-url') && typeof setupVideoImport === 'function') {
+            setupVideoImport();
+        }
+        
+        if (typeof updateProjectCardStatus === 'function') {
+            updateProjectCardStatus(); // 페이지 로드 시 카드 상태 초기화
+        }
+        
+        if (typeof restoreCompletedStages === 'function') {
+            restoreCompletedStages(); // 완료된 Stage 카드 표시 복원
+        }
+        
+        // 초기화 시 Stage 2 버튼 활성화
+        if (typeof enableStageButton === 'function') {
+            enableStageButton(2);
+        }
+    } catch (error) {
+        console.error('초기화 중 오류 발생:', error);
     }
-    
-    initializeAnimations();
-    setupCardClickHandlers();
-    setupVideoImport();
-    updateProjectCardStatus(); // 페이지 로드 시 카드 상태 초기화
-    restoreCompletedStages(); // 완료된 Stage 카드 표시 복원
-    
-    // 초기화 시 Stage 2 버튼 활성화
-    enableStageButton(2);
     
     // Stage 2 파일 입력 이벤트 리스너 추가
     const stage2FileInput = document.getElementById('stage2-json-input');
