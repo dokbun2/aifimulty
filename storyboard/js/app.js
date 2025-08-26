@@ -276,8 +276,14 @@ function convertStage5V5Format(data) {
                 // 샷 데이터 변환
                 if (scene.shots && Array.isArray(scene.shots)) {
                     scene.shots.forEach((shot, shotIndex) => {
+                        // Shot ID 생성 시 일관된 형식 사용
+                        const shotNumber = String(shotIndex + 1).padStart(2, '0');
+                        const shotId = shot.shot_id || `shot_${shotNumber}`;
+                        
+                        console.log(`🔧 Stage 5 변환 - Shot ID 생성: ${shotId} (원본: ${shot.shot_id})`);
+                        
                         const convertedShot = {
-                            id: shot.shot_id || `${sceneId}_SH${String(shotIndex + 1).padStart(2, '0')}`,
+                            id: shotId,
                             scene_id: sceneId,
                             sequence_id: sequenceInfo.id,
                             title: shot.blockout?.action || `Shot ${shotIndex + 1}`,
