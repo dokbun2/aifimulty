@@ -347,6 +347,22 @@
                             </div>
                             <span class="tool-arrow">→</span>
                         </a>
+                        <a href="https://suno.com/" target="_blank" class="tool-item">
+                            <span class="tool-icon tool-icon-suno"></span>
+                            <div class="tool-info">
+                                <h4>음악만들기</h4>
+                                <p>SUNO AI</p>
+                            </div>
+                            <span class="tool-arrow">→</span>
+                        </a>
+                        <a href="https://www.krea.ai/enhancer" target="_blank" class="tool-item">
+                            <span class="tool-icon tool-icon-enhancer"></span>
+                            <div class="tool-info">
+                                <h4>이미지 Enhancer</h4>
+                                <p>무료 하루 제한 있음</p>
+                            </div>
+                            <span class="tool-arrow">→</span>
+                        </a>
                     </div>
                 </div>
                 
@@ -910,6 +926,22 @@
                 toolIconMidjourney.innerHTML = getTablerIcon('palette', 24);
                 if (!toolIconMidjourney.innerHTML || toolIconMidjourney.innerHTML === '') {
                     toolIconMidjourney.innerHTML = getTablerIcon('photo', 24);
+                }
+            }
+            
+            const toolIconSuno = document.querySelector('.tool-icon-suno');
+            if (toolIconSuno) {
+                toolIconSuno.innerHTML = getTablerIcon('headphones', 24);
+                if (!toolIconSuno.innerHTML || toolIconSuno.innerHTML === '') {
+                    toolIconSuno.innerHTML = getTablerIcon('music', 24);
+                }
+            }
+            
+            const toolIconEnhancer = document.querySelector('.tool-icon-enhancer');
+            if (toolIconEnhancer) {
+                toolIconEnhancer.innerHTML = getTablerIcon('star', 24);
+                if (!toolIconEnhancer.innerHTML || toolIconEnhancer.innerHTML === '') {
+                    toolIconEnhancer.innerHTML = getTablerIcon('sparkles', 24);
                 }
             }
         });
