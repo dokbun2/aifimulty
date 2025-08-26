@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 비디오 프롬프트 빌더 - AIFI</title>
+    
+    <!-- 기존 CSS 먼저 로드 -->
+    <link rel="stylesheet" href="assets/css/core.css">
+    
+    <!-- Apple Developer Style CSS - core.css 오버라이드 -->
+    <link rel="stylesheet" href="apple-developer-style.css">
+    
+    <!-- Tabler Icons CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/iconfont/tabler-icons.min.css">
+    
+    <!-- SEO -->
+    <meta name="description" content="AI 비디오 생성을 위한 프롬프트 제작 도구">
+    <meta name="keywords" content="AI 비디오생성, 프롬프트, Luma, Runway, Kling, Veo2, Sora">
+    
+    <!-- 파비콘 -->
+    <link rel="icon" type="image/x-icon" href="favicon_io/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon_io/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon_io/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon_io/apple-touch-icon.png">
+    <link rel="manifest" href="favicon_io/site.webmanifest">
+    
+    <style>
+        /* Apple Style Custom Overrides for Prompt Builder */
+        
+        /* Apple Style Variables Override - Important */
+        :root {
+            --apple-blue: #0066CC !important;
+            --apple-blue-hover: #0055B3 !important;
+            --apple-blue-dark: #004499 !important;
+            --apple-blue-gradient: linear-gradient(135deg, #0066CC, #004499) !important;
+            --dark-bg: #000000 !important;
+            --dark-nav: #1d1d1f !important;
+            --dark-card: #1d1d1f !important;
+            --dark-card-hover: #2d2d30 !important;
+            --dark-text: #f5f5f7 !important;
+            --dark-text-secondary: #86868b !important;
+            --dark-border: rgba(255, 255, 255, 0.16) !important;
+            --overlay-light: rgba(255, 255, 255, 0.04) !important;
+            --overlay-medium: rgba(255, 255, 255, 0.08) !important;
+            --overlay-heavy: rgba(255, 255, 255, 0.12) !important;
+            
+            /* Override core.css variables */
+            --bg-primary: #000000 !important;
+            --bg-secondary: #1d1d1f !important;
+            --bg-card: rgba(255, 255, 255, 0.05) !important;
+            --text-primary: #f5f5f7 !important;
+            --text-secondary: #86868b !important;
+            --border-primary: rgba(255, 255, 255, 0.16) !important;
+            --space-xs: 0.25rem !important;
+            --space-sm: 0.5rem !important;
+            --space-md: 1rem !important;
+            --space-lg: 1.5rem !important;
+            --space-xl: 2rem !important;
+            --radius-sm: 8px !important;
+            --transition-base: all 0.3s ease !important;
+            --accent-purple: #8b5cf6 !important;
+        }
+        
+        /* Body and Nav Overrides */
+        body {
+            background: var(--dark-bg) !important;
+            color: var(--dark-text) !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Paperlogy', sans-serif !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            padding-top: 70px !important;
+        }
+        
+        /* Navigation Bar Apple Style */
+        .navbar {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            height: 70px !important;
+            background: rgba(0, 0, 0, 0.95) !important;
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
+            border-bottom: 1px solid var(--dark-border) !important;
+            z-index: 1000 !important;
+            display: flex !important;
+            align-items: center !important;
+            padding: 0 24px !important;
+        }
+        
+        .navbar h1 {
+            color: var(--dark-text) !important;
+            font-size: 20px !important;
+            font-weight: 600 !important;
+            margin: 0 !important;
+            letter-spacing: -0.5px !important;
+        }
+
+        /* Main Container */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: var(--space-xl) var(--space-lg);
+            padding-bottom: 100px;
+        }
+
+        /* Section Styles */
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--dark-border);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: all 0.3s ease;
+        }
+
+        .section:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 102, 204, 0.1);
+        }
+
+        .section-header {
+            margin-bottom: var(--space-lg);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--dark-text);
+            margin-bottom: 4px;
+            letter-spacing: -0.01em;
+        }
+
+        .section-subtitle {
+            font-size: 13px;
+            color: var(--dark-text-secondary);
+            font-weight: 400;
+        }
+
+        /* Generated Prompt Section - Sticky */
+        .prompt-preview-section {
+            position: sticky;
+            top: 90px;
+            z-index: 100;
+            background: rgba(20, 20, 20, 0.98);
+            border: 1px solid var(--apple-blue);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            box-shadow: 0 8px 32px rgba(0, 102, 204, 0.15);
+        }
+
+        .prompt-preview {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--dark-border);
+            border-radius: 12px;
+            padding: 16px;
+            min-height: 100px;
+            color: var(--dark-text);
+            font-size: 14px;
+            line-height: 1.6;
+            position: relative;
+        }
+
+        .prompt-preview-text {
+            display: block;
+        }
+
+        .prompt-preview-editor {
+            display: none;
+            width: 100%;
+            min-height: 100px;
+            background: transparent;
+            border: none;
+            color: var(--dark-text);
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: vertical;
+            outline: none;
+        }
+
+        .prompt-preview.editing .prompt-preview-text {
+            display: none;
+        }
+
+        .prompt-preview.editing .prompt-preview-editor {
+            display: block;
+        }
+
+        .edit-prompt-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--dark-border);
+            border-radius: 8px;
+            padding: 6px 12px;
+            color: var(--dark-text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .edit-prompt-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: var(--dark-text);
+        }
+
+        .edit-prompt-btn.save-mode {
+            background: var(--apple-blue);
+            border-color: var(--apple-blue);
+            color: white;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--apple-blue);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 102, 204, 0.25);
+        }
+
+        .btn-primary:hover {
+            background: var(--apple-blue-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0, 102, 204, 0.35);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--dark-text);
+            border: 1px solid var(--dark-border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.25);
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+
+        /* Scene Controls Grid */
+        .scene-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+
+        /* Visual Style Presets */
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .preset-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--dark-border);
+            border-radius: 12px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .preset-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .preset-card.selected {
+            border-color: var(--apple-blue);
+            background: rgba(0, 102, 204, 0.1);
+        }
+
+        .preset-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--dark-text);
+            margin-bottom: 4px;
+        }
+
+        .preset-desc {
+            font-size: 12px;
+            color: var(--dark-text-secondary);
+        }
+
+        /* Input Fields */
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--dark-text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .text-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--dark-border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: var(--dark-text);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: var(--apple-blue);
+            background: rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
+        }
+
+        textarea.text-input {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* Motion Cards Grid */
+        .motion-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .motion-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .motion-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--dark-border);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .motion-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .motion-card.selected {
+            background: rgba(139, 92, 246, 0.15);
+            border-color: var(--accent-purple);
+            color: var(--accent-purple);
+        }
+
+        .motion-icon {
+            font-size: 24px;
+        }
+
+        .motion-label {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* Transition Effects */
+        .transition-options {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+
+        .transition-chip {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--dark-border);
+            border-radius: 20px;
+            color: var(--dark-text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .transition-chip:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--dark-text);
+        }
+
+        .transition-chip.selected {
+            background: rgba(217, 70, 239, 0.15);
+            border-color: #d946ef;
+            color: #d946ef;
+        }
+
+        /* Duration Slider */
+        .duration-control {
+            margin-top: 16px;
+        }
+
+        .duration-slider {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            height: 6px;
+            border-radius: 3px;
+            appearance: none;
+            outline: none;
+        }
+
+        .duration-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--apple-blue);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .duration-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--dark-text-secondary);
+            margin-top: 8px;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(30, 30, 30, 0.95);
+            color: var(--dark-text);
+            padding: 12px 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 2000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .scene-controls {
+                grid-template-columns: 1fr;
+            }
+            
+            .preset-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .main-container {
+                padding: var(--space-md);
+            }
+            
+            .prompt-preview-section {
+                position: relative;
+                top: auto;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <h1>🎬 AI 비디오 프롬프트 빌더</h1>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="main-container">
+        <!-- Generated Prompt Preview Section -->
+        <div class="prompt-preview-section">
+            <div class="section-header">
+                <div>
+                    <h3 class="section-title">생성된 프롬프트</h3>
+                    <p class="section-subtitle">AI 비디오 생성용 최종 프롬프트</p>
+                </div>
+            </div>
+            
+            <div class="prompt-preview" id="videoPromptPreview">
+                <button class="edit-prompt-btn" id="editPromptBtn" onclick="toggleEditMode()">
+                    <i class="ti ti-edit" id="editIcon"></i>
+                    <span id="editBtnText">수정</span>
+                </button>
+                <span class="prompt-preview-text" id="promptText">여기에 생성된 비디오 프롬프트가 표시됩니다...</span>
+                <textarea class="prompt-preview-editor" id="promptEditor"></textarea>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="copyVideoPrompt()">
+                    <i class="ti ti-copy"></i>
+                    복사
+                </button>
+                <button class="btn btn-secondary" onclick="generateVariation()">
+                    <i class="ti ti-refresh"></i>
+                    변형 생성
+                </button>
+                <button class="btn btn-secondary" onclick="saveVideoPrompt()">
+                    <i class="ti ti-bookmark"></i>
+                    저장
+                </button>
+                <button class="btn btn-danger" onclick="clearVideoPrompt()">
+                    <i class="ti ti-trash"></i>
+                    초기화
+                </button>
+            </div>
+        </div>
+
+        <!-- Scene Builder Controls -->
+        <div class="scene-controls">
+            <!-- 1. Visual Style -->
+            <div class="section">
+                <div class="section-header">
+                    <div>
+                        <h3 class="section-title">1. 비주얼 스타일</h3>
+                        <p class="section-subtitle">원하는 비주얼 스타일을 선택하세요</p>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label">스타일 프리셋</label>
+                    <div class="preset-grid">
+                        <div class="preset-card selected" data-style="cinematic">
+                            <div class="preset-title">시네마틱</div>
+                            <div class="preset-desc">영화적 품질</div>
+                        </div>
+                        <div class="preset-card" data-style="documentary">
+                            <div class="preset-title">다큐멘터리</div>
+                            <div class="preset-desc">사실적 표현</div>
+                        </div>
+                        <div class="preset-card" data-style="animated">
+                            <div class="preset-title">애니메이션</div>
+                            <div class="preset-desc">스타일라이즈드</div>
+                        </div>
+                        <div class="preset-card" data-style="motion graphics">
+                            <div class="preset-title">모션그래픽</div>
+                            <div class="preset-desc">그래픽 중심</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label">색상 그레이딩</label>
+                    <input type="text" class="text-input" id="colorGrading" 
+                           placeholder="예: warm tones, high contrast">
+                </div>
+            </div>
+
+            <!-- 2. Scene Elements -->
+            <div class="section">
+                <div class="section-header">
+                    <div>
+                        <h3 class="section-title">2. 장면 요소</h3>
+                        <p class="section-subtitle">비디오의 주요 구성 요소</p>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label">주요 대상</label>
+                    <input type="text" class="text-input" id="mainSubject" 
+                           placeholder="예: 우주복을 입은 우주비행사">
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label">배경/환경</label>
+                    <input type="text" class="text-input" id="environment" 
+                           placeholder="예: 화성의 붉은 사막">
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label">액션/동작</label>
+                    <textarea class="text-input" id="action" 
+                              placeholder="예: 천천히 걸어가며 주변을 둘러본다"></textarea>
+                </div>
+            </div>
+
+            <!-- 3. Camera Movement -->
+            <div class="section">
+                <div class="section-header">
+                    <div>
+                        <h3 class="section-title">3. 카메라 움직임</h3>
+                        <p class="section-subtitle">원하는 카메라 모션을 선택하세요</p>
+                    </div>
+                </div>
+                
+                <div class="motion-grid">
+                    <div class="motion-card selected" data-motion="static">
+                        <i class="ti ti-square motion-icon"></i>
+                        <span class="motion-label">고정</span>
+                    </div>
+                    <div class="motion-card" data-motion="pan">
+                        <i class="ti ti-arrows-horizontal motion-icon"></i>
+                        <span class="motion-label">팬</span>
+                    </div>
+                    <div class="motion-card" data-motion="tilt">
+                        <i class="ti ti-arrows-vertical motion-icon"></i>
+                        <span class="motion-label">틸트</span>
+                    </div>
+                    <div class="motion-card" data-motion="zoom-in">
+                        <i class="ti ti-zoom-in motion-icon"></i>
+                        <span class="motion-label">줌 인</span>
+                    </div>
+                    <div class="motion-card" data-motion="zoom-out">
+                        <i class="ti ti-zoom-out motion-icon"></i>
+                        <span class="motion-label">줌 아웃</span>
+                    </div>
+                    <div class="motion-card" data-motion="dolly">
+                        <i class="ti ti-arrow-narrow-right motion-icon"></i>
+                        <span class="motion-label">돌리</span>
+                    </div>
+                    <div class="motion-card" data-motion="orbit">
+                        <i class="ti ti-rotate-360 motion-icon"></i>
+                        <span class="motion-label">궤도</span>
+                    </div>
+                    <div class="motion-card" data-motion="crane">
+                        <i class="ti ti-crane motion-icon"></i>
+                        <span class="motion-label">크레인</span>
+                    </div>
+                    <div class="motion-card" data-motion="handheld">
+                        <i class="ti ti-hand-move motion-icon"></i>
+                        <span class="motion-label">핸드헬드</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Transition Effects -->
+            <div class="section">
+                <div class="section-header">
+                    <div>
+                        <h3 class="section-title">4. 전환 효과</h3>
+                        <p class="section-subtitle">장면 간 전환 방식</p>
+                    </div>
+                </div>
+                
+                <div class="transition-options">
+                    <div class="transition-chip selected" data-transition="cut">컷</div>
+                    <div class="transition-chip" data-transition="fade">페이드</div>
+                    <div class="transition-chip" data-transition="dissolve">디졸브</div>
+                    <div class="transition-chip" data-transition="wipe">와이프</div>
+                    <div class="transition-chip" data-transition="morph">모프</div>
+                    <div class="transition-chip" data-transition="match-cut">매치 컷</div>
+                </div>
+            </div>
+
+            <!-- 5. Duration & Intensity -->
+            <div class="section">
+                <div class="section-header">
+                    <div>
+                        <h3 class="section-title">5. 길이 및 강도</h3>
+                        <p class="section-subtitle">비디오 설정</p>
+                    </div>
+                </div>
+                
+                <div class="duration-control">
+                    <label class="input-label">비디오 길이</label>
+                    <input type="range" class="duration-slider" id="duration" 
+                           min="5" max="30" value="10" step="1">
+                    <div class="duration-display">
+                        <span>5초</span>
+                        <span id="durationValue">10초</span>
+                        <span>30초</span>
+                    </div>
+                </div>
+                
+                <div class="duration-control" style="margin-top: 20px;">
+                    <label class="input-label">모션 강도</label>
+                    <input type="range" class="duration-slider" id="motionIntensity" 
+                           min="1" max="10" value="5" step="1">
+                    <div class="duration-display">
+                        <span>약함</span>
+                        <span id="motionValue">5</span>
+                        <span>강함</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i class="ti ti-check" id="toastIcon"></i>
+        <span id="toastMessage">메시지</span>
+    </div>
+
+    <script>
+        // Initialize
+        let selectedMotion = 'static';
+        let selectedTransition = 'cut';
+        let selectedStyle = 'cinematic';
+        let selectedStyleKorean = '시네마틱';
+        let duration = 10;
+        let motionIntensity = 5;
+        let isEditMode = false;
+
+        // Wait for DOM to load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Motion Card Selection
+            const motionCards = document.querySelectorAll('.motion-card');
+            motionCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    motionCards.forEach(c => c.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedMotion = this.getAttribute('data-motion');
+                    updateVideoPrompt();
+                });
+            });
+
+            // Transition Chip Selection
+            const transitionChips = document.querySelectorAll('.transition-chip');
+            transitionChips.forEach(chip => {
+                chip.addEventListener('click', function() {
+                    transitionChips.forEach(c => c.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedTransition = this.getAttribute('data-transition');
+                    updateVideoPrompt();
+                });
+            });
+
+            // Preset Card Selection
+            const presetCards = document.querySelectorAll('.preset-card');
+            presetCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    presetCards.forEach(c => c.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedStyleKorean = this.querySelector('.preset-title').textContent;
+                    selectedStyle = this.getAttribute('data-style');
+                    updateVideoPrompt();
+                });
+            });
+
+            // Duration Slider
+            const durationSlider = document.getElementById('duration');
+            durationSlider.addEventListener('input', function() {
+                duration = this.value;
+                document.getElementById('durationValue').textContent = duration + '초';
+                updateVideoPrompt();
+            });
+
+            // Motion Intensity Slider
+            const motionSlider = document.getElementById('motionIntensity');
+            motionSlider.addEventListener('input', function() {
+                motionIntensity = this.value;
+                document.getElementById('motionValue').textContent = motionIntensity;
+                updateVideoPrompt();
+            });
+
+            // Input Fields
+            const inputFields = ['mainSubject', 'environment', 'action', 'colorGrading'];
+            inputFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.addEventListener('input', updateVideoPrompt);
+                }
+            });
+
+            // Initial prompt generation
+            updateVideoPrompt();
+        });
+
+        // Toggle Edit Mode
+        function toggleEditMode() {
+            const previewDiv = document.getElementById('videoPromptPreview');
+            const promptText = document.getElementById('promptText');
+            const promptEditor = document.getElementById('promptEditor');
+            const editBtn = document.getElementById('editPromptBtn');
+            const editIcon = document.getElementById('editIcon');
+            const editBtnText = document.getElementById('editBtnText');
+
+            if (!isEditMode) {
+                // Enter edit mode
+                isEditMode = true;
+                previewDiv.classList.add('editing');
+                promptEditor.value = promptText.textContent;
+                promptEditor.focus();
+                editBtn.classList.add('save-mode');
+                editIcon.className = 'ti ti-check';
+                editBtnText.textContent = '저장';
+            } else {
+                // Exit edit mode and save
+                isEditMode = false;
+                previewDiv.classList.remove('editing');
+                promptText.textContent = promptEditor.value;
+                editBtn.classList.remove('save-mode');
+                editIcon.className = 'ti ti-edit';
+                editBtnText.textContent = '수정';
+                showToast('프롬프트가 수정되었습니다', 'success');
+            }
+        }
+
+        // Update Video Prompt
+        function updateVideoPrompt() {
+            const subject = document.getElementById('mainSubject').value || '주요 대상';
+            const environment = document.getElementById('environment').value || '배경';
+            const action = document.getElementById('action').value || '동작';
+            const colorGrading = document.getElementById('colorGrading').value;
+
+            const motionDescriptions = {
+                'static': 'static shot',
+                'pan': 'smooth pan',
+                'tilt': 'vertical tilt',
+                'zoom-in': 'slow zoom in',
+                'zoom-out': 'gradual zoom out',
+                'dolly': 'dolly forward',
+                'orbit': 'orbital movement',
+                'crane': 'crane shot',
+                'handheld': 'handheld camera'
+            };
+
+            let prompt = `${selectedStyle} style video: ${subject} in ${environment}. ${action}. `;
+            prompt += `Camera: ${motionDescriptions[selectedMotion]}. `;
+            
+            if (colorGrading) {
+                prompt += `Color grading: ${colorGrading}. `;
+            }
+            
+            prompt += `Duration: ${duration} seconds. `;
+            prompt += `Motion intensity: ${motionIntensity}/10. `;
+            prompt += `Transition: ${selectedTransition}.`;
+
+            // Update both text and editor
+            document.getElementById('promptText').textContent = prompt;
+            if (isEditMode) {
+                document.getElementById('promptEditor').value = prompt;
+            }
+        }
+
+        // Copy Video Prompt
+        function copyVideoPrompt() {
+            let promptToCopy;
+            if (isEditMode) {
+                promptToCopy = document.getElementById('promptEditor').value;
+            } else {
+                promptToCopy = document.getElementById('promptText').textContent;
+            }
+            navigator.clipboard.writeText(promptToCopy).then(() => {
+                showToast('프롬프트가 복사되었습니다', 'success');
+            });
+        }
+
+        // Generate Variation
+        function generateVariation() {
+            if (isEditMode) {
+                toggleEditMode();
+            }
+
+            const variations = [
+                'dynamic movement',
+                'subtle motion',
+                'dramatic angles',
+                'smooth transitions',
+                'epic scale',
+                'intimate close-up',
+                'wide establishing shot'
+            ];
+            const randomVariation = variations[Math.floor(Math.random() * variations.length)];
+            
+            const currentPrompt = document.getElementById('promptText').textContent;
+            const variedPrompt = currentPrompt.replace(/Camera: [^.]+/, `Camera: ${randomVariation}`);
+            document.getElementById('promptText').textContent = variedPrompt;
+            
+            showToast('변형이 생성되었습니다', 'success');
+        }
+
+        // Save Video Prompt
+        function saveVideoPrompt() {
+            if (isEditMode) {
+                toggleEditMode();
+            }
+
+            const promptText = document.getElementById('promptText').textContent;
+            
+            // Save to localStorage
+            const savedPrompts = JSON.parse(localStorage.getItem('savedVideoPrompts') || '[]');
+            savedPrompts.push({
+                prompt: promptText,
+                style: selectedStyle,
+                styleKorean: selectedStyleKorean,
+                motion: selectedMotion,
+                transition: selectedTransition,
+                duration: duration,
+                intensity: motionIntensity,
+                timestamp: new Date().toISOString()
+            });
+            localStorage.setItem('savedVideoPrompts', JSON.stringify(savedPrompts));
+            showToast('프롬프트가 저장되었습니다', 'success');
+        }
+
+        // Clear Video Prompt
+        function clearVideoPrompt() {
+            // Clear all input fields
+            document.getElementById('mainSubject').value = '';
+            document.getElementById('environment').value = '';
+            document.getElementById('action').value = '';
+            document.getElementById('colorGrading').value = '';
+            
+            // Reset selections to defaults
+            selectedMotion = 'static';
+            selectedTransition = 'cut';
+            selectedStyle = 'cinematic';
+            selectedStyleKorean = '시네마틱';
+            duration = 10;
+            motionIntensity = 5;
+            
+            // Reset UI elements
+            document.querySelectorAll('.motion-card').forEach(card => {
+                card.classList.remove('selected');
+                if (card.getAttribute('data-motion') === 'static') {
+                    card.classList.add('selected');
+                }
+            });
+            
+            document.querySelectorAll('.transition-chip').forEach(chip => {
+                chip.classList.remove('selected');
+                if (chip.getAttribute('data-transition') === 'cut') {
+                    chip.classList.add('selected');
+                }
+            });
+            
+            document.querySelectorAll('.preset-card').forEach(card => {
+                card.classList.remove('selected');
+                if (card.getAttribute('data-style') === 'cinematic') {
+                    card.classList.add('selected');
+                }
+            });
+            
+            // Reset sliders
+            document.getElementById('duration').value = 10;
+            document.getElementById('durationValue').textContent = '10초';
+            document.getElementById('motionIntensity').value = 5;
+            document.getElementById('motionValue').textContent = '5';
+            
+            // Exit edit mode if active
+            if (isEditMode) {
+                toggleEditMode();
+            }
+            
+            // Clear the prompt preview
+            document.getElementById('promptText').textContent = '여기에 생성된 비디오 프롬프트가 표시됩니다...';
+            document.getElementById('promptEditor').value = '';
+            
+            showToast('프롬프트가 초기화되었습니다', 'success');
+        }
+
+        // Show Toast
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+            
+            toastMessage.textContent = message;
+            toast.className = 'toast show';
+            
+            if (type === 'success') {
+                toastIcon.className = 'ti ti-check';
+            } else {
+                toastIcon.className = 'ti ti-x';
+            }
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
