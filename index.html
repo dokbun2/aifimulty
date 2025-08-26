@@ -362,6 +362,14 @@
                             </div>
                             <span class="tool-arrow">→</span>
                         </a>
+                        <a href="https://midstudy.netlify.app/" target="_blank" class="tool-item">
+                            <span class="tool-icon tool-icon-prompt-builder"></span>
+                            <div class="tool-info">
+                                <h4>프롬프트 빌더</h4>
+                                <p>미드저니 SREF</p>
+                            </div>
+                            <span class="tool-arrow">→</span>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -862,6 +870,14 @@
                 toolIconJson.innerHTML = getTablerIcon('fileCode', 24);
                 if (!toolIconJson.innerHTML || toolIconJson.innerHTML === '') {
                     toolIconJson.innerHTML = getTablerIcon('code', 24);
+                }
+            }
+            
+            const toolIconPromptBuilder = document.querySelector('.tool-icon-prompt-builder');
+            if (toolIconPromptBuilder) {
+                toolIconPromptBuilder.innerHTML = getTablerIcon('sparkles', 24);
+                if (!toolIconPromptBuilder.innerHTML || toolIconPromptBuilder.innerHTML === '') {
+                    toolIconPromptBuilder.innerHTML = getTablerIcon('edit', 24);
                 }
             }
         });
