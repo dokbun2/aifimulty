@@ -5403,7 +5403,7 @@ try {
 			localStorage.setItem('videoPromptShotId', shotId); 
 			localStorage.setItem('videoPromptImageId', imageId);
 			
-			// 비디오 프롬프트 생성기 페이지로 이동
+			// Video Studio 페이지로 이동
 			window.location.href = '../video-prompt-builder.html';
 		} catch (error) {
 			console.error('AI 영상 프롬프트 개선 중 오류:', error);

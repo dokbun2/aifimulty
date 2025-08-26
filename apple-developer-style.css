@@ -1770,10 +1770,10 @@ body {
 .stage-cards-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: 16px;
   margin-top: 16px;
   width: 100%;
-  max-width: 400px;
+  max-width: 600px;
 }
 
 
@@ -1781,13 +1781,14 @@ body {
   background: rgba(30, 30, 35, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
-  padding: 20px;
+  padding: 20px 24px;
   cursor: pointer;
   transition: all 0.3s;
   position: relative;
   display: flex;
   align-items: center;
   gap: 16px;
+  min-width: 250px;
 }
 
 .stage-upload-card:hover {
@@ -1937,7 +1938,8 @@ body {
   }
   
   .stage-cards-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 550px;
   }
   
   .tools-grid {
@@ -1960,6 +1962,7 @@ body {
   
   .stage-cards-grid {
     grid-template-columns: repeat(2, 1fr);
+    max-width: 500px;
   }
 }
 
@@ -2079,6 +2082,7 @@ body {
   .stage-cards-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
+    max-width: 600px;
   }
   
   .tools-grid {
