@@ -4895,6 +4895,7 @@ if (selectedPlanData && selectedPlanData.images) {
 												onclick="copyVideoPrompt('${prompt.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, "\\n")}', '${ai.name}', '${imageId}')">
 											프롬프트 복사
 										</button>
+										<!-- 영상탭에서는 프롬프트 수정과 AI수정 버튼을 숨김
 										<button class="edit-btn btn-small" 
 												onclick="editVideoPrompt('${shot.id}', '${ai.id}', '${imageId}', '${prompt.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, "\\n")}')">
 											프롬프트 수정
@@ -4903,6 +4904,7 @@ if (selectedPlanData && selectedPlanData.images) {
 												onclick="aiImproveVideoPrompt('${shot.id}', '${ai.id}', '${imageId}', '${prompt.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, "\\n")}')">
 											AI수정
 										</button>
+										-->
 									</div>
 								</div>
 								<div class="video-url-section">
@@ -5259,12 +5261,14 @@ try {
 							<button class="copy-btn" onclick="copyVideoPrompt('${promptForCopy}', '${ai.name}', '${imageId}')">
 								프롬프트 복사
 							</button>
+							<!-- 영상탭에서는 프롬프트 수정과 AI수정 버튼을 숨김
 							<button class="edit-btn" onclick="editVideoPrompt('${shotId}', '${ai.id}', '${imageId}', '${promptForCopy}')">
 								프롬프트 수정
 							</button>
 							<button class="ai-improve-btn" onclick="aiImproveVideoPrompt('${shotId}', '${ai.id}', '${imageId}', '${promptForCopy}')">
 								AI수정
 							</button>
+							-->
 						</div>
 					</div>
 					<div class="video-url-section">
