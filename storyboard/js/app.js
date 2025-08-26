@@ -3821,6 +3821,18 @@ const stage6Data = window.stage6ImagePrompts || {};
 const shotStage6Data = stage6Data[shot.id] || {};
 console.log('🔍 Stage 6 데이터 확인:', shot.id, Object.keys(shotStage6Data).length, 'images');
 
+// 플랜별 이미지 프롬프트 데이터 가져오기
+const imagePromptsByPlan = shot.image_prompts_by_plan || {
+    plan_a: {},
+    plan_b: {},
+    plan_c: {}
+};
+console.log('📋 플랜별 이미지 프롬프트:', {
+    'Plan A': Object.keys(imagePromptsByPlan.plan_a).length,
+    'Plan B': Object.keys(imagePromptsByPlan.plan_b).length,
+    'Plan C': Object.keys(imagePromptsByPlan.plan_c).length
+});
+
 let planSelectorHtml = '';
 let selectedPlanData = null;
 
@@ -4032,9 +4044,24 @@ let aiSectionsHtml = '';
 							dataLookupId = `${baseId}-C-${imageNum}`;
 						}
 						
-						// 직접 해당 ID의 데이터를 조회 (JSON에 이미 플랜별로 저장됨)
-						const imageStage6Data = shotStage6Data[dataLookupId] || {};
-						const imageCsvData = csvMapping[dataLookupId] || {};
+						// 플랜별 이미지 프롬프트 데이터 조회
+						let imageStage6Data = {};
+						
+						// 플랜별 데이터에서 먼저 찾기
+						const currentPlanKey = `plan_${planId.toLowerCase()}`;
+						if (imagePromptsByPlan[currentPlanKey] && imagePromptsByPlan[currentPlanKey][imageId]) {
+							imageStage6Data = imagePromptsByPlan[currentPlanKey][imageId];
+							console.log(`  ✅ 플랜 ${planId} 데이터에서 발견:`, imageId);
+						} 
+						// 플랜별 데이터가 없으면 전체 Stage6 데이터에서 조회
+						else {
+							imageStage6Data = shotStage6Data[dataLookupId] || shotStage6Data[imageId] || {};
+							if (imageStage6Data.prompts) {
+								console.log(`  📦 전체 Stage6 데이터에서 발견:`, dataLookupId);
+							}
+						}
+						
+						const imageCsvData = csvMapping[dataLookupId] || csvMapping[imageId] || {};
 						console.log(`  🖼️ AI: ${ai.name}, Plan ${planImage.planId}, Image ${imgIdx + 1}:`, imageId, 'has Stage6:', !!imageStage6Data.prompts, 'has Stage5:', !!imageCsvData.SCENE);
 						
 						let imagePrompts = imageStage6Data.prompts?.[ai.id] || {};
@@ -4076,11 +4103,30 @@ let aiSectionsHtml = '';
 							}
 						}
 						
-						// universal 프롬프트 특별 처리를 고려한 hasPrompt 체크
+						// nanobabana 프롬프트 특별 처리
+						if (ai.id === 'nanobabana') {
+							// Stage 6 데이터가 있으면 사용
+							if (imageStage6Data.prompts?.nanobabana) {
+								const nanobabanaData = imageStage6Data.prompts.nanobabana;
+								if (typeof nanobabanaData === 'string') {
+									imagePrompts = {
+										prompt: nanobabanaData,
+										prompt_translated: imageStage6Data.prompts.nanobabana_translated || ''
+									};
+								} else {
+									imagePrompts = nanobabanaData;
+								}
+							}
+						}
+						
+						// universal 및 nanobabana 프롬프트 특별 처리를 고려한 hasPrompt 체크
 						let hasPrompt = false;
 						if (ai.id === 'universal') {
 							hasPrompt = !!(imageStage6Data.prompts?.universal || imageStage6Data.prompts?.universal_translated || 
 										   imagePrompts.prompt || imagePrompts.main_prompt || imageCsvData.SCENE);
+						} else if (ai.id === 'nanobabana') {
+							hasPrompt = !!(imageStage6Data.prompts?.nanobabana || imageStage6Data.prompts?.nanobabana_translated || 
+										   imagePrompts.prompt || imagePrompts.main_prompt);
 						} else {
 							hasPrompt = !!(imagePrompts.prompt || imagePrompts.main_prompt);
 						}
@@ -6741,7 +6787,39 @@ try {
                                         }
                                         
                                         if (stage6Data) {
-                                            // 첫 번째 이미지의 프롬프트 데이터 찾기
+                                            console.log(`🎯 Stage 6 데이터 발견 - 이미지 수: ${Object.keys(stage6Data).length}`);
+                                            
+                                            // 모든 이미지 프롬프트를 개별적으로 처리
+                                            const imageIds = Object.keys(stage6Data);
+                                            
+                                            // 플랜별 이미지 프롬프트 저장을 위한 구조 초기화
+                                            if (!shot.image_prompts_by_plan) {
+                                                shot.image_prompts_by_plan = {
+                                                    plan_a: {}, // 1개 이미지
+                                                    plan_b: {}, // 2개 이미지
+                                                    plan_c: {}  // 3개 이미지
+                                                };
+                                            }
+                                            
+                                            // 각 이미지를 플랜에 따라 매핑
+                                            imageIds.forEach((imageId, index) => {
+                                                const imageData = stage6Data[imageId];
+                                                console.log(`   📸 이미지 처리: ${imageId} (index: ${index})`);
+                                                
+                                                // 플랜별로 이미지 할당
+                                                // Plan A: 첫 번째 이미지만
+                                                if (index === 0) {
+                                                    shot.image_prompts_by_plan.plan_a[imageId] = imageData;
+                                                }
+                                                // Plan B: 첫 두 개 이미지
+                                                if (index < 2) {
+                                                    shot.image_prompts_by_plan.plan_b[imageId] = imageData;
+                                                }
+                                                // Plan C: 모든 이미지
+                                                shot.image_prompts_by_plan.plan_c[imageId] = imageData;
+                                            });
+                                            
+                                            // 기존 호환성을 위한 첫 번째 이미지 프롬프트 처리
                                             const firstImageData = Object.values(stage6Data)[0];
                                             
                                             if (firstImageData && firstImageData.prompts) {
@@ -6750,7 +6828,7 @@ try {
                                                     shot.image_prompts = {};
                                                 }
                                                 
-                                                // AI 도구별 프롬프트 처리
+                                                // AI 도구별 프롬프트 처리 (기존 로직 유지)
                                                 Object.keys(firstImageData.prompts).forEach(aiTool => {
                                                     const promptData = firstImageData.prompts[aiTool];
                                                     
