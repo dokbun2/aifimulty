@@ -276,33 +276,8 @@ function convertStage5V5Format(data) {
                 // 샷 데이터 변환
                 if (scene.shots && Array.isArray(scene.shots)) {
                     scene.shots.forEach((shot, shotIndex) => {
-                        // Shot ID 생성 시 S01.01 형식 사용 (스토리보드 표준)
-                        const shotNumber = String(shotIndex + 1).padStart(2, '0');
-                        // shot_id가 있으면 사용, 없으면 scene_id 기반으로 생성
-                        let shotId = shot.shot_id;
-                        if (!shotId) {
-                            // sceneId가 S01 형식이면 S01.01 형식으로 생성
-                            if (sceneId && sceneId.startsWith('S')) {
-                                shotId = `${sceneId}.${shotNumber}`;
-                            } else {
-                                shotId = `S01.${shotNumber}`;
-                            }
-                        } else if (/^\d+$/.test(shotId)) {
-                            // 숫자만 있는 경우 S01.XX 형식으로 변환
-                            const num = parseInt(shotId);
-                            const seqNum = Math.floor((num - 1) / 100) + 1;
-                            const shotNum = ((num - 1) % 100) + 1;
-                            shotId = `S${String(seqNum).padStart(2, '0')}.${String(shotNum).padStart(2, '0')}`;
-                        } else if (shotId.startsWith('shot_')) {
-                            // shot_XX 형식인 경우 S01.XX로 변환
-                            const num = shotId.replace('shot_', '');
-                            shotId = `S01.${num.padStart(2, '0')}`;
-                        }
-                        
-                        console.log(`🔧 Stage 5 변환 - Shot ID 생성: ${shotId} (원본: ${shot.shot_id})`);
-                        
                         const convertedShot = {
-                            id: shotId,
+                            id: shot.shot_id || `${sceneId}_SH${String(shotIndex + 1).padStart(2, '0')}`,
                             scene_id: sceneId,
                             sequence_id: sequenceInfo.id,
                             title: shot.blockout?.action || `Shot ${shotIndex + 1}`,
@@ -1409,38 +1384,17 @@ function createTestData() {
    if (!file) { 
        return; 
    }
-   
-   // 파일 크기 체크 (50MB 제한)
-   const maxSize = 50 * 1024 * 1024; // 50MB
-   if (file.size > maxSize) {
-       showMessage(`파일 크기가 너무 큽니다. 최대 50MB까지 가능합니다. (현재: ${(file.size / 1024 / 1024).toFixed(2)}MB)`, 'error');
-       event.target.value = '';
-       return;
-   }
-   
-   console.log(`📁 파일 업로드 시작: ${file.name} (${(file.size / 1024).toFixed(2)}KB)`);
 
    const reader = new FileReader();
-   reader.onerror = function(error) {
-       console.error('파일 읽기 오류:', error);
-       showMessage('파일을 읽는 중 오류가 발생했습니다.', 'error');
-       event.target.value = '';
-   };
-   
    reader.onload = function(e) {
        try {
-           console.log('📖 파일 읽기 완료, JSON 파싱 시작...');
 					// 새로운 실용적 JSON 핸들러 사용
 					const result = practicalJSONHandler(e.target.result);
 
 					if (!result.success) {
-						console.error('❌ JSON 파싱 실패:', result.error || 'Unknown error');
-						showMessage('JSON 파일 형식이 올바르지 않습니다. 콘솔에서 자세한 내용을 확인하세요.', 'error');
 						event.target.value = '';
 						return;
 					}
-					
-					console.log('✅ JSON 파싱 성공');
 
 					const newData = result.data;
 					let updated = false;
@@ -1662,23 +1616,7 @@ function createTestData() {
 							}
 
 							newData.shots.forEach(shotData => {
-								let shotId = shotData.shot_id;
-								
-								// shot_id 형식 변환: 숫자만 있는 경우 S01.XX 형식으로 변환
-								if (/^\d+$/.test(shotId)) {
-									const shotNumber = parseInt(shotId);
-									const sequenceNumber = Math.floor((shotNumber - 1) / 100) + 1;
-									const shotInSequence = ((shotNumber - 1) % 100) + 1;
-									shotId = `S${String(sequenceNumber).padStart(2, '0')}.${String(shotInSequence).padStart(2, '0')}`;
-									console.log(`📌 Stage 6 Shot ID 형식 변환: ${shotData.shot_id} → ${shotId}`);
-								}
-								// "shot_XX" 형식인 경우 S01.XX로 변환
-								else if (/^shot_\d+$/.test(shotId)) {
-									const shotNumber = parseInt(shotId.replace('shot_', ''));
-									shotId = `S01.${String(shotNumber).padStart(2, '0')}`;
-									console.log(`📌 Stage 6 Shot ID 형식 변환: ${shotData.shot_id} → ${shotId}`);
-								}
-								
+								const shotId = shotData.shot_id;
 								// 기존 데이터를 완전히 대체 (업데이트)
 								window.stage6ImagePrompts[shotId] = {};
 
@@ -2152,13 +2090,16 @@ function createTestData() {
            }
 
        } catch (parseError) {
-           console.error('❌ JSON 파싱 오류:', parseError);
            showMessage(`JSON 파싱 오류: ${parseError.message}`, 'error');
-           event.target.value = '';
        }
    };
    
+   reader.onerror = function(error) {
+       showMessage('파일 읽기 오류', 'error');
+   };
+   
    reader.readAsText(file);
+   event.target.value = '';
        }
    // 새로운 함수: Stage 2 데이터 처리
 			function handleStage2Data(jsonData) {
@@ -2184,11 +2125,6 @@ function createTestData() {
 					const sequences = jsonData.narrative_data.treatment_data.sequence_structure || [];
 					const scenes = jsonData.narrative_data.scenario_data.scenes || [];
 					
-					console.log('📊 Stage 2 데이터 구조 확인:');
-					console.log('- 시퀀스 수:', sequences.length);
-					console.log('- 시퀀스 ID들:', sequences.map(s => s.sequence_id));
-					console.log('- 씬 수:', scenes.length);
-					console.log('- 씬 ID들:', scenes.map(s => s.scene_id));
 
 					if (sequences.length === 0 || scenes.length === 0) {
 						throw new Error('시퀀스 또는 씬 데이터가 비어있습니다.');
@@ -2247,10 +2183,6 @@ function createTestData() {
 					// Stage 2 구조 로드 완료 표시
 					hasStage2Structure = true;
 					currentData.hasStage2Structure = true;
-					
-					console.log('✅ Stage 2 데이터 처리 완료:');
-					console.log('- 시퀀스:', currentData.breakdown_data.sequences.map(s => `${s.id}(씬: ${s.scenes.join(', ')})`));
-					console.log('- 씬:', currentData.breakdown_data.scenes.map(s => `${s.id}(시퀀스: ${s.sequence_id})`));
 
 
 					saveDataToLocalStorage();
@@ -2303,11 +2235,6 @@ function createTestData() {
 				const newScenes = jsonData.breakdown_data.scenes || [];
 				const newShots = jsonData.breakdown_data.shots || [];
 				const newSequences = jsonData.breakdown_data.sequences || [];
-				
-				console.log('📝 Stage 5 데이터 구조:');
-				console.log('- 시퀀스:', newSequences.length, newSequences.map(s => s.id));
-				console.log('- 씬:', newScenes.length, newScenes.map(s => s.id));
-				console.log('- 샷:', newShots.length, newShots.slice(0, 5).map(s => `${s.id}(씬: ${s.scene_id})`));
 
 
         // 공통 CSV 데이터 처리 (Stage 5 v2.1)
@@ -2413,11 +2340,6 @@ function createTestData() {
 				}
 
 				// 샷 데이터 병합 처리
-				console.log('🔄 Stage 5 샷 데이터 병합 시작');
-				console.log('- 처리할 샷 수:', newShots.length);
-				console.log('- CF 프로젝트:', isCFProject);
-				console.log('- 현재 씬 ID:', sceneIdParam);
-				
 				newShots.forEach(newShot => {
 					// CF 프로젝트인 경우 모든 샷 처리, 그렇지 않으면 특정 씬의 샷만 처리
 					const shouldProcessShot = isCFProject || newShot.scene_id === sceneIdParam;
@@ -2506,8 +2428,6 @@ function createTestData() {
 						
                 // csv_mapping 추가 (개별 CSV - Stage 5 v2.1)
 						if (newShot.csv_mapping) {
-							console.log(`📊 Stage 5 CSV 매핑 추가 - Shot ID: ${newShot.id}`);
-							console.log(`   이미지 매핑 수: ${Object.keys(newShot.csv_mapping).length}`);
 							if (existingIndex >= 0) {
 								currentData.breakdown_data.shots[existingIndex].csv_mapping = newShot.csv_mapping;
 							} else {
@@ -3892,22 +3812,6 @@ console.log('🔍 Stage 5 CSV 데이터 확인:', shot.id, Object.keys(csvMappin
 const stage6Data = window.stage6ImagePrompts || {};
 const shotStage6Data = stage6Data[shot.id] || {};
 console.log('🔍 Stage 6 데이터 확인:', shot.id, Object.keys(shotStage6Data).length, 'images');
-console.log('📊 Stage 6 전체 데이터:', window.stage6ImagePrompts);
-console.log('📊 현재 샷의 Stage 6 데이터:', shotStage6Data);
-
-// 플랜별 이미지 프롬프트 데이터 가져오기
-const imagePromptsByPlan = shot.image_prompts_by_plan || {
-    plan_a: {},
-    plan_b: {},
-    plan_c: {}
-};
-console.log('📋 플랜별 이미지 프롬프트:', {
-    'Plan A': Object.keys(imagePromptsByPlan.plan_a).length,
-    'Plan B': Object.keys(imagePromptsByPlan.plan_b).length,
-    'Plan C': Object.keys(imagePromptsByPlan.plan_c).length
-});
-console.log('📊 샷의 image_prompts 데이터:', shot.image_prompts);
-console.log('📊 샷의 전체 데이터:', shot);
 
 let planSelectorHtml = '';
 let selectedPlanData = null;
@@ -3981,7 +3885,6 @@ else {
 // AI별 프롬프트 및 생성된 이미지 섹션
 const imageAIs = [
     { id: 'universal', name: 'Universal' },  // universal 프롬프트 지원 추가
-    { id: 'nanobabana', name: 'NanoBabana' },  // nanobabana 프롬프트 추가
     { id: 'midjourney', name: 'Midjourney' },
     { id: 'ideogram', name: 'Ideogram' },
     { id: 'leonardo', name: 'Leonardo' },
@@ -4036,18 +3939,10 @@ let aiSectionsHtml = '';
 					return allPlanImages.some(planImage => {
 						const imageId = planImage.id;
 						// 데이터 조회를 위한 ID 매핑
+						// Stage 6에서는 각 Plan별로 고유한 ID를 이미 가지고 있음
+						// 따라서 ID 변환 없이 그대로 사용
 						let dataLookupId = imageId;
 						
-						// Simple 샷의 경우 이미지 ID를 그대로 사용
-						if (complexity === 'simple') {
-							dataLookupId = imageId;
-						}
-						// Complex 샷의 Plan A/B의 경우 Plan C ID로 매핑
-						else if (selectedPlan === 'A' || selectedPlan === 'B') {
-							const baseId = imageId.split('-').slice(0, -2).join('-');
-							const imageNum = imageId.split('-').pop();
-							dataLookupId = `${baseId}-C-${imageNum}`;
-						}
 						const imageStage6Data = shotStage6Data[dataLookupId] || {};
 						const imageCsvData = csvMapping[dataLookupId] || {};
 						
@@ -4057,22 +3952,14 @@ let aiSectionsHtml = '';
 							hasStage5Prompt = true;
 						}
 						
-						// universal 및 nanobabana 프롬프트 특별 처리
+						// universal 프롬프트 특별 처리
 						let hasPrompt = false;
 						if (ai.id === 'universal') {
 							// universal은 문자열로 직접 저장되거나 universal_translated와 함께 있음
-							hasPrompt = !!(imageStage6Data.prompts?.universal || imageStage6Data.prompts?.universal_translated || 
-							              shot.image_prompts?.universal || hasStage5Prompt);
-						} else if (ai.id === 'nanobabana') {
-							// nanobabana는 별도의 프롬프트가 있을 때만 표시
-							hasPrompt = !!(imageStage6Data.prompts?.nanobabana || imageStage6Data.prompts?.nanobabana_translated || 
-							              shot.image_prompts?.nanobabana?.main_prompt);
+							hasPrompt = !!(imageStage6Data.prompts?.universal || imageStage6Data.prompts?.universal_translated || hasStage5Prompt);
 						} else {
 							const imagePrompts = imageStage6Data.prompts?.[ai.id] || {};
-							// shot.image_prompts에서도 확인
-							const shotImagePrompts = shot.image_prompts?.[ai.id] || {};
-							hasPrompt = !!(imagePrompts.prompt || imagePrompts.main_prompt || 
-							              shotImagePrompts.prompt || shotImagePrompts.main_prompt);
+							hasPrompt = !!(imagePrompts.prompt || imagePrompts.main_prompt);
 						}
 						
 						// 수정된 프롬프트도 확인
@@ -4108,43 +3995,17 @@ let aiSectionsHtml = '';
 							const imageId = planImage.id;
 						
 						// 데이터 조회를 위한 ID 매핑
+						// Stage 6에서는 각 Plan별로 고유한 ID를 이미 가지고 있음
+						// 예: S01.01-A-01 (Plan A), S01.01-B-01 (Plan B), S01.01-C-01 (Plan C)
+						// 따라서 ID 변환 없이 그대로 사용
 						let dataLookupId = imageId;
 						
-						// Simple 샷의 경우 이미지 ID를 그대로 사용 (S01.02-single-01 형식)
-						if (complexity === 'simple') {
-							// Simple 샷은 이미 올바른 ID를 가지고 있음
-							dataLookupId = imageId;
-						}
-						// Complex 샷의 Plan A/B의 경우 Plan C ID로 매핑
-						else if (planId === 'A' || planId === 'B') {
-							// Plan A/B의 경우 대응하는 Plan C ID로 변환하여 데이터 조회
-							// S01.01-A-01 -> S01.01-C-01
-							const baseId = imageId.split('-').slice(0, -2).join('-'); // S01.01
-							const imageNum = imageId.split('-').pop(); // 01
-							dataLookupId = `${baseId}-C-${imageNum}`;
-						}
-						
-						// 플랜별 이미지 프롬프트 데이터 조회
-						let imageStage6Data = {};
-						
-						// 플랜별 데이터에서 먼저 찾기
-						const currentPlanKey = `plan_${planId.toLowerCase()}`;
-						if (imagePromptsByPlan[currentPlanKey] && imagePromptsByPlan[currentPlanKey][imageId]) {
-							imageStage6Data = imagePromptsByPlan[currentPlanKey][imageId];
-							console.log(`  ✅ 플랜 ${planId} 데이터에서 발견:`, imageId);
-						} 
-						// 플랜별 데이터가 없으면 전체 Stage6 데이터에서 조회
-						else {
-							imageStage6Data = shotStage6Data[dataLookupId] || shotStage6Data[imageId] || {};
-							if (imageStage6Data.prompts) {
-								console.log(`  📦 전체 Stage6 데이터에서 발견:`, dataLookupId);
-							}
-						}
-						
-						const imageCsvData = csvMapping[dataLookupId] || csvMapping[imageId] || {};
+						// 직접 해당 ID의 데이터를 조회 (JSON에 이미 플랜별로 저장됨)
+						const imageStage6Data = shotStage6Data[dataLookupId] || {};
+						const imageCsvData = csvMapping[dataLookupId] || {};
 						console.log(`  🖼️ AI: ${ai.name}, Plan ${planImage.planId}, Image ${imgIdx + 1}:`, imageId, 'has Stage6:', !!imageStage6Data.prompts, 'has Stage5:', !!imageCsvData.SCENE);
 						
-						let imagePrompts = imageStage6Data.prompts?.[ai.id] || shot.image_prompts?.[ai.id] || {};
+						let imagePrompts = imageStage6Data.prompts?.[ai.id] || {};
 						
 						// universal 프롬프트 특별 처리
 						if (ai.id === 'universal') {
@@ -4183,38 +4044,11 @@ let aiSectionsHtml = '';
 							}
 						}
 						
-						// nanobabana 프롬프트 특별 처리
-						if (ai.id === 'nanobabana') {
-							// Stage 6 데이터가 있으면 사용
-							if (imageStage6Data.prompts?.nanobabana) {
-								const nanobabanaData = imageStage6Data.prompts.nanobabana;
-								if (typeof nanobabanaData === 'string') {
-									imagePrompts = {
-										prompt: nanobabanaData,
-										prompt_translated: imageStage6Data.prompts.nanobabana_translated || ''
-									};
-								} else {
-									imagePrompts = nanobabanaData;
-								}
-							} 
-							// shot.image_prompts에서 확인
-							else if (shot.image_prompts?.nanobabana) {
-								imagePrompts = shot.image_prompts.nanobabana;
-							}
-							// 나노바나나 전용 프롬프트가 없으면 비워둠 (universal을 사용하지 않음)
-							else {
-								imagePrompts = {};
-							}
-						}
-						
-						// universal 및 nanobabana 프롬프트 특별 처리를 고려한 hasPrompt 체크
+						// universal 프롬프트 특별 처리를 고려한 hasPrompt 체크
 						let hasPrompt = false;
 						if (ai.id === 'universal') {
 							hasPrompt = !!(imageStage6Data.prompts?.universal || imageStage6Data.prompts?.universal_translated || 
 										   imagePrompts.prompt || imagePrompts.main_prompt || imageCsvData.SCENE);
-						} else if (ai.id === 'nanobabana') {
-							hasPrompt = !!(imageStage6Data.prompts?.nanobabana || imageStage6Data.prompts?.nanobabana_translated || 
-										   imagePrompts.prompt || imagePrompts.main_prompt);
 						} else {
 							hasPrompt = !!(imagePrompts.prompt || imagePrompts.main_prompt);
 						}
@@ -4257,31 +4091,6 @@ let aiSectionsHtml = '';
 								mainPrompt = imagePrompts.prompt || imagePrompts.main_prompt || '';
 								translatedPrompt = imagePrompts.prompt_translated || imagePrompts.main_prompt_translated || '';
 								parameters = imagePrompts.parameters || '';
-							}
-						} 
-						// nanobabana 프롬프트 특별 처리
-						else if (ai.id === 'nanobabana') {
-							// shot.image_prompts에서 먼저 확인 (Stage 6 병합 데이터)
-							if (shot.image_prompts?.nanobabana?.main_prompt) {
-								mainPrompt = shot.image_prompts.nanobabana.main_prompt || '';
-								translatedPrompt = shot.image_prompts.nanobabana.main_prompt_translated || '';
-								parameters = shot.image_prompts.nanobabana.parameters || '';
-							} 
-							// Stage 6 원본 데이터 확인
-							else if (imageStage6Data.prompts?.nanobabana) {
-								const nanobabanaData = imageStage6Data.prompts.nanobabana;
-								if (typeof nanobabanaData === 'string') {
-									mainPrompt = nanobabanaData;
-									translatedPrompt = imageStage6Data.prompts.nanobabana_translated || '';
-								} else {
-									mainPrompt = nanobabanaData.prompt || nanobabanaData.main_prompt || '';
-									translatedPrompt = nanobabanaData.prompt_translated || nanobabanaData.main_prompt_translated || '';
-								}
-								parameters = imageStage6Data.csv_data?.PARAMETERS || '';
-							}
-							// 나노바나나 전용 프롬프트가 없으면 건너뛰기
-							else {
-								continue; // 이 이미지는 나노바나나용이 아니므로 건너뛰기
 							}
 						} else {
 							mainPrompt = imagePrompts.prompt || imagePrompts.main_prompt || '';
@@ -6622,23 +6431,7 @@ try {
                                             window.stage6ImagePrompts = {};
                                         }
                                         newData.shots.forEach(shotData => {
-                                            let shotId = shotData.shot_id;
-                                            
-                                            // shot_id 형식 변환: 숫자만 있는 경우 S01.XX 형식으로 변환
-                                            if (/^\d+$/.test(shotId)) {
-                                                const shotNumber = parseInt(shotId);
-                                                const sequenceNumber = Math.floor((shotNumber - 1) / 100) + 1;
-                                                const shotInSequence = ((shotNumber - 1) % 100) + 1;
-                                                shotId = `S${String(sequenceNumber).padStart(2, '0')}.${String(shotInSequence).padStart(2, '0')}`;
-                                                console.log(`📌 Stage 6 Shot ID 형식 변환: ${shotData.shot_id} → ${shotId}`);
-                                            }
-                                            // "shot_XX" 형식인 경우 S01.XX로 변환
-                                            else if (/^shot_\d+$/.test(shotId)) {
-                                                const shotNumber = parseInt(shotId.replace('shot_', ''));
-                                                shotId = `S01.${String(shotNumber).padStart(2, '0')}`;
-                                                console.log(`📌 Stage 6 Shot ID 형식 변휈: ${shotData.shot_id} → ${shotId}`);
-                                            }
-                                            
+                                            const shotId = shotData.shot_id;
                                             window.stage6ImagePrompts[shotId] = {};
                                             shotData.images.forEach(imageData => {
                                                 const imageId = imageData.image_id;
@@ -6793,36 +6586,12 @@ try {
                                     }
                                     
                                     newData.shots.forEach(shotData => {
-                                        // shot_id를 일관된 형식으로 처리
-                                        let shotId = shotData.shot_id;
-                                        
-                                        // shot_id 형식 변환: 숫자만 있는 경우 S01.XX 형식으로 변환
-                                        if (/^\d+$/.test(shotId)) {
-                                            const shotNumber = parseInt(shotId);
-                                            const sequenceNumber = Math.floor((shotNumber - 1) / 100) + 1;
-                                            const shotInSequence = ((shotNumber - 1) % 100) + 1;
-                                            shotId = `S${String(sequenceNumber).padStart(2, '0')}.${String(shotInSequence).padStart(2, '0')}`;
-                                            console.log(`📌 Stage 6 Shot ID 형식 변환: ${shotData.shot_id} → ${shotId}`);
-                                        }
-                                        // "shot_XX" 형식인 경우 S01.XX로 변환
-                                        else if (/^shot_\d+$/.test(shotId)) {
-                                            const shotNumber = parseInt(shotId.replace('shot_', ''));
-                                            shotId = `S01.${String(shotNumber).padStart(2, '0')}`;
-                                            console.log(`📌 Stage 6 Shot ID 형식 변환: ${shotData.shot_id} → ${shotId}`);
-                                        }
-                                        
-                                        console.log(`📌 Stage 6 처리 중 - Shot ID: ${shotId}`);
-                                        console.log(`   - 이미지 수: ${shotData.images?.length || 0}`);
-                                        
+                                        const shotId = shotData.shot_id;
                                         // 기존 데이터를 완전히 대체 (업데이트)
                                         window.stage6ImagePrompts[shotId] = {};
                                         shotData.images.forEach(imageData => {
                                             const imageId = imageData.image_id;
                                             window.stage6ImagePrompts[shotId][imageId] = imageData;
-                                            console.log(`   - 이미지 ID: ${imageId}`);
-                                            if (imageData.prompts) {
-                                                console.log(`     프롬프트 키: ${Object.keys(imageData.prompts).join(', ')}`);
-                                            }
                                         });
                                     });
                                     
@@ -6854,88 +6623,12 @@ try {
                                     let mergedCount = 0;
                                     
                                     // 각 shot에 Stage 6 데이터 병합
-                                    console.log('🔄 Stage 6 데이터 병합 시작');
-                                    console.log('📋 현재 스토리보드의 Shot IDs:', currentData.breakdown_data.shots.map(s => s.id).join(', '));
-                                    console.log('📦 Stage 6 데이터의 Shot IDs:', Object.keys(window.stage6ImagePrompts).join(', '));
-                                    
                                     currentData.breakdown_data.shots.forEach(shot => {
                                         const shotId = shot.id;
-                                        console.log(`\n🔍 매칭 시도 - 스토리보드 Shot ID: ${shotId}`);
-                                        
-                                        // 유연한 ID 매칭: 정확한 매칭 먼저 시도하고, 없으면 부분 매칭 시도
-                                        let stage6Data = window.stage6ImagePrompts[shotId];
-                                        
-                                        // 정확한 매칭이 없으면 유사한 ID 찾기
-                                        if (!stage6Data) {
-                                            // shotId에서 숫자 부분 추출 (예: "shot_123" -> "123")
-                                            const shotNumber = shotId.match(/\d+/)?.[0];
-                                            if (shotNumber) {
-                                                // 다양한 형식으로 시도
-                                                const possibleIds = [
-                                                    `shot_${shotNumber}`,
-                                                    `Shot_${shotNumber}`,
-                                                    `SHOT_${shotNumber}`,
-                                                    `sh${shotNumber}`,
-                                                    `SH${shotNumber}`,
-                                                    shotNumber
-                                                ];
-                                                
-                                                for (const possibleId of possibleIds) {
-                                                    if (window.stage6ImagePrompts[possibleId]) {
-                                                        stage6Data = window.stage6ImagePrompts[possibleId];
-                                                        console.log(`📎 Stage 6 매칭 성공: ${shotId} → ${possibleId}`);
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                            
-                                            // 여전히 못 찾았으면 키에서 유사한 패턴 찾기
-                                            if (!stage6Data) {
-                                                const stage6Keys = Object.keys(window.stage6ImagePrompts);
-                                                for (const key of stage6Keys) {
-                                                    if (key.includes(shotNumber) || shotId.includes(key) || key.includes(shotId)) {
-                                                        stage6Data = window.stage6ImagePrompts[key];
-                                                        console.log(`📎 Stage 6 부분 매칭 성공: ${shotId} → ${key}`);
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                        }
+                                        const stage6Data = window.stage6ImagePrompts[shotId];
                                         
                                         if (stage6Data) {
-                                            console.log(`🎯 Stage 6 데이터 발견 - 이미지 수: ${Object.keys(stage6Data).length}`);
-                                            
-                                            // 모든 이미지 프롬프트를 개별적으로 처리
-                                            const imageIds = Object.keys(stage6Data);
-                                            
-                                            // 플랜별 이미지 프롬프트 저장을 위한 구조 초기화
-                                            if (!shot.image_prompts_by_plan) {
-                                                shot.image_prompts_by_plan = {
-                                                    plan_a: {}, // 1개 이미지
-                                                    plan_b: {}, // 2개 이미지
-                                                    plan_c: {}  // 3개 이미지
-                                                };
-                                            }
-                                            
-                                            // 각 이미지를 플랜에 따라 매핑
-                                            imageIds.forEach((imageId, index) => {
-                                                const imageData = stage6Data[imageId];
-                                                console.log(`   📸 이미지 처리: ${imageId} (index: ${index})`);
-                                                
-                                                // 플랜별로 이미지 할당
-                                                // Plan A: 첫 번째 이미지만
-                                                if (index === 0) {
-                                                    shot.image_prompts_by_plan.plan_a[imageId] = imageData;
-                                                }
-                                                // Plan B: 첫 두 개 이미지
-                                                if (index < 2) {
-                                                    shot.image_prompts_by_plan.plan_b[imageId] = imageData;
-                                                }
-                                                // Plan C: 모든 이미지
-                                                shot.image_prompts_by_plan.plan_c[imageId] = imageData;
-                                            });
-                                            
-                                            // 기존 호환성을 위한 첫 번째 이미지 프롬프트 처리
+                                            // 첫 번째 이미지의 프롬프트 데이터 찾기
                                             const firstImageData = Object.values(stage6Data)[0];
                                             
                                             if (firstImageData && firstImageData.prompts) {
@@ -6944,7 +6637,7 @@ try {
                                                     shot.image_prompts = {};
                                                 }
                                                 
-                                                // AI 도구별 프롬프트 처리 (기존 로직 유지)
+                                                // AI 도구별 프롬프트 처리
                                                 Object.keys(firstImageData.prompts).forEach(aiTool => {
                                                     const promptData = firstImageData.prompts[aiTool];
                                                     
@@ -6952,8 +6645,6 @@ try {
                                                     if (aiTool === 'universal') {
                                                         const universalPrompt = typeof promptData === 'string' ? promptData : (promptData.prompt || promptData);
                                                         const universalTranslated = firstImageData.prompts.universal_translated || '';
-                                                        const nanobabanaPrompt = firstImageData.prompts.nanobabana || '';
-                                                        const nanobabanaTranslated = firstImageData.prompts.nanobabana_translated || '';
                                                         const csvParams = firstImageData.csv_data?.PARAMETERS || '';
                                                         
                                                         // universal 프롬프트 저장
@@ -6962,15 +6653,6 @@ try {
                                                             main_prompt_translated: universalTranslated,
                                                             parameters: csvParams
                                                         };
-                                                        
-                                                        // nanobabana 프롬프트 저장 (나노바나나 전용 프롬프트가 있을 때만)
-                                                        if (nanobabanaPrompt && nanobabanaPrompt.trim() !== '') {
-                                                            shot.image_prompts.nanobabana = {
-                                                                main_prompt: nanobabanaPrompt,
-                                                                main_prompt_translated: nanobabanaTranslated,
-                                                                parameters: csvParams
-                                                            };
-                                                        }
                                                         
                                                         // 호환성을 위해 다른 AI 도구 형식으로도 저장
                                                         shot.image_prompts.midjourney = {
@@ -6991,23 +6673,6 @@ try {
                                                     } else if (aiTool === 'universal_translated') {
                                                         // universal_translated는 이미 universal에서 처리됨
                                                         return;
-                                                    } else if (aiTool === 'nanobabana') {
-                                                        // nanobabana는 독립적인 프롬프트를 가질 수 있음
-                                                        const nanobabanaPrompt = typeof promptData === 'string' ? promptData : (promptData.prompt || promptData.main_prompt || '');
-                                                        const nanobabanaTranslated = firstImageData.prompts.nanobabana_translated || '';
-                                                        
-                                                        // nanobabana 프롬프트가 있을 때만 저장
-                                                        if (nanobabanaPrompt && nanobabanaPrompt.trim() !== '') {
-                                                            shot.image_prompts.nanobabana = {
-                                                                main_prompt: nanobabanaPrompt,
-                                                                main_prompt_translated: nanobabanaTranslated,
-                                                                parameters: firstImageData.csv_data?.PARAMETERS || ''
-                                                            };
-                                                        }
-                                                        return;
-                                                    } else if (aiTool === 'nanobabana_translated') {
-                                                        // nanobabana_translated는 nanobabana에서 처리됨
-                                                        return;
                                                     } else if (promptData && typeof promptData === 'object') {
                                                         // 기존 형식 처리 (호환성)
                                                         let parameters = '';
@@ -7024,20 +6689,6 @@ try {
                                                             parameters: promptData.parameters || parameters
                                                         };
                                                     }
-                                                });
-                                                
-                                                // 플랜 A/B/C 데이터가 있으면 추가
-                                                if (firstImageData.image_design_plans) {
-                                                    shot.image_design_plans = firstImageData.image_design_plans;
-                                                    console.log(`📋 플랜 A/B/C 데이터 추가: ${shotId}`);
-                                                }
-                                                
-                                                // 각 이미지의 모든 프롬프트 데이터 저장 (필요시 사용)
-                                                if (!shot.all_image_prompts) {
-                                                    shot.all_image_prompts = {};
-                                                }
-                                                Object.entries(stage6Data).forEach(([imageId, imageData]) => {
-                                                    shot.all_image_prompts[imageId] = imageData;
                                                 });
                                                 
                                                 mergedCount++;

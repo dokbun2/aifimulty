@@ -113,6 +113,7 @@ body {
     display: flex !important;
     flex-direction: column !important;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+    max-height: calc(100vh - 88px) !important; /* 48px nav + 20px padding top + 20px padding bottom */
 }
 
 .nav-header {
@@ -122,6 +123,9 @@ body {
     padding: 24px 20px !important;
     flex-shrink: 0 !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
 }
 
 .project-header {
@@ -208,8 +212,35 @@ body {
     padding: 20px !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
-    flex: 1 !important;
+    flex: 1 1 auto !important;
     min-height: 0 !important;
+    /* Dynamic height calculation for proper scrolling */
+    height: 100% !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(255, 255, 255, 0.2) rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Custom Scrollbar for WebKit */
+.nav-content::-webkit-scrollbar,
+#navigation-content::-webkit-scrollbar {
+    width: 8px !important;
+}
+
+.nav-content::-webkit-scrollbar-track,
+#navigation-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-radius: 10px !important;
+}
+
+.nav-content::-webkit-scrollbar-thumb,
+#navigation-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-radius: 10px !important;
+}
+
+.nav-content::-webkit-scrollbar-thumb:hover,
+#navigation-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3) !important;
 }
 
 .nav-sequence {
@@ -217,7 +248,7 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
     border-radius: 12px !important;
     margin-bottom: 12px !important;
-    overflow: hidden !important;
+    overflow: visible !important; /* Changed from hidden to visible for proper expansion */
     transition: all 0.3s ease !important;
 }
 
@@ -247,10 +278,11 @@ body {
 .nav-scene {
     background: rgba(0, 0, 0, 0.3) !important;
     border-bottom: none !important;
+    overflow: visible !important; /* Ensure scene content is visible */
 }
 
 .nav-scene-header {
-    padding: 8px 15px !important;
+    padding: 8px 15px 8px 25px !important; /* Added indent for hierarchy */
     cursor: pointer !important;
     transition: all 0.2s !important;
     border-left: none !important;
@@ -266,10 +298,13 @@ body {
 }
 
 .nav-shot {
-    padding: 6px 15px !important;
+    padding: 6px 15px 6px 30px !important; /* Added indent for better hierarchy */
     cursor: pointer !important;
     transition: all 0.2s !important;
     border-left: none !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
 }
 
 .nav-shot:hover {
