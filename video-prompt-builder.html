@@ -3,554 +3,738 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 비디오 프롬프트 빌더 - AIFI</title>
+    <title>AI 비디오 프롬프트 빌더 - Linear Design</title>
     
-    <!-- 기존 CSS 먼저 로드 -->
-    <link rel="stylesheet" href="assets/css/core.css">
-    
-    <!-- Apple Developer Style CSS - core.css 오버라이드 -->
-    <link rel="stylesheet" href="apple-developer-style.css">
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Tabler Icons CDN -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/iconfont/tabler-icons.min.css">
-    
-    <!-- SEO -->
-    <meta name="description" content="AI 비디오 생성을 위한 프롬프트 제작 도구">
-    <meta name="keywords" content="AI 비디오생성, 프롬프트, Luma, Runway, Kling, Veo2, Sora">
     
     <!-- 파비콘 -->
     <link rel="icon" type="image/x-icon" href="favicon_io/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon_io/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="favicon_io/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="favicon_io/apple-touch-icon.png">
-    <link rel="manifest" href="favicon_io/site.webmanifest">
     
     <style>
-        /* Apple Style Custom Overrides for Prompt Builder */
-        
-        /* Apple Style Variables Override - Important */
+        /* Linear Design System Variables */
         :root {
-            --apple-blue: #0066CC !important;
-            --apple-blue-hover: #0055B3 !important;
-            --apple-blue-dark: #004499 !important;
-            --apple-blue-gradient: linear-gradient(135deg, #0066CC, #004499) !important;
-            --dark-bg: #000000 !important;
-            --dark-nav: #1d1d1f !important;
-            --dark-card: #1d1d1f !important;
-            --dark-card-hover: #2d2d30 !important;
-            --dark-text: #f5f5f7 !important;
-            --dark-text-secondary: #86868b !important;
-            --dark-border: rgba(255, 255, 255, 0.16) !important;
-            --overlay-light: rgba(255, 255, 255, 0.04) !important;
-            --overlay-medium: rgba(255, 255, 255, 0.08) !important;
-            --overlay-heavy: rgba(255, 255, 255, 0.12) !important;
+            /* Background colors */
+            --bg-primary: #08090a;
+            --bg-secondary: #0f1011;
+            --bg-tertiary: #141516;
+            --bg-quaternary: #191a1b;
             
-            /* Override core.css variables */
-            --bg-primary: #000000 !important;
-            --bg-secondary: #1d1d1f !important;
-            --bg-card: rgba(255, 255, 255, 0.05) !important;
-            --text-primary: #f5f5f7 !important;
-            --text-secondary: #86868b !important;
-            --border-primary: rgba(255, 255, 255, 0.16) !important;
-            --space-xs: 0.25rem !important;
-            --space-sm: 0.5rem !important;
-            --space-md: 1rem !important;
-            --space-lg: 1.5rem !important;
-            --space-xl: 2rem !important;
-            --radius-sm: 8px !important;
-            --transition-base: all 0.3s ease !important;
-            --accent-purple: #8b5cf6 !important;
+            /* Text colors */
+            --text-primary: #f7f8f8;
+            --text-secondary: #d0d6e0;
+            --text-tertiary: #8a8f98;
+            --text-quaternary: #62666d;
+            
+            /* Brand colors */
+            --brand-primary: #5e6ad2;
+            --brand-accent: #7170ff;
+            --brand-accent-hover: #828fff;
+            
+            /* Border colors */
+            --border-primary: #23252a;
+            --border-secondary: #34343a;
+            --border-tertiary: #3e3e44;
+            --border-translucent: hsla(0,0%,100%,.05);
+            
+            /* Status colors */
+            --status-red: #eb5757;
+            --status-orange: #fc7840;
+            --status-yellow: #f2c94c;
+            --status-green: #4cb782;
+            --status-blue: #4ea7fc;
+            --status-purple: #a06af9;
+            
+            /* Spacing */
+            --space-xs: 0.25rem;
+            --space-sm: 0.5rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            --space-2xl: 3rem;
+            
+            /* Border radius */
+            --radius-xs: 4px;
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            
+            /* Typography */
+            --font-micro: 0.6875rem;
+            --font-mini: 0.75rem;
+            --font-small: 0.8125rem;
+            --font-regular: 0.9375rem;
+            --font-large: 1.0625rem;
+            --font-title-1: 1.0625rem;
+            --font-title-2: 1.3125rem;
+            --font-title-3: 1.5rem;
+            
+            /* Shadows */
+            --shadow-low: 0px 2px 4px rgba(0,0,0,.1);
+            --shadow-medium: 0px 4px 24px rgba(0,0,0,.2);
+            --shadow-high: 0px 7px 32px rgba(0,0,0,.35);
+            
+            /* Transitions */
+            --transition-quick: 100ms;
+            --transition-regular: 250ms;
+            --easing-out-quad: cubic-bezier(0.25,0.46,0.45,0.94);
+            --easing-out-expo: cubic-bezier(0.19,1,0.22,1);
         }
         
-        /* Body and Nav Overrides */
+        /* Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
-            background: var(--dark-bg) !important;
-            color: var(--dark-text) !important;
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Paperlogy', sans-serif !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            padding-top: 70px !important;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+            font-size: var(--font-regular);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
         
-        /* Navigation Bar Apple Style */
-        .navbar {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            height: 70px !important;
-            background: rgba(0, 0, 0, 0.95) !important;
-            backdrop-filter: blur(20px) !important;
-            -webkit-backdrop-filter: blur(20px) !important;
-            border-bottom: 1px solid var(--dark-border) !important;
-            z-index: 1000 !important;
-            display: flex !important;
-            align-items: center !important;
-            padding: 0 24px !important;
+        /* Navigation */
+        .nav-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: rgba(8, 9, 10, 0.85);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid var(--border-primary);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
         }
         
-        .navbar h1 {
-            color: var(--dark-text) !important;
-            font-size: 20px !important;
-            font-weight: 600 !important;
-            margin: 0 !important;
-            letter-spacing: -0.5px !important;
+        .nav-content {
+            max-width: 1280px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-
+        
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+        
+        .brand-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-accent) 100%);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        
+        .brand-text {
+            font-size: var(--font-large);
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+        
         /* Main Container */
         .main-container {
-            max-width: 1400px;
+            max-width: 1280px;
             margin: 0 auto;
-            padding: 0 var(--space-lg);
-            padding-top: 8px;
-            padding-bottom: 100px;
+            padding: 80px 24px 48px;
         }
-
-        /* Section Styles */
-        .section {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--dark-border);
-            border-radius: 16px;
-            padding: 25px;
-            margin-bottom: 24px;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            transition: all 0.3s ease;
+        
+        /* Prompt Section - Floating Card */
+        .prompt-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-xl);
+            padding: 24px;
+            margin-bottom: 32px;
+            position: sticky;
+            top: 80px;
+            z-index: 100;
+            box-shadow: var(--shadow-medium);
+            transition: all var(--transition-regular) var(--easing-out-quad);
         }
-
-        .section:hover {
-            background: rgba(255, 255, 255, 0.08);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 102, 204, 0.1);
+        
+        .prompt-card:hover {
+            border-color: var(--border-secondary);
+            box-shadow: var(--shadow-high);
         }
-
-        .section-header {
-            margin-bottom: var(--space-lg);
+        
+        .prompt-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
+            margin-bottom: 16px;
         }
-
-        .section-title {
-            font-size: 18px;
+        
+        .prompt-title {
+            font-size: var(--font-title-2);
             font-weight: 600;
-            color: var(--dark-text);
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
             margin-bottom: 4px;
-            letter-spacing: -0.01em;
         }
-
-        .section-subtitle {
-            font-size: 13px;
-            color: var(--dark-text-secondary);
-            font-weight: 400;
+        
+        .prompt-subtitle {
+            font-size: var(--font-small);
+            color: var(--text-tertiary);
         }
-
-        /* Generated Prompt Section - Sticky */
-        .prompt-preview-section {
-            position: sticky;
-            top: 78px;
-            z-index: 100;
-            background: rgba(20, 20, 20, 0.98);
-            border: 1px solid var(--apple-blue);
-            border-radius: 16px;
-            padding: 20px;
-            margin-top: 0;
-            margin-bottom: 30px;
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-            box-shadow: 0 8px 32px rgba(0, 102, 204, 0.15);
-        }
-
-        .prompt-preview {
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid var(--dark-border);
-            border-radius: 12px;
+        
+        .prompt-display {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
             padding: 16px;
             min-height: 100px;
-            color: var(--dark-text);
-            font-size: 14px;
-            line-height: 1.6;
             position: relative;
+            transition: all var(--transition-quick) var(--easing-out-quad);
         }
-
-        .prompt-preview-text {
-            display: block;
+        
+        .prompt-display:hover {
+            border-color: var(--brand-primary);
         }
-
-        .prompt-preview-editor {
+        
+        .prompt-text {
+            color: var(--text-secondary);
+            font-size: var(--font-small);
+            line-height: 1.6;
+            font-family: 'Berkeley Mono', 'SF Mono', 'Menlo', monospace;
+        }
+        
+        .prompt-editor {
             display: none;
             width: 100%;
             min-height: 100px;
             background: transparent;
             border: none;
-            color: var(--dark-text);
-            font-family: inherit;
-            font-size: 14px;
+            color: var(--text-primary);
+            font-family: 'Berkeley Mono', 'SF Mono', 'Menlo', monospace;
+            font-size: var(--font-small);
             line-height: 1.6;
             resize: vertical;
             outline: none;
         }
-
-        .prompt-preview.editing .prompt-preview-text {
+        
+        .prompt-display.editing .prompt-text {
             display: none;
         }
-
-        .prompt-preview.editing .prompt-preview-editor {
+        
+        .prompt-display.editing .prompt-editor {
             display: block;
         }
-
-        .edit-prompt-btn {
+        
+        /* Edit Button */
+        .edit-button {
             position: absolute;
             top: 12px;
             right: 12px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid var(--dark-border);
-            border-radius: 8px;
             padding: 6px 12px;
-            color: var(--dark-text-secondary);
-            font-size: 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-secondary);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-size: var(--font-mini);
+            font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             gap: 6px;
+            transition: all var(--transition-quick) var(--easing-out-quad);
         }
-
-        .edit-prompt-btn:hover {
-            background: rgba(255, 255, 255, 0.12);
-            color: var(--dark-text);
+        
+        .edit-button:hover {
+            background: var(--bg-quaternary);
+            color: var(--text-primary);
+            border-color: var(--border-tertiary);
         }
-
-        .edit-prompt-btn.save-mode {
-            background: var(--apple-blue);
-            border-color: var(--apple-blue);
+        
+        .edit-button.save-mode {
+            background: var(--brand-primary);
+            border-color: var(--brand-primary);
             color: white;
         }
-
+        
+        .edit-button.save-mode:hover {
+            background: var(--brand-accent);
+            border-color: var(--brand-accent);
+        }
+        
         /* Action Buttons */
-        .action-buttons {
+        .action-group {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             margin-top: 16px;
             flex-wrap: wrap;
         }
-
+        
         .btn {
-            padding: 8px 20px;
-            border: none;
-            border-radius: 20px;
-            font-weight: 500;
-            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            font-size: var(--font-small);
+            font-weight: 510;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+            transition: all var(--transition-quick) var(--easing-out-quad);
             display: inline-flex;
             align-items: center;
             gap: 8px;
+            outline: none;
+            position: relative;
+            overflow: hidden;
         }
-
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+            opacity: 0;
+            transition: opacity var(--transition-quick);
+        }
+        
+        .btn:hover::before {
+            opacity: 1;
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
         .btn-primary {
-            background: var(--apple-blue);
+            background: var(--brand-primary);
             color: white;
-            box-shadow: 0 4px 12px rgba(0, 102, 204, 0.25);
         }
-
+        
         .btn-primary:hover {
-            background: var(--apple-blue-hover);
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(0, 102, 204, 0.35);
+            background: var(--brand-accent);
         }
-
+        
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.08);
-            color: var(--dark-text);
-            border: 1px solid var(--dark-border);
+            background: var(--bg-tertiary);
+            border-color: var(--border-secondary);
+            color: var(--text-primary);
         }
-
+        
         .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.12);
-            border-color: rgba(255, 255, 255, 0.25);
+            background: var(--bg-quaternary);
+            border-color: var(--border-tertiary);
         }
-
+        
         .btn-danger {
-            background: rgba(239, 68, 68, 0.15);
-            color: #ef4444;
-            border: 1px solid rgba(239, 68, 68, 0.3);
+            background: rgba(235, 87, 87, 0.1);
+            border-color: rgba(235, 87, 87, 0.2);
+            color: var(--status-red);
         }
-
+        
         .btn-danger:hover {
-            background: rgba(239, 68, 68, 0.25);
-            border-color: rgba(239, 68, 68, 0.5);
+            background: rgba(235, 87, 87, 0.2);
+            border-color: rgba(235, 87, 87, 0.3);
         }
-
-        /* Scene Controls Grid */
-        .scene-controls {
+        
+        /* Control Sections Grid */
+        .controls-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 24px;
-            margin-bottom: 30px;
+            margin-top: 32px;
         }
-
-        /* Visual Style Presets */
+        
+        /* Card Component */
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            transition: all var(--transition-regular) var(--easing-out-quad);
+        }
+        
+        .card:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--border-secondary);
+            transform: translateY(-2px);
+        }
+        
+        .card-header {
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-primary);
+        }
+        
+        .card-title {
+            font-size: var(--font-title-1);
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .card-title-icon {
+            width: 20px;
+            height: 20px;
+            color: var(--brand-primary);
+        }
+        
+        .card-description {
+            font-size: var(--font-mini);
+            color: var(--text-tertiary);
+        }
+        
+        /* Input Components */
+        .input-group {
+            margin-bottom: 16px;
+        }
+        
+        .input-label {
+            display: block;
+            font-size: var(--font-small);
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: var(--font-small);
+            transition: all var(--transition-quick) var(--easing-out-quad);
+            outline: none;
+        }
+        
+        .input-field:hover {
+            border-color: var(--border-secondary);
+        }
+        
+        .input-field:focus {
+            border-color: var(--brand-primary);
+            background: var(--bg-primary);
+            box-shadow: 0 0 0 3px rgba(94, 106, 210, 0.1);
+        }
+        
+        .input-field::placeholder {
+            color: var(--text-quaternary);
+        }
+        
+        textarea.input-field {
+            resize: vertical;
+            min-height: 80px;
+            font-family: 'Inter', -apple-system, sans-serif;
+        }
+        
+        /* Style Presets */
         .preset-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 12px;
-            margin-top: 16px;
         }
-
-        .preset-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--dark-border);
-            border-radius: 12px;
+        
+        .preset-item {
             padding: 12px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all var(--transition-quick) var(--easing-out-quad);
         }
-
-        .preset-card:hover {
-            background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(255, 255, 255, 0.25);
+        
+        .preset-item:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--border-secondary);
         }
-
-        .preset-card.selected {
-            border-color: var(--apple-blue);
-            background: rgba(0, 102, 204, 0.1);
+        
+        .preset-item.selected {
+            background: rgba(94, 106, 210, 0.1);
+            border-color: var(--brand-primary);
         }
-
-        .preset-title {
-            font-size: 14px;
+        
+        .preset-name {
+            font-size: var(--font-small);
             font-weight: 600;
-            color: var(--dark-text);
-            margin-bottom: 4px;
+            color: var(--text-primary);
+            margin-bottom: 2px;
         }
-
+        
         .preset-desc {
-            font-size: 12px;
-            color: var(--dark-text-secondary);
+            font-size: var(--font-mini);
+            color: var(--text-tertiary);
         }
-
-        /* Input Fields */
-        .input-group {
-            margin-bottom: 16px;
-        }
-
-        .input-label {
-            display: block;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--dark-text-secondary);
-            margin-bottom: 8px;
-        }
-
-        .text-input {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--dark-border);
-            border-radius: 12px;
-            padding: 12px 16px;
-            color: var(--dark-text);
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-
-        .text-input:focus {
-            outline: none;
-            border-color: var(--apple-blue);
-            background: rgba(0, 0, 0, 0.4);
-            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
-        }
-
-        textarea.text-input {
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        /* Motion Cards Grid */
+        
+        /* Motion Cards */
         .motion-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 12px;
-            margin-top: 16px;
         }
-
-        @media (max-width: 768px) {
+        
+        @media (max-width: 480px) {
             .motion-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
-
+        
         .motion-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--dark-border);
-            border-radius: 12px;
-            padding: 16px;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            padding: 14px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
             text-align: center;
+            cursor: pointer;
+            transition: all var(--transition-quick) var(--easing-out-quad);
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 8px;
         }
-
+        
         .motion-card:hover {
-            background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(255, 255, 255, 0.25);
+            background: var(--bg-tertiary);
+            border-color: var(--border-secondary);
             transform: translateY(-2px);
         }
-
+        
         .motion-card.selected {
-            background: rgba(139, 92, 246, 0.15);
-            border-color: var(--accent-purple);
-            color: var(--accent-purple);
+            background: rgba(160, 106, 249, 0.1);
+            border-color: var(--status-purple);
         }
-
+        
         .motion-icon {
-            font-size: 24px;
+            font-size: 20px;
+            color: var(--text-secondary);
         }
-
+        
+        .motion-card.selected .motion-icon {
+            color: var(--status-purple);
+        }
+        
         .motion-label {
-            font-size: 13px;
+            font-size: var(--font-mini);
             font-weight: 500;
+            color: var(--text-secondary);
         }
-
-        /* Transition Effects */
-        .transition-options {
+        
+        .motion-card.selected .motion-label {
+            color: var(--text-primary);
+        }
+        
+        /* Transition Pills */
+        .pill-group {
             display: flex;
-            gap: 8px;
             flex-wrap: wrap;
-            margin-top: 16px;
+            gap: 8px;
         }
-
-        .transition-chip {
-            padding: 8px 16px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--dark-border);
-            border-radius: 20px;
-            color: var(--dark-text-secondary);
-            font-size: 13px;
+        
+        .pill {
+            padding: 6px 14px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-primary);
+            border-radius: 100px;
+            font-size: var(--font-mini);
+            font-weight: 500;
+            color: var(--text-secondary);
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all var(--transition-quick) var(--easing-out-quad);
         }
-
-        .transition-chip:hover {
-            background: rgba(255, 255, 255, 0.06);
-            color: var(--dark-text);
+        
+        .pill:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border-color: var(--border-secondary);
         }
-
-        .transition-chip.selected {
-            background: rgba(217, 70, 239, 0.15);
+        
+        .pill.selected {
+            background: rgba(217, 70, 239, 0.1);
             border-color: #d946ef;
             color: #d946ef;
         }
-
-        /* Duration Slider */
-        .duration-control {
+        
+        /* Sliders */
+        .slider-control {
             margin-top: 16px;
         }
-
-        .duration-slider {
+        
+        .slider {
             width: 100%;
-            background: rgba(255, 255, 255, 0.1);
-            height: 6px;
-            border-radius: 3px;
-            appearance: none;
+            height: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
             outline: none;
+            -webkit-appearance: none;
+            appearance: none;
         }
-
-        .duration-slider::-webkit-slider-thumb {
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
             appearance: none;
             width: 16px;
             height: 16px;
-            background: var(--apple-blue);
+            background: var(--brand-primary);
             border-radius: 50%;
             cursor: pointer;
+            transition: all var(--transition-quick);
         }
-
-        .duration-display {
+        
+        .slider::-webkit-slider-thumb:hover {
+            background: var(--brand-accent);
+            transform: scale(1.2);
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: var(--brand-primary);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            transition: all var(--transition-quick);
+        }
+        
+        .slider::-moz-range-thumb:hover {
+            background: var(--brand-accent);
+            transform: scale(1.2);
+        }
+        
+        .slider-labels {
             display: flex;
             justify-content: space-between;
-            font-size: 12px;
-            color: var(--dark-text-secondary);
             margin-top: 8px;
+            font-size: var(--font-mini);
+            color: var(--text-quaternary);
         }
-
+        
+        .slider-value {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
         /* Toast Notification */
         .toast {
             position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: rgba(30, 30, 30, 0.95);
-            color: var(--dark-text);
-            padding: 12px 20px;
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            bottom: 24px;
+            right: 24px;
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-secondary);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-high);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             transform: translateY(100px);
             opacity: 0;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            transition: all var(--transition-regular) var(--easing-out-expo);
             z-index: 2000;
         }
-
+        
         .toast.show {
             transform: translateY(0);
             opacity: 1;
+            pointer-events: all;
         }
-
+        
+        .toast-icon {
+            font-size: 18px;
+            color: var(--status-green);
+        }
+        
+        .toast-message {
+            font-size: var(--font-small);
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        
         /* Responsive */
         @media (max-width: 768px) {
-            .scene-controls {
-                grid-template-columns: 1fr;
-            }
-            
-            .preset-grid {
-                grid-template-columns: 1fr;
-            }
-            
             .main-container {
-                padding: var(--space-md);
+                padding: 72px 16px 32px;
             }
             
-            .prompt-preview-section {
+            .controls-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .prompt-card {
                 position: relative;
                 top: auto;
-                margin-bottom: 20px;
+                margin-bottom: 24px;
+            }
+            
+            .action-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
             }
         }
     </style>
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar">
-        <h1>🎬 AI 비디오 프롬프트 빌더</h1>
+    <nav class="nav-header">
+        <div class="nav-content">
+            <a href="#" class="nav-brand">
+                <div class="brand-icon">
+                    <i class="ti ti-video"></i>
+                </div>
+                <span class="brand-text">Video Prompt Builder</span>
+            </a>
+        </div>
     </nav>
-
+    
     <!-- Main Container -->
     <main class="main-container">
-        <!-- Generated Prompt Preview Section -->
-        <div class="prompt-preview-section">
-            <div class="section-header">
+        <!-- Generated Prompt Card -->
+        <div class="prompt-card">
+            <div class="prompt-header">
                 <div>
-                    <h3 class="section-title">생성된 프롬프트</h3>
-                    <p class="section-subtitle">AI 비디오 생성용 최종 프롬프트</p>
+                    <h2 class="prompt-title">생성된 프롬프트</h2>
+                    <p class="prompt-subtitle">AI 비디오 생성을 위한 최적화된 프롬프트</p>
                 </div>
             </div>
             
-            <div class="prompt-preview" id="videoPromptPreview">
-                <button class="edit-prompt-btn" id="editPromptBtn" onclick="toggleEditMode()">
+            <div class="prompt-display" id="promptDisplay">
+                <button class="edit-button" id="editBtn" onclick="toggleEdit()">
                     <i class="ti ti-edit" id="editIcon"></i>
-                    <span id="editBtnText">수정</span>
+                    <span id="editText">수정</span>
                 </button>
-                <span class="prompt-preview-text" id="promptText">여기에 생성된 비디오 프롬프트가 표시됩니다...</span>
-                <textarea class="prompt-preview-editor" id="promptEditor"></textarea>
+                <div class="prompt-text" id="promptText">프롬프트를 생성하려면 아래 옵션을 설정하세요...</div>
+                <textarea class="prompt-editor" id="promptEditor"></textarea>
             </div>
             
-            <div class="action-buttons">
-                <button class="btn btn-primary" onclick="copyVideoPrompt()">
+            <div class="action-group">
+                <button class="btn btn-primary" onclick="copyPrompt()">
                     <i class="ti ti-copy"></i>
                     복사
                 </button>
@@ -558,45 +742,46 @@
                     <i class="ti ti-refresh"></i>
                     변형 생성
                 </button>
-                <button class="btn btn-secondary" onclick="saveVideoPrompt()">
+                <button class="btn btn-secondary" onclick="savePrompt()">
                     <i class="ti ti-bookmark"></i>
                     저장
                 </button>
-                <button class="btn btn-danger" onclick="clearVideoPrompt()">
+                <button class="btn btn-danger" onclick="clearAll()">
                     <i class="ti ti-trash"></i>
                     초기화
                 </button>
             </div>
         </div>
-
-        <!-- Scene Builder Controls -->
-        <div class="scene-controls">
-            <!-- 1. Visual Style -->
-            <div class="section">
-                <div class="section-header">
-                    <div>
-                        <h3 class="section-title">1. 비주얼 스타일</h3>
-                        <p class="section-subtitle">원하는 비주얼 스타일을 선택하세요</p>
-                    </div>
+        
+        <!-- Control Cards -->
+        <div class="controls-grid">
+            <!-- Visual Style Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="ti ti-palette card-title-icon"></i>
+                        비주얼 스타일
+                    </h3>
+                    <p class="card-description">영상의 시각적 스타일을 선택하세요</p>
                 </div>
                 
                 <div class="input-group">
                     <label class="input-label">스타일 프리셋</label>
                     <div class="preset-grid">
-                        <div class="preset-card selected" data-style="cinematic">
-                            <div class="preset-title">시네마틱</div>
+                        <div class="preset-item selected" data-style="cinematic">
+                            <div class="preset-name">시네마틱</div>
                             <div class="preset-desc">영화적 품질</div>
                         </div>
-                        <div class="preset-card" data-style="documentary">
-                            <div class="preset-title">다큐멘터리</div>
+                        <div class="preset-item" data-style="documentary">
+                            <div class="preset-name">다큐멘터리</div>
                             <div class="preset-desc">사실적 표현</div>
                         </div>
-                        <div class="preset-card" data-style="animated">
-                            <div class="preset-title">애니메이션</div>
+                        <div class="preset-item" data-style="animated">
+                            <div class="preset-name">애니메이션</div>
                             <div class="preset-desc">스타일라이즈드</div>
                         </div>
-                        <div class="preset-card" data-style="motion graphics">
-                            <div class="preset-title">모션그래픽</div>
+                        <div class="preset-item" data-style="motion graphics">
+                            <div class="preset-name">모션그래픽</div>
                             <div class="preset-desc">그래픽 중심</div>
                         </div>
                     </div>
@@ -604,46 +789,48 @@
                 
                 <div class="input-group">
                     <label class="input-label">색상 그레이딩</label>
-                    <input type="text" class="text-input" id="colorGrading" 
-                           placeholder="예: warm tones, high contrast">
+                    <input type="text" class="input-field" id="colorGrading" 
+                           placeholder="예: warm tones, high contrast, moody atmosphere">
                 </div>
             </div>
-
-            <!-- 2. Scene Elements -->
-            <div class="section">
-                <div class="section-header">
-                    <div>
-                        <h3 class="section-title">2. 장면 요소</h3>
-                        <p class="section-subtitle">비디오의 주요 구성 요소</p>
-                    </div>
+            
+            <!-- Scene Elements Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="ti ti-layers-intersect card-title-icon"></i>
+                        장면 요소
+                    </h3>
+                    <p class="card-description">비디오의 주요 구성 요소를 설정하세요</p>
                 </div>
                 
                 <div class="input-group">
                     <label class="input-label">주요 대상</label>
-                    <input type="text" class="text-input" id="mainSubject" 
+                    <input type="text" class="input-field" id="mainSubject" 
                            placeholder="예: 우주복을 입은 우주비행사">
                 </div>
                 
                 <div class="input-group">
                     <label class="input-label">배경/환경</label>
-                    <input type="text" class="text-input" id="environment" 
-                           placeholder="예: 화성의 붉은 사막">
+                    <input type="text" class="input-field" id="environment" 
+                           placeholder="예: 화성의 붉은 사막, 거대한 크레이터">
                 </div>
                 
                 <div class="input-group">
                     <label class="input-label">액션/동작</label>
-                    <textarea class="text-input" id="action" 
+                    <textarea class="input-field" id="action" 
                               placeholder="예: 천천히 걸어가며 주변을 둘러본다"></textarea>
                 </div>
             </div>
-
-            <!-- 3. Camera Movement -->
-            <div class="section">
-                <div class="section-header">
-                    <div>
-                        <h3 class="section-title">3. 카메라 움직임</h3>
-                        <p class="section-subtitle">원하는 카메라 모션을 선택하세요</p>
-                    </div>
+            
+            <!-- Camera Movement Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="ti ti-movie card-title-icon"></i>
+                        카메라 움직임
+                    </h3>
+                    <p class="card-description">원하는 카메라 모션을 선택하세요</p>
                 </div>
                 
                 <div class="motion-grid">
@@ -685,179 +872,172 @@
                     </div>
                 </div>
             </div>
-
-            <!-- 4. Transition Effects -->
-            <div class="section">
-                <div class="section-header">
-                    <div>
-                        <h3 class="section-title">4. 전환 효과</h3>
-                        <p class="section-subtitle">장면 간 전환 방식</p>
-                    </div>
+            
+            <!-- Transition Effects Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="ti ti-transform card-title-icon"></i>
+                        전환 효과
+                    </h3>
+                    <p class="card-description">장면 간 전환 방식을 선택하세요</p>
                 </div>
                 
-                <div class="transition-options">
-                    <div class="transition-chip selected" data-transition="cut">컷</div>
-                    <div class="transition-chip" data-transition="fade">페이드</div>
-                    <div class="transition-chip" data-transition="dissolve">디졸브</div>
-                    <div class="transition-chip" data-transition="wipe">와이프</div>
-                    <div class="transition-chip" data-transition="morph">모프</div>
-                    <div class="transition-chip" data-transition="match-cut">매치 컷</div>
+                <div class="pill-group">
+                    <div class="pill selected" data-transition="cut">컷</div>
+                    <div class="pill" data-transition="fade">페이드</div>
+                    <div class="pill" data-transition="dissolve">디졸브</div>
+                    <div class="pill" data-transition="wipe">와이프</div>
+                    <div class="pill" data-transition="morph">모프</div>
+                    <div class="pill" data-transition="match-cut">매치 컷</div>
                 </div>
             </div>
-
-            <!-- 5. Duration & Intensity -->
-            <div class="section">
-                <div class="section-header">
-                    <div>
-                        <h3 class="section-title">5. 길이 및 강도</h3>
-                        <p class="section-subtitle">비디오 설정</p>
-                    </div>
+            
+            <!-- Duration & Intensity Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="ti ti-adjustments-horizontal card-title-icon"></i>
+                        길이 및 강도
+                    </h3>
+                    <p class="card-description">비디오 파라미터를 조정하세요</p>
                 </div>
                 
-                <div class="duration-control">
+                <div class="slider-control">
                     <label class="input-label">비디오 길이</label>
-                    <input type="range" class="duration-slider" id="duration" 
+                    <input type="range" class="slider" id="duration" 
                            min="5" max="30" value="10" step="1">
-                    <div class="duration-display">
+                    <div class="slider-labels">
                         <span>5초</span>
-                        <span id="durationValue">10초</span>
+                        <span class="slider-value" id="durationValue">10초</span>
                         <span>30초</span>
                     </div>
                 </div>
                 
-                <div class="duration-control" style="margin-top: 20px;">
+                <div class="slider-control">
                     <label class="input-label">모션 강도</label>
-                    <input type="range" class="duration-slider" id="motionIntensity" 
+                    <input type="range" class="slider" id="intensity" 
                            min="1" max="10" value="5" step="1">
-                    <div class="duration-display">
+                    <div class="slider-labels">
                         <span>약함</span>
-                        <span id="motionValue">5</span>
+                        <span class="slider-value" id="intensityValue">5</span>
                         <span>강함</span>
                     </div>
                 </div>
             </div>
         </div>
     </main>
-
-    <!-- Toast Notification -->
+    
+    <!-- Toast -->
     <div class="toast" id="toast">
-        <i class="ti ti-check" id="toastIcon"></i>
-        <span id="toastMessage">메시지</span>
+        <i class="ti ti-check toast-icon" id="toastIcon"></i>
+        <span class="toast-message" id="toastMessage">메시지</span>
     </div>
-
+    
     <script>
+        // State
+        let state = {
+            style: 'cinematic',
+            motion: 'static',
+            transition: 'cut',
+            duration: 10,
+            intensity: 5,
+            isEditing: false
+        };
+        
         // Initialize
-        let selectedMotion = 'static';
-        let selectedTransition = 'cut';
-        let selectedStyle = 'cinematic';
-        let selectedStyleKorean = '시네마틱';
-        let duration = 10;
-        let motionIntensity = 5;
-        let isEditMode = false;
-
-        // Wait for DOM to load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Motion Card Selection
-            const motionCards = document.querySelectorAll('.motion-card');
-            motionCards.forEach(card => {
+        document.addEventListener('DOMContentLoaded', () => {
+            // Style presets
+            document.querySelectorAll('.preset-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    document.querySelectorAll('.preset-item').forEach(p => p.classList.remove('selected'));
+                    this.classList.add('selected');
+                    state.style = this.dataset.style;
+                    updatePrompt();
+                });
+            });
+            
+            // Motion cards
+            document.querySelectorAll('.motion-card').forEach(card => {
                 card.addEventListener('click', function() {
-                    motionCards.forEach(c => c.classList.remove('selected'));
+                    document.querySelectorAll('.motion-card').forEach(c => c.classList.remove('selected'));
                     this.classList.add('selected');
-                    selectedMotion = this.getAttribute('data-motion');
-                    updateVideoPrompt();
+                    state.motion = this.dataset.motion;
+                    updatePrompt();
                 });
             });
-
-            // Transition Chip Selection
-            const transitionChips = document.querySelectorAll('.transition-chip');
-            transitionChips.forEach(chip => {
-                chip.addEventListener('click', function() {
-                    transitionChips.forEach(c => c.classList.remove('selected'));
+            
+            // Transition pills
+            document.querySelectorAll('.pill').forEach(pill => {
+                pill.addEventListener('click', function() {
+                    document.querySelectorAll('.pill').forEach(p => p.classList.remove('selected'));
                     this.classList.add('selected');
-                    selectedTransition = this.getAttribute('data-transition');
-                    updateVideoPrompt();
+                    state.transition = this.dataset.transition;
+                    updatePrompt();
                 });
             });
-
-            // Preset Card Selection
-            const presetCards = document.querySelectorAll('.preset-card');
-            presetCards.forEach(card => {
-                card.addEventListener('click', function() {
-                    presetCards.forEach(c => c.classList.remove('selected'));
-                    this.classList.add('selected');
-                    selectedStyleKorean = this.querySelector('.preset-title').textContent;
-                    selectedStyle = this.getAttribute('data-style');
-                    updateVideoPrompt();
-                });
+            
+            // Sliders
+            document.getElementById('duration').addEventListener('input', function() {
+                state.duration = this.value;
+                document.getElementById('durationValue').textContent = this.value + '초';
+                updatePrompt();
             });
-
-            // Duration Slider
-            const durationSlider = document.getElementById('duration');
-            durationSlider.addEventListener('input', function() {
-                duration = this.value;
-                document.getElementById('durationValue').textContent = duration + '초';
-                updateVideoPrompt();
+            
+            document.getElementById('intensity').addEventListener('input', function() {
+                state.intensity = this.value;
+                document.getElementById('intensityValue').textContent = this.value;
+                updatePrompt();
             });
-
-            // Motion Intensity Slider
-            const motionSlider = document.getElementById('motionIntensity');
-            motionSlider.addEventListener('input', function() {
-                motionIntensity = this.value;
-                document.getElementById('motionValue').textContent = motionIntensity;
-                updateVideoPrompt();
-            });
-
-            // Input Fields
-            const inputFields = ['mainSubject', 'environment', 'action', 'colorGrading'];
-            inputFields.forEach(fieldId => {
-                const field = document.getElementById(fieldId);
-                if (field) {
-                    field.addEventListener('input', updateVideoPrompt);
+            
+            // Text inputs
+            ['mainSubject', 'environment', 'action', 'colorGrading'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('input', updatePrompt);
                 }
             });
-
-            // Initial prompt generation
-            updateVideoPrompt();
+            
+            // Initial prompt
+            updatePrompt();
         });
-
-        // Toggle Edit Mode
-        function toggleEditMode() {
-            const previewDiv = document.getElementById('videoPromptPreview');
-            const promptText = document.getElementById('promptText');
-            const promptEditor = document.getElementById('promptEditor');
-            const editBtn = document.getElementById('editPromptBtn');
-            const editIcon = document.getElementById('editIcon');
-            const editBtnText = document.getElementById('editBtnText');
-
-            if (!isEditMode) {
-                // Enter edit mode
-                isEditMode = true;
-                previewDiv.classList.add('editing');
-                promptEditor.value = promptText.textContent;
-                promptEditor.focus();
-                editBtn.classList.add('save-mode');
-                editIcon.className = 'ti ti-check';
-                editBtnText.textContent = '저장';
+        
+        // Toggle edit mode
+        function toggleEdit() {
+            const display = document.getElementById('promptDisplay');
+            const text = document.getElementById('promptText');
+            const editor = document.getElementById('promptEditor');
+            const btn = document.getElementById('editBtn');
+            const icon = document.getElementById('editIcon');
+            const btnText = document.getElementById('editText');
+            
+            if (!state.isEditing) {
+                state.isEditing = true;
+                display.classList.add('editing');
+                editor.value = text.textContent;
+                editor.focus();
+                btn.classList.add('save-mode');
+                icon.className = 'ti ti-check';
+                btnText.textContent = '저장';
             } else {
-                // Exit edit mode and save
-                isEditMode = false;
-                previewDiv.classList.remove('editing');
-                promptText.textContent = promptEditor.value;
-                editBtn.classList.remove('save-mode');
-                editIcon.className = 'ti ti-edit';
-                editBtnText.textContent = '수정';
-                showToast('프롬프트가 수정되었습니다', 'success');
+                state.isEditing = false;
+                display.classList.remove('editing');
+                text.textContent = editor.value;
+                btn.classList.remove('save-mode');
+                icon.className = 'ti ti-edit';
+                btnText.textContent = '수정';
+                showToast('프롬프트가 수정되었습니다');
             }
         }
-
-        // Update Video Prompt
-        function updateVideoPrompt() {
+        
+        // Update prompt
+        function updatePrompt() {
             const subject = document.getElementById('mainSubject').value || '주요 대상';
             const environment = document.getElementById('environment').value || '배경';
             const action = document.getElementById('action').value || '동작';
             const colorGrading = document.getElementById('colorGrading').value;
-
-            const motionDescriptions = {
+            
+            const motionMap = {
                 'static': 'static shot',
                 'pan': 'smooth pan',
                 'tilt': 'vertical tilt',
@@ -868,156 +1048,121 @@
                 'crane': 'crane shot',
                 'handheld': 'handheld camera'
             };
-
-            let prompt = `${selectedStyle} style video: ${subject} in ${environment}. ${action}. `;
-            prompt += `Camera: ${motionDescriptions[selectedMotion]}. `;
+            
+            let prompt = `${state.style} style video: ${subject} in ${environment}. ${action}. `;
+            prompt += `Camera: ${motionMap[state.motion]}. `;
             
             if (colorGrading) {
                 prompt += `Color grading: ${colorGrading}. `;
             }
             
-            prompt += `Duration: ${duration} seconds. `;
-            prompt += `Motion intensity: ${motionIntensity}/10. `;
-            prompt += `Transition: ${selectedTransition}.`;
-
-            // Update both text and editor
+            prompt += `Duration: ${state.duration} seconds. `;
+            prompt += `Motion intensity: ${state.intensity}/10. `;
+            prompt += `Transition: ${state.transition}.`;
+            
             document.getElementById('promptText').textContent = prompt;
-            if (isEditMode) {
+            if (state.isEditing) {
                 document.getElementById('promptEditor').value = prompt;
             }
         }
-
-        // Copy Video Prompt
-        function copyVideoPrompt() {
-            let promptToCopy;
-            if (isEditMode) {
-                promptToCopy = document.getElementById('promptEditor').value;
-            } else {
-                promptToCopy = document.getElementById('promptText').textContent;
-            }
-            navigator.clipboard.writeText(promptToCopy).then(() => {
-                showToast('프롬프트가 복사되었습니다', 'success');
+        
+        // Copy prompt
+        function copyPrompt() {
+            const text = state.isEditing 
+                ? document.getElementById('promptEditor').value
+                : document.getElementById('promptText').textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('프롬프트가 복사되었습니다');
             });
         }
-
-        // Generate Variation
+        
+        // Generate variation
         function generateVariation() {
-            if (isEditMode) {
-                toggleEditMode();
-            }
-
+            if (state.isEditing) toggleEdit();
+            
             const variations = [
-                'dynamic movement',
-                'subtle motion',
-                'dramatic angles',
-                'smooth transitions',
-                'epic scale',
-                'intimate close-up',
-                'wide establishing shot'
+                'dynamic movement', 'subtle motion', 'dramatic angles',
+                'smooth transitions', 'epic scale', 'intimate close-up'
             ];
-            const randomVariation = variations[Math.floor(Math.random() * variations.length)];
             
-            const currentPrompt = document.getElementById('promptText').textContent;
-            const variedPrompt = currentPrompt.replace(/Camera: [^.]+/, `Camera: ${randomVariation}`);
-            document.getElementById('promptText').textContent = variedPrompt;
+            const variation = variations[Math.floor(Math.random() * variations.length)];
+            const current = document.getElementById('promptText').textContent;
+            const varied = current.replace(/Camera: [^.]+/, `Camera: ${variation}`);
             
-            showToast('변형이 생성되었습니다', 'success');
+            document.getElementById('promptText').textContent = varied;
+            showToast('변형이 생성되었습니다');
         }
-
-        // Save Video Prompt
-        function saveVideoPrompt() {
-            if (isEditMode) {
-                toggleEditMode();
-            }
-
-            const promptText = document.getElementById('promptText').textContent;
+        
+        // Save prompt
+        function savePrompt() {
+            if (state.isEditing) toggleEdit();
             
-            // Save to localStorage
-            const savedPrompts = JSON.parse(localStorage.getItem('savedVideoPrompts') || '[]');
-            savedPrompts.push({
-                prompt: promptText,
-                style: selectedStyle,
-                styleKorean: selectedStyleKorean,
-                motion: selectedMotion,
-                transition: selectedTransition,
-                duration: duration,
-                intensity: motionIntensity,
+            const prompt = document.getElementById('promptText').textContent;
+            const saved = JSON.parse(localStorage.getItem('savedPrompts') || '[]');
+            
+            saved.push({
+                prompt,
+                ...state,
                 timestamp: new Date().toISOString()
             });
-            localStorage.setItem('savedVideoPrompts', JSON.stringify(savedPrompts));
-            showToast('프롬프트가 저장되었습니다', 'success');
+            
+            localStorage.setItem('savedPrompts', JSON.stringify(saved));
+            showToast('프롬프트가 저장되었습니다');
         }
-
-        // Clear Video Prompt
-        function clearVideoPrompt() {
-            // Clear all input fields
-            document.getElementById('mainSubject').value = '';
-            document.getElementById('environment').value = '';
-            document.getElementById('action').value = '';
-            document.getElementById('colorGrading').value = '';
-            
-            // Reset selections to defaults
-            selectedMotion = 'static';
-            selectedTransition = 'cut';
-            selectedStyle = 'cinematic';
-            selectedStyleKorean = '시네마틱';
-            duration = 10;
-            motionIntensity = 5;
-            
-            // Reset UI elements
-            document.querySelectorAll('.motion-card').forEach(card => {
-                card.classList.remove('selected');
-                if (card.getAttribute('data-motion') === 'static') {
-                    card.classList.add('selected');
-                }
+        
+        // Clear all
+        function clearAll() {
+            ['mainSubject', 'environment', 'action', 'colorGrading'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) element.value = '';
             });
             
-            document.querySelectorAll('.transition-chip').forEach(chip => {
-                chip.classList.remove('selected');
-                if (chip.getAttribute('data-transition') === 'cut') {
-                    chip.classList.add('selected');
-                }
+            // Reset to defaults
+            state = {
+                style: 'cinematic',
+                motion: 'static',
+                transition: 'cut',
+                duration: 10,
+                intensity: 5,
+                isEditing: false
+            };
+            
+            // Reset UI
+            document.querySelectorAll('.preset-item').forEach(p => {
+                p.classList.toggle('selected', p.dataset.style === 'cinematic');
             });
             
-            document.querySelectorAll('.preset-card').forEach(card => {
-                card.classList.remove('selected');
-                if (card.getAttribute('data-style') === 'cinematic') {
-                    card.classList.add('selected');
-                }
+            document.querySelectorAll('.motion-card').forEach(c => {
+                c.classList.toggle('selected', c.dataset.motion === 'static');
             });
             
-            // Reset sliders
+            document.querySelectorAll('.pill').forEach(p => {
+                p.classList.toggle('selected', p.dataset.transition === 'cut');
+            });
+            
             document.getElementById('duration').value = 10;
             document.getElementById('durationValue').textContent = '10초';
-            document.getElementById('motionIntensity').value = 5;
-            document.getElementById('motionValue').textContent = '5';
+            document.getElementById('intensity').value = 5;
+            document.getElementById('intensityValue').textContent = '5';
             
-            // Exit edit mode if active
-            if (isEditMode) {
-                toggleEditMode();
-            }
+            if (state.isEditing) toggleEdit();
             
-            // Clear the prompt preview
-            document.getElementById('promptText').textContent = '여기에 생성된 비디오 프롬프트가 표시됩니다...';
-            document.getElementById('promptEditor').value = '';
+            document.getElementById('promptText').textContent = '프롬프트를 생성하려면 아래 옵션을 설정하세요...';
             
-            showToast('프롬프트가 초기화되었습니다', 'success');
+            showToast('모든 설정이 초기화되었습니다');
         }
-
-        // Show Toast
+        
+        // Show toast
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
-            const toastMessage = document.getElementById('toastMessage');
-            const toastIcon = document.getElementById('toastIcon');
+            const icon = document.getElementById('toastIcon');
+            const msg = document.getElementById('toastMessage');
             
-            toastMessage.textContent = message;
-            toast.className = 'toast show';
+            msg.textContent = message;
+            icon.className = type === 'success' ? 'ti ti-check toast-icon' : 'ti ti-x toast-icon';
             
-            if (type === 'success') {
-                toastIcon.className = 'ti ti-check';
-            } else {
-                toastIcon.className = 'ti ti-x';
-            }
+            toast.classList.add('show');
             
             setTimeout(() => {
                 toast.classList.remove('show');
