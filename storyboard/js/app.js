@@ -1622,7 +1622,23 @@ function createTestData() {
 							}
 
 							newData.shots.forEach(shotData => {
-								const shotId = shotData.shot_id;
+								let shotId = shotData.shot_id;
+								
+								// shot_id 형식 변환: 숫자만 있는 경우 S01.XX 형식으로 변환
+								if (/^\d+$/.test(shotId)) {
+									const shotNumber = parseInt(shotId);
+									const sequenceNumber = Math.floor((shotNumber - 1) / 100) + 1;
+									const shotInSequence = ((shotNumber - 1) % 100) + 1;
+									shotId = `S${String(sequenceNumber).padStart(2, '0')}.${String(shotInSequence).padStart(2, '0')}`;
+									console.log(`📌 Stage 6 Shot ID 형식 변환: ${shotData.shot_id} → ${shotId}`);
+								}
+								// "shot_XX" 형식인 경우 S01.XX로 변환
+								else if (/^shot_\d+$/.test(shotId)) {
+									const shotNumber = parseInt(shotId.replace('shot_', ''));
+									shotId = `S01.${String(shotNumber).padStart(2, '0')}`;
+									console.log(`📌 Stage 6 Shot ID 형식 변환: ${shotData.shot_id} → ${shotId}`);
+								}
+								
 								// 기존 데이터를 완전히 대체 (업데이트)
 								window.stage6ImagePrompts[shotId] = {};
 
@@ -6550,7 +6566,23 @@ try {
                                             window.stage6ImagePrompts = {};
                                         }
                                         newData.shots.forEach(shotData => {
-                                            const shotId = shotData.shot_id;
+                                            let shotId = shotData.shot_id;
+                                            
+                                            // shot_id 형식 변환: 숫자만 있는 경우 S01.XX 형식으로 변환
+                                            if (/^\d+$/.test(shotId)) {
+                                                const shotNumber = parseInt(shotId);
+                                                const sequenceNumber = Math.floor((shotNumber - 1) / 100) + 1;
+                                                const shotInSequence = ((shotNumber - 1) % 100) + 1;
+                                                shotId = `S${String(sequenceNumber).padStart(2, '0')}.${String(shotInSequence).padStart(2, '0')}`;
+                                                console.log(`📌 Stage 6 Shot ID 형식 변환: ${shotData.shot_id} → ${shotId}`);
+                                            }
+                                            // "shot_XX" 형식인 경우 S01.XX로 변환
+                                            else if (/^shot_\d+$/.test(shotId)) {
+                                                const shotNumber = parseInt(shotId.replace('shot_', ''));
+                                                shotId = `S01.${String(shotNumber).padStart(2, '0')}`;
+                                                console.log(`📌 Stage 6 Shot ID 형식 변휈: ${shotData.shot_id} → ${shotId}`);
+                                            }
+                                            
                                             window.stage6ImagePrompts[shotId] = {};
                                             shotData.images.forEach(imageData => {
                                                 const imageId = imageData.image_id;
@@ -6708,10 +6740,18 @@ try {
                                         // shot_id를 일관된 형식으로 처리
                                         let shotId = shotData.shot_id;
                                         
-                                        // shot_id가 숫자만 있는 경우 "shot_" 접두사 추가
+                                        // shot_id 형식 변환: 숫자만 있는 경우 S01.XX 형식으로 변환
                                         if (/^\d+$/.test(shotId)) {
-                                            const paddedNumber = shotId.padStart(2, '0');
-                                            shotId = `shot_${paddedNumber}`;
+                                            const shotNumber = parseInt(shotId);
+                                            const sequenceNumber = Math.floor((shotNumber - 1) / 100) + 1;
+                                            const shotInSequence = ((shotNumber - 1) % 100) + 1;
+                                            shotId = `S${String(sequenceNumber).padStart(2, '0')}.${String(shotInSequence).padStart(2, '0')}`;
+                                            console.log(`📌 Stage 6 Shot ID 형식 변환: ${shotData.shot_id} → ${shotId}`);
+                                        }
+                                        // "shot_XX" 형식인 경우 S01.XX로 변환
+                                        else if (/^shot_\d+$/.test(shotId)) {
+                                            const shotNumber = parseInt(shotId.replace('shot_', ''));
+                                            shotId = `S01.${String(shotNumber).padStart(2, '0')}`;
                                             console.log(`📌 Stage 6 Shot ID 형식 변환: ${shotData.shot_id} → ${shotId}`);
                                         }
                                         
@@ -6867,12 +6907,14 @@ try {
                                                             parameters: csvParams
                                                         };
                                                         
-                                                        // nanobabana 프롬프트 저장
-                                                        shot.image_prompts.nanobabana = {
-                                                            main_prompt: nanobabanaPrompt,
-                                                            main_prompt_translated: nanobabanaTranslated,
-                                                            parameters: csvParams
-                                                        };
+                                                        // nanobabana 프롬프트 저장 (나노바나나 전용 프롬프트가 있을 때만)
+                                                        if (nanobabanaPrompt && nanobabanaPrompt.trim() !== '') {
+                                                            shot.image_prompts.nanobabana = {
+                                                                main_prompt: nanobabanaPrompt,
+                                                                main_prompt_translated: nanobabanaTranslated,
+                                                                parameters: csvParams
+                                                            };
+                                                        }
                                                         
                                                         // 호환성을 위해 다른 AI 도구 형식으로도 저장
                                                         shot.image_prompts.midjourney = {
@@ -6893,18 +6935,22 @@ try {
                                                     } else if (aiTool === 'universal_translated') {
                                                         // universal_translated는 이미 universal에서 처리됨
                                                         return;
-                                                    } else if (aiTool === 'nanobabana' || aiTool === 'nanobabana_translated') {
-                                                        // nanobabana는 이미 universal에서 처리됨 (같이 처리하는 경우)
-                                                        // 하지만 독립적으로 존재할 수도 있으므로 체크
-                                                        if (!shot.image_prompts.nanobabana) {
-                                                            const nanobabanaPrompt = firstImageData.prompts.nanobabana || '';
-                                                            const nanobabanaTranslated = firstImageData.prompts.nanobabana_translated || '';
+                                                    } else if (aiTool === 'nanobabana') {
+                                                        // nanobabana는 독립적인 프롬프트를 가질 수 있음
+                                                        const nanobabanaPrompt = typeof promptData === 'string' ? promptData : (promptData.prompt || promptData.main_prompt || '');
+                                                        const nanobabanaTranslated = firstImageData.prompts.nanobabana_translated || '';
+                                                        
+                                                        // nanobabana 프롬프트가 있을 때만 저장
+                                                        if (nanobabanaPrompt && nanobabanaPrompt.trim() !== '') {
                                                             shot.image_prompts.nanobabana = {
                                                                 main_prompt: nanobabanaPrompt,
                                                                 main_prompt_translated: nanobabanaTranslated,
                                                                 parameters: firstImageData.csv_data?.PARAMETERS || ''
                                                             };
                                                         }
+                                                        return;
+                                                    } else if (aiTool === 'nanobabana_translated') {
+                                                        // nanobabana_translated는 nanobabana에서 처리됨
                                                         return;
                                                     } else if (promptData && typeof promptData === 'object') {
                                                         // 기존 형식 처리 (호환성)
