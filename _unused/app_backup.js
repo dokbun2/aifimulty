@@ -6845,7 +6845,7 @@ function aiEditImagePrompt(shotId, aiName, imageId, originalPrompt) {
         // 프롬프트를 localStorage에 저장
         localStorage.setItem('aiEditPrompt', promptToTransfer);
         
-        // 이미지 프롬프트 생성기 페이지로 이동
+        // Image Studio 페이지로 이동
         window.location.href = '../image_prompt_generator.html';
     } catch (error) {
         console.error('AI 수정 버튼 처리 중 오류:', error);
