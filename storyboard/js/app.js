@@ -276,9 +276,28 @@ function convertStage5V5Format(data) {
                 // 샷 데이터 변환
                 if (scene.shots && Array.isArray(scene.shots)) {
                     scene.shots.forEach((shot, shotIndex) => {
-                        // Shot ID 생성 시 일관된 형식 사용
+                        // Shot ID 생성 시 S01.01 형식 사용 (스토리보드 표준)
                         const shotNumber = String(shotIndex + 1).padStart(2, '0');
-                        const shotId = shot.shot_id || `shot_${shotNumber}`;
+                        // shot_id가 있으면 사용, 없으면 scene_id 기반으로 생성
+                        let shotId = shot.shot_id;
+                        if (!shotId) {
+                            // sceneId가 S01 형식이면 S01.01 형식으로 생성
+                            if (sceneId && sceneId.startsWith('S')) {
+                                shotId = `${sceneId}.${shotNumber}`;
+                            } else {
+                                shotId = `S01.${shotNumber}`;
+                            }
+                        } else if (/^\d+$/.test(shotId)) {
+                            // 숫자만 있는 경우 S01.XX 형식으로 변환
+                            const num = parseInt(shotId);
+                            const seqNum = Math.floor((num - 1) / 100) + 1;
+                            const shotNum = ((num - 1) % 100) + 1;
+                            shotId = `S${String(seqNum).padStart(2, '0')}.${String(shotNum).padStart(2, '0')}`;
+                        } else if (shotId.startsWith('shot_')) {
+                            // shot_XX 형식인 경우 S01.XX로 변환
+                            const num = shotId.replace('shot_', '');
+                            shotId = `S01.${num.padStart(2, '0')}`;
+                        }
                         
                         console.log(`🔧 Stage 5 변환 - Shot ID 생성: ${shotId} (원본: ${shot.shot_id})`);
                         
@@ -2147,6 +2166,11 @@ function createTestData() {
 					const sequences = jsonData.narrative_data.treatment_data.sequence_structure || [];
 					const scenes = jsonData.narrative_data.scenario_data.scenes || [];
 					
+					console.log('📊 Stage 2 데이터 구조 확인:');
+					console.log('- 시퀀스 수:', sequences.length);
+					console.log('- 시퀀스 ID들:', sequences.map(s => s.sequence_id));
+					console.log('- 씬 수:', scenes.length);
+					console.log('- 씬 ID들:', scenes.map(s => s.scene_id));
 
 					if (sequences.length === 0 || scenes.length === 0) {
 						throw new Error('시퀀스 또는 씬 데이터가 비어있습니다.');
@@ -2205,6 +2229,10 @@ function createTestData() {
 					// Stage 2 구조 로드 완료 표시
 					hasStage2Structure = true;
 					currentData.hasStage2Structure = true;
+					
+					console.log('✅ Stage 2 데이터 처리 완료:');
+					console.log('- 시퀀스:', currentData.breakdown_data.sequences.map(s => `${s.id}(씬: ${s.scenes.join(', ')})`));
+					console.log('- 씬:', currentData.breakdown_data.scenes.map(s => `${s.id}(시퀀스: ${s.sequence_id})`));
 
 
 					saveDataToLocalStorage();
@@ -2257,6 +2285,11 @@ function createTestData() {
 				const newScenes = jsonData.breakdown_data.scenes || [];
 				const newShots = jsonData.breakdown_data.shots || [];
 				const newSequences = jsonData.breakdown_data.sequences || [];
+				
+				console.log('📝 Stage 5 데이터 구조:');
+				console.log('- 시퀀스:', newSequences.length, newSequences.map(s => s.id));
+				console.log('- 씬:', newScenes.length, newScenes.map(s => s.id));
+				console.log('- 샷:', newShots.length, newShots.slice(0, 5).map(s => `${s.id}(씬: ${s.scene_id})`));
 
 
         // 공통 CSV 데이터 처리 (Stage 5 v2.1)
@@ -2362,6 +2395,11 @@ function createTestData() {
 				}
 
 				// 샷 데이터 병합 처리
+				console.log('🔄 Stage 5 샷 데이터 병합 시작');
+				console.log('- 처리할 샷 수:', newShots.length);
+				console.log('- CF 프로젝트:', isCFProject);
+				console.log('- 현재 씬 ID:', sceneIdParam);
+				
 				newShots.forEach(newShot => {
 					// CF 프로젝트인 경우 모든 샷 처리, 그렇지 않으면 특정 씬의 샷만 처리
 					const shouldProcessShot = isCFProject || newShot.scene_id === sceneIdParam;
