@@ -2428,6 +2428,8 @@ function createTestData() {
 						
                 // csv_mapping 추가 (개별 CSV - Stage 5 v2.1)
 						if (newShot.csv_mapping) {
+							console.log(`📊 Stage 5 CSV 매핑 추가 - Shot ID: ${newShot.id}`);
+							console.log(`   이미지 매핑 수: ${Object.keys(newShot.csv_mapping).length}`);
 							if (existingIndex >= 0) {
 								currentData.breakdown_data.shots[existingIndex].csv_mapping = newShot.csv_mapping;
 							} else {
@@ -6632,11 +6634,18 @@ try {
                                     
                                     newData.shots.forEach(shotData => {
                                         const shotId = shotData.shot_id;
+                                        console.log(`📌 Stage 6 처리 중 - Shot ID: ${shotId}`);
+                                        console.log(`   - 이미지 수: ${shotData.images?.length || 0}`);
+                                        
                                         // 기존 데이터를 완전히 대체 (업데이트)
                                         window.stage6ImagePrompts[shotId] = {};
                                         shotData.images.forEach(imageData => {
                                             const imageId = imageData.image_id;
                                             window.stage6ImagePrompts[shotId][imageId] = imageData;
+                                            console.log(`   - 이미지 ID: ${imageId}`);
+                                            if (imageData.prompts) {
+                                                console.log(`     프롬프트 키: ${Object.keys(imageData.prompts).join(', ')}`);
+                                            }
                                         });
                                     });
                                     
@@ -6668,8 +6677,13 @@ try {
                                     let mergedCount = 0;
                                     
                                     // 각 shot에 Stage 6 데이터 병합
+                                    console.log('🔄 Stage 6 데이터 병합 시작');
+                                    console.log('📋 현재 스토리보드의 Shot IDs:', currentData.breakdown_data.shots.map(s => s.id).join(', '));
+                                    console.log('📦 Stage 6 데이터의 Shot IDs:', Object.keys(window.stage6ImagePrompts).join(', '));
+                                    
                                     currentData.breakdown_data.shots.forEach(shot => {
                                         const shotId = shot.id;
+                                        console.log(`\n🔍 매칭 시도 - 스토리보드 Shot ID: ${shotId}`);
                                         
                                         // 유연한 ID 매칭: 정확한 매칭 먼저 시도하고, 없으면 부분 매칭 시도
                                         let stage6Data = window.stage6ImagePrompts[shotId];
