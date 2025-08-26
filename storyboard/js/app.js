@@ -3914,6 +3914,7 @@ else {
 // AI별 프롬프트 및 생성된 이미지 섹션
 const imageAIs = [
     { id: 'universal', name: 'Universal' },  // universal 프롬프트 지원 추가
+    { id: 'nanobana', name: 'Nanobana' },    // nanobana 프롬프트 지원 추가
     { id: 'midjourney', name: 'Midjourney' },
     { id: 'ideogram', name: 'Ideogram' },
     { id: 'leonardo', name: 'Leonardo' },
@@ -3981,11 +3982,14 @@ let aiSectionsHtml = '';
 							hasStage5Prompt = true;
 						}
 						
-						// universal 프롬프트 특별 처리
+						// universal과 nanobana 프롬프트 특별 처리
 						let hasPrompt = false;
 						if (ai.id === 'universal') {
 							// universal은 문자열로 직접 저장되거나 universal_translated와 함께 있음
 							hasPrompt = !!(imageStage6Data.prompts?.universal || imageStage6Data.prompts?.universal_translated || hasStage5Prompt);
+						} else if (ai.id === 'nanobana') {
+							// nanobana도 문자열로 직접 저장되거나 nanobana_translated와 함께 있음
+							hasPrompt = !!(imageStage6Data.prompts?.nanobana || imageStage6Data.prompts?.nanobana_translated || hasStage5Prompt);
 						} else {
 							const imagePrompts = imageStage6Data.prompts?.[ai.id] || {};
 							hasPrompt = !!(imagePrompts.prompt || imagePrompts.main_prompt);
@@ -4050,6 +4054,21 @@ let aiSectionsHtml = '';
 									imagePrompts = universalData;
 								}
 							}
+						} 
+						// nanobana 프롬프트 특별 처리
+						else if (ai.id === 'nanobana') {
+							// Stage 6 데이터가 있으면 사용
+							if (imageStage6Data.prompts?.nanobana) {
+								const nanobanaData = imageStage6Data.prompts.nanobana;
+								if (typeof nanobanaData === 'string') {
+									imagePrompts = {
+										prompt: nanobanaData,
+										prompt_translated: imageStage6Data.prompts.nanobana_translated || ''
+									};
+								} else {
+									imagePrompts = nanobanaData;
+								}
+							}
 							// Stage 6 데이터가 없고 Stage 5 CSV 데이터가 있으면 CSV 데이터를 프롬프트로 사용
 							else if (imageCsvData && Object.keys(imageCsvData).length > 0) {
 								// CSV 필드들을 조합하여 프롬프트 생성
@@ -4073,10 +4092,13 @@ let aiSectionsHtml = '';
 							}
 						}
 						
-						// universal 프롬프트 특별 처리를 고려한 hasPrompt 체크
+						// universal과 nanobana 프롬프트 특별 처리를 고려한 hasPrompt 체크
 						let hasPrompt = false;
 						if (ai.id === 'universal') {
 							hasPrompt = !!(imageStage6Data.prompts?.universal || imageStage6Data.prompts?.universal_translated || 
+										   imagePrompts.prompt || imagePrompts.main_prompt || imageCsvData.SCENE);
+						} else if (ai.id === 'nanobana') {
+							hasPrompt = !!(imageStage6Data.prompts?.nanobana || imageStage6Data.prompts?.nanobana_translated || 
 										   imagePrompts.prompt || imagePrompts.main_prompt || imageCsvData.SCENE);
 						} else {
 							hasPrompt = !!(imagePrompts.prompt || imagePrompts.main_prompt);
@@ -4104,6 +4126,35 @@ let aiSectionsHtml = '';
 								} else {
 									mainPrompt = universalData.prompt || universalData.main_prompt || '';
 									translatedPrompt = universalData.prompt_translated || universalData.main_prompt_translated || '';
+								}
+								parameters = imageStage6Data.csv_data?.['502'] || imageStage6Data.csv_data?.PARAMETERS || '';
+							} else if (imagePrompts.isFromStage5) {
+								// Stage 5 CSV 데이터 사용
+								mainPrompt = imagePrompts.prompt || '';
+								translatedPrompt = imagePrompts.prompt_translated || '';
+								isFromStage5 = true;
+								
+								// Stage 5 PARAMETERS 필드 사용
+								if (imageCsvData.PARAMETERS) {
+									parameters = imageCsvData.PARAMETERS;
+								}
+							} else {
+								mainPrompt = imagePrompts.prompt || imagePrompts.main_prompt || '';
+								translatedPrompt = imagePrompts.prompt_translated || imagePrompts.main_prompt_translated || '';
+								parameters = imagePrompts.parameters || '';
+							}
+						} 
+						// nanobana 프롬프트 특별 처리
+						else if (ai.id === 'nanobana') {
+							if (imageStage6Data.prompts?.nanobana) {
+								// Stage 6 데이터 사용
+								const nanobanaData = imageStage6Data.prompts.nanobana;
+								if (typeof nanobanaData === 'string') {
+									mainPrompt = nanobanaData;
+									translatedPrompt = imageStage6Data.prompts.nanobana_translated || '';
+								} else {
+									mainPrompt = nanobanaData.prompt || nanobanaData.main_prompt || '';
+									translatedPrompt = nanobanaData.prompt_translated || nanobanaData.main_prompt_translated || '';
 								}
 								parameters = imageStage6Data.csv_data?.['502'] || imageStage6Data.csv_data?.PARAMETERS || '';
 							} else if (imagePrompts.isFromStage5) {
