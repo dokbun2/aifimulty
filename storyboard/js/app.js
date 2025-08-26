@@ -1744,77 +1744,98 @@ function createTestData() {
 								return;
 							}
 
+							let missingShots = [];
+							let successCount = 0;
+							
 							newData.shots.forEach(newShotData => {
 								const shotIdToFind = newShotData.shot_id;
 								const existingShot = currentData.breakdown_data.shots.find(shot => shot.id === shotIdToFind);
 
+								// Stage 5 데이터가 없는 샷은 병합하지 않음
+								if (!existingShot) {
+									missingShots.push(shotIdToFind);
+									return; // 이 샷은 건너뛰기
+								}
+
 								if (existingShot) {
+									successCount++;
 
 									// Stage 6의 프롬프트 정보만 가져오기
 									if (newShotData.images && newShotData.images.length > 0) {
 										// image_design_plans 생성 (없는 경우)
 										if (!existingShot.image_design_plans) {
-											// 플랜 A용 이미지 데이터 (가장 단순 - 1개 이미지만)
-											const planAImages = newShotData.images.slice(0, 1).map((img, idx) => {
-												let id;
-												if (img.image_id) {
-													// S01.01-C-01 → S01.01-A-01
-													id = img.image_id.replace(/-[ABC]-/, '-A-');
-												} else {
-													id = `IMG_A_${String(idx + 1).padStart(3, '0')}`;
-												}
-												return {
-													id: id,
+											// Stage 6에는 이미 Plan별로 구분된 ID가 있으므로 Plan별로 필터링만 수행
+											
+											// single 플랜 이미지: -single- 패턴을 가진 이미지들 (Simple 샷용)
+											const singleImages = newShotData.images
+												.filter(img => img.image_id && img.image_id.includes('-single-'))
+												.map(img => ({
+													id: img.image_id,
 													description: img.image_description || '',
 													csv_attributes: img.csv_data || {}
-												};
-											});
+												}));
 											
-											// 플랜 B용 이미지 데이터 (중간 복잡도 - 2개 이미지)
-											const planBCount = Math.min(2, newShotData.images.length);
-											const planBImages = newShotData.images.slice(0, planBCount).map((img, idx) => {
-												let id;
-												if (img.image_id) {
-													// S01.01-C-01 → S01.01-B-01
-													const shotPrefix = img.image_id.split('-').slice(0, -2).join('-');
-													id = `${shotPrefix}-B-${String(idx + 1).padStart(2, '0')}`;
-												} else {
-													id = `IMG_B_${String(idx + 1).padStart(3, '0')}`;
-												}
-												return {
-													id: id,
+											// Plan A 이미지: -A- 패턴을 가진 이미지들
+											const planAImages = newShotData.images
+												.filter(img => img.image_id && img.image_id.includes('-A-'))
+												.map(img => ({
+													id: img.image_id,
 													description: img.image_description || '',
 													csv_attributes: img.csv_data || {}
+												}));
+											
+											// Plan B 이미지: -B- 패턴을 가진 이미지들
+											const planBImages = newShotData.images
+												.filter(img => img.image_id && img.image_id.includes('-B-'))
+												.map(img => ({
+													id: img.image_id,
+													description: img.image_description || '',
+													csv_attributes: img.csv_data || {}
+												}));
+											
+											// Plan C 이미지: -C- 패턴을 가진 이미지들
+											const planCImages = newShotData.images
+												.filter(img => img.image_id && img.image_id.includes('-C-'))
+												.map(img => ({
+													id: img.image_id,
+													description: img.image_description || '',
+													csv_attributes: img.csv_data || {}
+												}));
+											
+											// 객체 생성
+											existingShot.image_design_plans = {};
+											
+											// single 플랜이 있으면 추가
+											if (singleImages.length > 0) {
+												existingShot.image_design_plans.single = {
+													description: `단일 이미지 (${singleImages.length}개 이미지)`,
+													image_count: singleImages.length,
+													complexity: "simple",
+													images: singleImages
 												};
-											});
+											}
 											
-											// 플랜 C용 이미지 데이터 (가장 복잡 - 3개 이상 또는 모든 이미지)
-											const planCImages = newShotData.images.map((img, idx) => ({
-												id: img.image_id || `IMG_C_${String(idx + 1).padStart(3, '0')}`,
-												description: img.image_description || '',
-												csv_attributes: img.csv_data || {}
-											}));
-											
-											existingShot.image_design_plans = {
-												plan_a: {
-													description: "단순 표현 (1개 이미지)",
-													image_count: 1,
+											// Complex 플랜들 추가
+											if (planAImages.length > 0 || planBImages.length > 0 || planCImages.length > 0) {
+												existingShot.image_design_plans.plan_a = {
+													description: `단순 표현 (${planAImages.length}개 이미지)`,
+													image_count: planAImages.length,
 													complexity: "low",
 													images: planAImages
-												},
-												plan_b: {
-													description: "중간 복잡도 표현 (2개 이미지)",
-													image_count: planBCount,
+												};
+												existingShot.image_design_plans.plan_b = {
+													description: `중간 복잡도 표현 (${planBImages.length}개 이미지)`,
+													image_count: planBImages.length,
 													complexity: "medium",
 													images: planBImages
-												},
-												plan_c: {
-													description: `전체 표현 (${newShotData.images.length}개 이미지)`,
-													image_count: newShotData.images.length,
+												};
+												existingShot.image_design_plans.plan_c = {
+													description: `전체 표현 (${planCImages.length}개 이미지)`,
+													image_count: planCImages.length,
 													complexity: "high",
 													images: planCImages
-												}
-											};
+												};
+											}
 										}
 
 										// Stage 6 프롬프트 데이터를 각 이미지별로 저장
@@ -1838,6 +1859,14 @@ function createTestData() {
 											
 											// 원본 ID 그대로 저장
 											existingShot.shot_stage6_data[imageId] = imageData;
+											
+											// CSV 데이터도 병합 저장 (29개 블록 시스템)
+											if (!existingShot.csv_mapping) {
+												existingShot.csv_mapping = {};
+											}
+											if (img.csv_data) {
+												existingShot.csv_mapping[imageId] = img.csv_data;
+											}
 										});
 										
 										// image_prompts 초기화 (기존 데이터가 없을 때만)
@@ -1887,7 +1916,17 @@ function createTestData() {
 								}
 							});
 
-							if (updated) {
+							// 병합 결과 메시지 표시
+							if (missingShots.length > 0) {
+								const missingScenes = [...new Set(missingShots.map(id => id.split('.')[0]))];
+								showMessage(
+									`Stage 6 데이터 중 일부만 병합되었습니다.\n` +
+									`병합 성공: ${successCount}개 샷\n` +
+									`병합 실패: ${missingShots.length}개 샷 (${missingScenes.join(', ')} 씬)\n\n` +
+									`누락된 씬의 Stage 5 데이터를 먼저 로드해주세요.`,
+									successCount > 0 ? 'warning' : 'error'
+								);
+							} else if (updated) {
 								showMessage('스테이지6 이미지 프롬프트 정보를 현재 데이터에 성공적으로 병합했습니다.', 'success');
 							} else {
 								showMessage('스테이지6 JSON에서 업데이트할 샷 정보를 찾지 못했거나, 변경사항이 없습니다.', 'info');
@@ -3770,16 +3809,6 @@ function createShotInfoTab(shot) {
             </table>
         </div>` : ''}
         
-        ${shot.camera_framing ? `
-        <div class="info-section">
-            <h3>카메라 정보</h3>
-            <table class="info-table">
-                <tr><th>프레이밍</th><td>${shot.camera_framing.framing || '-'}</td></tr>
-                <tr><th>앵글</th><td>${shot.camera_framing.angle || '-'}</td></tr>
-                <tr><th>시점 방향</th><td>${shot.camera_framing.view_direction || '-'}</td></tr>
-                <tr><th>구도</th><td>${shot.camera_framing.composition || '-'}</td></tr>
-            </table>
-        </div>` : ''}
         
         ${shot.content ? `
         <div class="info-section">
