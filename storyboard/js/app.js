@@ -3992,9 +3992,9 @@ let aiSectionsHtml = '';
 							hasPrompt = !!(imageStage6Data.prompts?.universal || imageStage6Data.prompts?.universal_translated || 
 							              shot.image_prompts?.universal || hasStage5Prompt);
 						} else if (ai.id === 'nanobabana') {
-							// nanobabana도 문자열로 직접 저장되거나 nanobabana_translated와 함께 있음
+							// nanobabana는 별도의 프롬프트가 있을 때만 표시
 							hasPrompt = !!(imageStage6Data.prompts?.nanobabana || imageStage6Data.prompts?.nanobabana_translated || 
-							              shot.image_prompts?.nanobabana?.main_prompt || shot.image_prompts?.nanobabana);
+							              shot.image_prompts?.nanobabana?.main_prompt);
 						} else {
 							const imagePrompts = imageStage6Data.prompts?.[ai.id] || {};
 							// shot.image_prompts에서도 확인
@@ -4124,6 +4124,14 @@ let aiSectionsHtml = '';
 								} else {
 									imagePrompts = nanobabanaData;
 								}
+							} 
+							// shot.image_prompts에서 확인
+							else if (shot.image_prompts?.nanobabana) {
+								imagePrompts = shot.image_prompts.nanobabana;
+							}
+							// 나노바나나 전용 프롬프트가 없으면 비워둠 (universal을 사용하지 않음)
+							else {
+								imagePrompts = {};
 							}
 						}
 						
@@ -4182,7 +4190,7 @@ let aiSectionsHtml = '';
 						// nanobabana 프롬프트 특별 처리
 						else if (ai.id === 'nanobabana') {
 							// shot.image_prompts에서 먼저 확인 (Stage 6 병합 데이터)
-							if (shot.image_prompts?.nanobabana) {
+							if (shot.image_prompts?.nanobabana?.main_prompt) {
 								mainPrompt = shot.image_prompts.nanobabana.main_prompt || '';
 								translatedPrompt = shot.image_prompts.nanobabana.main_prompt_translated || '';
 								parameters = shot.image_prompts.nanobabana.parameters || '';
@@ -4198,6 +4206,10 @@ let aiSectionsHtml = '';
 									translatedPrompt = nanobabanaData.prompt_translated || nanobabanaData.main_prompt_translated || '';
 								}
 								parameters = imageStage6Data.csv_data?.PARAMETERS || '';
+							}
+							// 나노바나나 전용 프롬프트가 없으면 건너뛰기
+							else {
+								continue; // 이 이미지는 나노바나나용이 아니므로 건너뛰기
 							}
 						} else {
 							mainPrompt = imagePrompts.prompt || imagePrompts.main_prompt || '';
