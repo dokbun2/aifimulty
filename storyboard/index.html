@@ -14,9 +14,20 @@
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://aifiwb.netlify.app/storyboard">
+    <meta property="og:url" content="https://aifimulty.netlify.app/storyboard">
     <meta property="og:title" content="AIFI 영상 프레임워크 스토리보드">
     <meta property="og:description" content="AI 기반 영상 제작을 위한 종합적인 스토리보드 관리 시스템">
+    <meta property="og:image" content="https://aifimulty.netlify.app/og-image.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="AIFI 스토리보드">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://aifimulty.netlify.app/storyboard">
+    <meta name="twitter:title" content="AIFI 영상 프레임워크 스토리보드">
+    <meta name="twitter:description" content="AI 기반 영상 제작을 위한 종합적인 스토리보드 관리 시스템">
+    <meta name="twitter:image" content="https://aifimulty.netlify.app/og-image.jpg">
     
     <!-- 파비콘 -->
     <link rel="icon" type="image/x-icon" href="../favicon_io/favicon.ico">
@@ -153,6 +164,7 @@
             height: calc(100vh - 180px);  /* 전체 섹션 높이 설정 */
             display: flex;
             flex-direction: column;
+            overflow: hidden;  /* 컨테이너 밖으로 나가는 것 방지 */
         }
         
         .nav-controls {
@@ -203,8 +215,8 @@
         
         /* Navigation Tree */
         .nav-tree {
-            max-height: calc(100vh - 200px);  /* 사이드바 높이를 최대한 늘림 */
-            min-height: 500px;  /* 최소 높이 보장 */
+            flex: 1;  /* 남은 공간 모두 사용 */
+            min-height: 0;  /* flexbox에서 overflow 작동을 위해 필요 */
             overflow-y: auto;
         }
         
