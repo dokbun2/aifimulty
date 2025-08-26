@@ -3885,6 +3885,7 @@ else {
 // AI별 프롬프트 및 생성된 이미지 섹션
 const imageAIs = [
     { id: 'universal', name: 'Universal' },  // universal 프롬프트 지원 추가
+    { id: 'nanobabana', name: 'NanoBabana' },  // nanobabana 프롬프트 추가
     { id: 'midjourney', name: 'Midjourney' },
     { id: 'ideogram', name: 'Ideogram' },
     { id: 'leonardo', name: 'Leonardo' },
@@ -3960,11 +3961,15 @@ let aiSectionsHtml = '';
 							hasStage5Prompt = true;
 						}
 						
-						// universal 프롬프트 특별 처리
+						// universal 및 nanobabana 프롬프트 특별 처리
 						let hasPrompt = false;
 						if (ai.id === 'universal') {
 							// universal은 문자열로 직접 저장되거나 universal_translated와 함께 있음
 							hasPrompt = !!(imageStage6Data.prompts?.universal || imageStage6Data.prompts?.universal_translated || hasStage5Prompt);
+						} else if (ai.id === 'nanobabana') {
+							// nanobabana도 문자열로 직접 저장되거나 nanobabana_translated와 함께 있음
+							hasPrompt = !!(imageStage6Data.prompts?.nanobabana || imageStage6Data.prompts?.nanobabana_translated || 
+							              shot.image_prompts?.nanobabana?.main_prompt);
 						} else {
 							const imagePrompts = imageStage6Data.prompts?.[ai.id] || {};
 							hasPrompt = !!(imagePrompts.prompt || imagePrompts.main_prompt);
@@ -4110,6 +4115,27 @@ let aiSectionsHtml = '';
 								mainPrompt = imagePrompts.prompt || imagePrompts.main_prompt || '';
 								translatedPrompt = imagePrompts.prompt_translated || imagePrompts.main_prompt_translated || '';
 								parameters = imagePrompts.parameters || '';
+							}
+						} 
+						// nanobabana 프롬프트 특별 처리
+						else if (ai.id === 'nanobabana') {
+							// shot.image_prompts에서 먼저 확인 (Stage 6 병합 데이터)
+							if (shot.image_prompts?.nanobabana) {
+								mainPrompt = shot.image_prompts.nanobabana.main_prompt || '';
+								translatedPrompt = shot.image_prompts.nanobabana.main_prompt_translated || '';
+								parameters = shot.image_prompts.nanobabana.parameters || '';
+							} 
+							// Stage 6 원본 데이터 확인
+							else if (imageStage6Data.prompts?.nanobabana) {
+								const nanobabanaData = imageStage6Data.prompts.nanobabana;
+								if (typeof nanobabanaData === 'string') {
+									mainPrompt = nanobabanaData;
+									translatedPrompt = imageStage6Data.prompts.nanobabana_translated || '';
+								} else {
+									mainPrompt = nanobabanaData.prompt || nanobabanaData.main_prompt || '';
+									translatedPrompt = nanobabanaData.prompt_translated || nanobabanaData.main_prompt_translated || '';
+								}
+								parameters = imageStage6Data.csv_data?.PARAMETERS || '';
 							}
 						} else {
 							mainPrompt = imagePrompts.prompt || imagePrompts.main_prompt || '';
@@ -6644,7 +6670,46 @@ try {
                                     // 각 shot에 Stage 6 데이터 병합
                                     currentData.breakdown_data.shots.forEach(shot => {
                                         const shotId = shot.id;
-                                        const stage6Data = window.stage6ImagePrompts[shotId];
+                                        
+                                        // 유연한 ID 매칭: 정확한 매칭 먼저 시도하고, 없으면 부분 매칭 시도
+                                        let stage6Data = window.stage6ImagePrompts[shotId];
+                                        
+                                        // 정확한 매칭이 없으면 유사한 ID 찾기
+                                        if (!stage6Data) {
+                                            // shotId에서 숫자 부분 추출 (예: "shot_123" -> "123")
+                                            const shotNumber = shotId.match(/\d+/)?.[0];
+                                            if (shotNumber) {
+                                                // 다양한 형식으로 시도
+                                                const possibleIds = [
+                                                    `shot_${shotNumber}`,
+                                                    `Shot_${shotNumber}`,
+                                                    `SHOT_${shotNumber}`,
+                                                    `sh${shotNumber}`,
+                                                    `SH${shotNumber}`,
+                                                    shotNumber
+                                                ];
+                                                
+                                                for (const possibleId of possibleIds) {
+                                                    if (window.stage6ImagePrompts[possibleId]) {
+                                                        stage6Data = window.stage6ImagePrompts[possibleId];
+                                                        console.log(`📎 Stage 6 매칭 성공: ${shotId} → ${possibleId}`);
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                            
+                                            // 여전히 못 찾았으면 키에서 유사한 패턴 찾기
+                                            if (!stage6Data) {
+                                                const stage6Keys = Object.keys(window.stage6ImagePrompts);
+                                                for (const key of stage6Keys) {
+                                                    if (key.includes(shotNumber) || shotId.includes(key) || key.includes(shotId)) {
+                                                        stage6Data = window.stage6ImagePrompts[key];
+                                                        console.log(`📎 Stage 6 부분 매칭 성공: ${shotId} → ${key}`);
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
                                         
                                         if (stage6Data) {
                                             // 첫 번째 이미지의 프롬프트 데이터 찾기
@@ -6664,12 +6729,21 @@ try {
                                                     if (aiTool === 'universal') {
                                                         const universalPrompt = typeof promptData === 'string' ? promptData : (promptData.prompt || promptData);
                                                         const universalTranslated = firstImageData.prompts.universal_translated || '';
+                                                        const nanobabanaPrompt = firstImageData.prompts.nanobabana || '';
+                                                        const nanobabanaTranslated = firstImageData.prompts.nanobabana_translated || '';
                                                         const csvParams = firstImageData.csv_data?.PARAMETERS || '';
                                                         
                                                         // universal 프롬프트 저장
                                                         shot.image_prompts.universal = {
                                                             main_prompt: universalPrompt,
                                                             main_prompt_translated: universalTranslated,
+                                                            parameters: csvParams
+                                                        };
+                                                        
+                                                        // nanobabana 프롬프트 저장
+                                                        shot.image_prompts.nanobabana = {
+                                                            main_prompt: nanobabanaPrompt,
+                                                            main_prompt_translated: nanobabanaTranslated,
                                                             parameters: csvParams
                                                         };
                                                         
@@ -6692,6 +6766,19 @@ try {
                                                     } else if (aiTool === 'universal_translated') {
                                                         // universal_translated는 이미 universal에서 처리됨
                                                         return;
+                                                    } else if (aiTool === 'nanobabana' || aiTool === 'nanobabana_translated') {
+                                                        // nanobabana는 이미 universal에서 처리됨 (같이 처리하는 경우)
+                                                        // 하지만 독립적으로 존재할 수도 있으므로 체크
+                                                        if (!shot.image_prompts.nanobabana) {
+                                                            const nanobabanaPrompt = firstImageData.prompts.nanobabana || '';
+                                                            const nanobabanaTranslated = firstImageData.prompts.nanobabana_translated || '';
+                                                            shot.image_prompts.nanobabana = {
+                                                                main_prompt: nanobabanaPrompt,
+                                                                main_prompt_translated: nanobabanaTranslated,
+                                                                parameters: firstImageData.csv_data?.PARAMETERS || ''
+                                                            };
+                                                        }
+                                                        return;
                                                     } else if (promptData && typeof promptData === 'object') {
                                                         // 기존 형식 처리 (호환성)
                                                         let parameters = '';
@@ -6708,6 +6795,20 @@ try {
                                                             parameters: promptData.parameters || parameters
                                                         };
                                                     }
+                                                });
+                                                
+                                                // 플랜 A/B/C 데이터가 있으면 추가
+                                                if (firstImageData.image_design_plans) {
+                                                    shot.image_design_plans = firstImageData.image_design_plans;
+                                                    console.log(`📋 플랜 A/B/C 데이터 추가: ${shotId}`);
+                                                }
+                                                
+                                                // 각 이미지의 모든 프롬프트 데이터 저장 (필요시 사용)
+                                                if (!shot.all_image_prompts) {
+                                                    shot.all_image_prompts = {};
+                                                }
+                                                Object.entries(stage6Data).forEach(([imageId, imageData]) => {
+                                                    shot.all_image_prompts[imageId] = imageData;
                                                 });
                                                 
                                                 mergedCount++;

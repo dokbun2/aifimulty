@@ -1,0 +1,1900 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>이미지 프롬프트 생성기 - UI Enhanced</title>
+    
+    <!-- Tabler Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/iconfont/tabler-icons.min.css">
+    
+    <!-- 파비콘 -->
+    <link rel="icon" type="image/x-icon" href="favicon_io/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon_io/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon_io/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon_io/apple-touch-icon.png">
+    
+    <style>
+        /* UI Design Component 스타일 시스템 */
+        :root {
+            /* Colors from UI Design System */
+            --color-brand: #6366f1;
+            --color-brand-accent: #818cf8;
+            --color-brand-light: #a5b4fc;
+            --color-brand-dark: #4f46e5;
+            
+            --bg-primary: #0a0a0b;
+            --bg-secondary: #111113;
+            --bg-tertiary: #1a1a1d;
+            --bg-quaternary: #222227;
+            
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-tertiary: #71717a;
+            --text-quaternary: #52525b;
+            
+            --border-primary: rgba(255, 255, 255, 0.08);
+            --border-secondary: rgba(255, 255, 255, 0.12);
+            --border-tertiary: rgba(255, 255, 255, 0.16);
+            
+            --status-red: #ef4444;
+            --status-green: #10b981;
+            --status-yellow: #f59e0b;
+            --status-blue: #3b82f6;
+            --status-purple: #8b5cf6;
+            
+            /* Spacing */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            --space-2xl: 48px;
+            
+            /* Typography */
+            --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', 'Paperlogy', sans-serif;
+            --font-size-mini: 11px;
+            --font-size-small: 13px;
+            --font-size-regular: 14px;
+            --font-size-medium: 16px;
+            --font-size-large: 18px;
+            --font-size-title: 20px;
+            --font-size-title-2: 24px;
+            
+            /* Animations */
+            --duration-quick: 150ms;
+            --duration-normal: 250ms;
+            --duration-slow: 400ms;
+            --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+            
+            /* Shadows */
+            --shadow-small: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-medium: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-large: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+            
+            /* Border Radius */
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            --radius-full: 9999px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: var(--font-family);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+        
+        /* UI Button Component */
+        .ui-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-xs);
+            font-weight: 500;
+            font-size: var(--font-size-small);
+            border-radius: var(--radius-md);
+            transition: all var(--duration-quick) var(--ease-out-quad);
+            cursor: pointer;
+            border: 1px solid transparent;
+            outline: none;
+            position: relative;
+            white-space: nowrap;
+            font-family: var(--font-family);
+        }
+        
+        .ui-button:focus-visible {
+            outline: 2px solid var(--color-brand);
+            outline-offset: 2px;
+        }
+        
+        .ui-button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        
+        /* Button Variants */
+        .ui-button--primary {
+            background: var(--color-brand);
+            color: white;
+            border-color: transparent;
+        }
+        
+        .ui-button--primary:hover:not(:disabled) {
+            background: var(--color-brand-accent);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+        
+        .ui-button--secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border-color: var(--border-secondary);
+        }
+        
+        .ui-button--secondary:hover:not(:disabled) {
+            background: var(--bg-quaternary);
+            border-color: var(--border-tertiary);
+        }
+        
+        .ui-button--ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border-color: transparent;
+        }
+        
+        .ui-button--ghost:hover:not(:disabled) {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        
+        .ui-button--success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--status-green);
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+        
+        .ui-button--success:hover:not(:disabled) {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+        
+        .ui-button--ai {
+            background: linear-gradient(135deg, var(--status-purple) 0%, #7c3aed 100%);
+            color: white;
+            border-color: transparent;
+        }
+        
+        .ui-button--ai:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+        }
+        
+        /* Button Sizes */
+        .ui-button--sm {
+            height: 28px;
+            padding: 0 12px;
+            font-size: var(--font-size-small);
+        }
+        
+        .ui-button--md {
+            height: 36px;
+            padding: 0 var(--space-md);
+            font-size: var(--font-size-regular);
+        }
+        
+        .ui-button--lg {
+            height: 44px;
+            padding: 0 var(--space-lg);
+            font-size: var(--font-size-medium);
+        }
+        
+        /* UI Card Component */
+        .ui-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            transition: all var(--duration-quick) var(--ease-out-quad);
+        }
+        
+        .ui-card--elevated {
+            background: var(--bg-tertiary);
+            border-color: var(--border-secondary);
+            box-shadow: var(--shadow-medium);
+        }
+        
+        .ui-card-header {
+            padding-bottom: var(--space-md);
+            margin-bottom: var(--space-md);
+            border-bottom: 1px solid var(--border-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .ui-card-title {
+            font-size: var(--font-size-large);
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        
+        /* UI Input Component */
+        .ui-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-xs);
+        }
+        
+        .ui-input-label {
+            font-size: var(--font-size-small);
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .ui-input {
+            height: 36px;
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            padding: 0 12px;
+            color: var(--text-primary);
+            font-size: var(--font-size-regular);
+            font-family: var(--font-family);
+            transition: all var(--duration-quick) var(--ease-out-quad);
+        }
+        
+        .ui-input:hover {
+            border-color: var(--border-secondary);
+            background: rgba(255, 255, 255, 0.03);
+        }
+        
+        .ui-input:focus {
+            outline: none;
+            border-color: var(--color-brand);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .ui-textarea {
+            min-height: 100px;
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            padding: var(--space-sm) 12px;
+            color: var(--text-primary);
+            font-size: var(--font-size-regular);
+            font-family: var(--font-family);
+            resize: vertical;
+            transition: all var(--duration-quick) var(--ease-out-quad);
+        }
+        
+        .ui-textarea:hover {
+            border-color: var(--border-secondary);
+            background: rgba(255, 255, 255, 0.03);
+        }
+        
+        .ui-textarea:focus {
+            outline: none;
+            border-color: var(--color-brand);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        /* Navigation */
+        .nav-header {
+            background: rgba(17, 17, 19, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-primary);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .nav-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: var(--space-md) var(--space-lg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .nav-brand {
+            font-size: var(--font-size-large);
+            font-weight: 600;
+            color: var(--text-primary);
+            text-decoration: none;
+            letter-spacing: 0.5px;
+        }
+        
+        .nav-menu {
+            display: flex;
+            gap: var(--space-lg);
+            list-style: none;
+        }
+        
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: var(--font-size-regular);
+            transition: color var(--duration-quick);
+        }
+        
+        .nav-link:hover {
+            color: var(--text-primary);
+        }
+        
+        /* Main Container */
+        .main-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: var(--space-lg);
+        }
+        
+        /* Sections */
+        .section {
+            margin-bottom: var(--space-2xl);
+        }
+        
+        .section-header {
+            margin-bottom: var(--space-lg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .section-title {
+            font-size: var(--font-size-title);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        /* Prompt Preview */
+        .prompt-preview {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            min-height: 120px;
+            font-size: var(--font-size-regular);
+            line-height: 1.6;
+            color: var(--text-primary);
+            transition: all var(--duration-quick);
+        }
+        
+        .prompt-preview:hover {
+            border-color: var(--border-secondary);
+        }
+        
+        .prompt-preview:focus {
+            outline: none;
+            border-color: var(--color-brand);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        .prompt-preview[contenteditable="true"] {
+            cursor: text;
+        }
+        
+        /* Structure Tabs */
+        .structure-tabs {
+            margin-bottom: var(--space-lg);
+        }
+        
+        .structure-tab-buttons {
+            display: flex;
+            gap: var(--space-xs);
+            border-bottom: 2px solid var(--border-primary);
+            padding-bottom: 2px;
+        }
+        
+        .structure-tab-button {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: var(--space-sm) var(--space-lg);
+            font-size: var(--font-size-regular);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--duration-quick);
+            position: relative;
+        }
+        
+        .structure-tab-button:hover {
+            color: var(--text-primary);
+        }
+        
+        .structure-tab-button.active {
+            color: var(--color-brand);
+        }
+        
+        .structure-tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--color-brand);
+        }
+        
+        /* Sub Tabs */
+        .character-sub-tabs {
+            margin-bottom: var(--space-lg);
+        }
+        
+        .sub-tab-buttons {
+            display: flex;
+            gap: var(--space-sm);
+            flex-wrap: wrap;
+        }
+        
+        .sub-tab-button {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-full);
+            padding: 6px 16px;
+            color: var(--text-secondary);
+            font-size: var(--font-size-small);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--duration-quick);
+        }
+        
+        .sub-tab-button:hover {
+            background: var(--bg-quaternary);
+            color: var(--text-primary);
+            border-color: var(--border-secondary);
+        }
+        
+        .sub-tab-button.active {
+            background: var(--color-brand);
+            color: white;
+            border-color: var(--color-brand);
+        }
+        
+        /* Dropdown Containers */
+        .dropdown-container {
+            margin-bottom: var(--space-md);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: all var(--duration-normal);
+        }
+        
+        .dropdown-container:hover {
+            border-color: var(--border-secondary);
+            box-shadow: var(--shadow-medium);
+        }
+        
+        .dropdown-container.active {
+            border-color: var(--color-brand);
+            box-shadow: 0 0 0 1px var(--color-brand);
+        }
+        
+        .dropdown-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-md);
+            background: var(--bg-tertiary);
+            cursor: pointer;
+            user-select: none;
+            transition: all var(--duration-quick);
+        }
+        
+        .dropdown-header:hover {
+            background: var(--bg-quaternary);
+        }
+        
+        .dropdown-title {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            font-weight: 600;
+            font-size: var(--font-size-regular);
+        }
+        
+        .dropdown-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: var(--color-brand);
+            color: white;
+            border-radius: var(--radius-full);
+            font-size: var(--font-size-small);
+            font-weight: 700;
+        }
+        
+        .dropdown-arrow {
+            color: var(--text-tertiary);
+            transition: transform var(--duration-quick);
+        }
+        
+        .dropdown-container.active .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+        
+        .dropdown-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height var(--duration-normal) var(--ease-out-quad);
+        }
+        
+        .dropdown-container.active .dropdown-content {
+            max-height: 500px;
+        }
+        
+        .dropdown-fields {
+            padding: var(--space-lg);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-md);
+        }
+        
+        @media (max-width: 768px) {
+            .dropdown-fields {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .dropdown-field {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-xs);
+        }
+        
+        .dropdown-field-label {
+            font-size: var(--font-size-small);
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .dropdown-field-label-with-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-xs);
+        }
+        
+        .field-action-buttons {
+            display: flex;
+            gap: var(--space-xs);
+        }
+        
+        .btn-field-action {
+            padding: 4px 8px;
+            font-size: var(--font-size-mini);
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all var(--duration-quick);
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .btn-save {
+            background: var(--status-green);
+            color: white;
+        }
+        
+        .btn-save:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+        
+        .btn-ai-save {
+            background: var(--status-purple);
+            color: white;
+        }
+        
+        .btn-ai-save:hover {
+            background: #7c3aed;
+            transform: translateY(-1px);
+        }
+        
+        /* Select Input Wrapper */
+        .select-input-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        
+        .dropdown-field-input {
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            padding: 8px 12px;
+            color: var(--text-primary);
+            font-size: var(--font-size-small);
+            transition: all var(--duration-quick);
+        }
+        
+        .dropdown-field-input:hover {
+            border-color: var(--border-secondary);
+        }
+        
+        .dropdown-field-input:focus {
+            outline: none;
+            border-color: var(--color-brand);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        .dropdown-field-input.with-select {
+            padding-right: 35px;
+        }
+        
+        .dropdown-toggle-btn {
+            position: absolute;
+            right: 1px;
+            top: 1px;
+            bottom: 1px;
+            width: 30px;
+            background: var(--color-brand);
+            border: none;
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--duration-quick);
+        }
+        
+        .dropdown-toggle-btn:hover {
+            background: var(--color-brand-dark);
+        }
+        
+        .dropdown-toggle-btn.active {
+            background: var(--color-brand-dark);
+        }
+        
+        .style-options-dropdown {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-secondary);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-xl);
+            z-index: 1000;
+            max-height: 300px;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .style-options-search {
+            padding: var(--space-sm);
+            border-bottom: 1px solid var(--border-primary);
+        }
+        
+        .style-options-search input {
+            width: 100%;
+            padding: 6px 10px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: var(--font-size-small);
+        }
+        
+        .style-options-list {
+            overflow-y: auto;
+            max-height: 250px;
+        }
+        
+        .style-option {
+            padding: 10px 14px;
+            cursor: pointer;
+            transition: all var(--duration-quick);
+            font-size: var(--font-size-small);
+            color: var(--text-secondary);
+        }
+        
+        .style-option:hover {
+            background: var(--bg-quaternary);
+            color: var(--text-primary);
+            padding-left: 18px;
+        }
+        
+        .style-option.selected {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--color-brand);
+            font-weight: 500;
+        }
+        
+        .style-option.hidden {
+            display: none;
+        }
+        
+        /* Button Group */
+        .button-group {
+            display: flex;
+            gap: var(--space-sm);
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: var(--space-lg);
+        }
+        
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: var(--space-lg);
+            right: var(--space-lg);
+            background: var(--bg-quaternary);
+            color: var(--text-primary);
+            padding: var(--space-md) var(--space-lg);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-xl);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            transform: translateX(400px);
+            opacity: 0;
+            transition: all var(--duration-normal) var(--ease-out-quad);
+            z-index: 1000;
+            border: 1px solid var(--border-secondary);
+        }
+        
+        .toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        
+        .toast.success {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.3);
+            color: var(--status-green);
+        }
+        
+        .toast.error {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: var(--status-red);
+        }
+        
+        .toast.info {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.3);
+            color: var(--status-blue);
+        }
+        
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-overlay.show {
+            display: flex;
+        }
+        
+        .modal-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-secondary);
+            border-radius: var(--radius-xl);
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: var(--shadow-xl);
+        }
+        
+        .modal-header {
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-primary);
+            padding: var(--space-lg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: var(--font-size-large);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--text-tertiary);
+            font-size: 24px;
+            cursor: pointer;
+            transition: all var(--duration-quick);
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-md);
+        }
+        
+        .modal-close:hover {
+            background: var(--bg-quaternary);
+            color: var(--text-primary);
+        }
+        
+        .modal-body {
+            padding: var(--space-lg);
+            overflow-y: auto;
+            max-height: calc(90vh - 200px);
+        }
+        
+        .modal-footer {
+            padding: var(--space-lg);
+            border-top: 1px solid var(--border-primary);
+            background: var(--bg-tertiary);
+            display: flex;
+            gap: var(--space-sm);
+            justify-content: flex-end;
+        }
+        
+        /* Utility Classes */
+        .hidden {
+            display: none !important;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-container {
+                padding: var(--space-md);
+            }
+            
+            .nav-menu {
+                display: none;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                gap: var(--space-md);
+                align-items: flex-start;
+            }
+            
+            .button-group {
+                width: 100%;
+            }
+            
+            .ui-button {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav-header">
+        <div class="nav-content">
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <a href="index.html" class="nav-link" style="display: flex; align-items: center; gap: 6px;">
+                    <i class="ti ti-home" style="font-size: 18px;"></i>
+                    홈
+                </a>
+            </div>
+            <a href="#" class="nav-brand">IMAGE PROMPT GENERATOR</a>
+            <ul class="nav-menu">
+                <li><a href="storyboard/index.html" class="nav-link">스토리보드</a></li>
+                <li><a href="concept-art/index.html" class="nav-link">컨셉아트</a></li>
+                <li><a href="media-gallery-apple.html" class="nav-link">갤러리</a></li>
+            </ul>
+        </div>
+    </nav>
+    
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- 요청사항 입력 섹션 -->
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">요청사항 입력</h2>
+                <button class="ui-button ui-button--primary ui-button--md" id="ai-connect-btn">
+                    AI 연동
+                </button>
+            </div>
+
+            <!-- 프롬프트 입력 영역 -->
+            <div class="ui-card" style="margin-bottom: var(--space-lg);">
+                <div class="ui-card-header">
+                    <h3 class="ui-card-title">프롬프트 입력</h3>
+                    <button class="ui-button ui-button--ghost ui-button--sm" onclick="clearPromptInput()" title="프롬프트 초기화">
+                        <i class="ti ti-refresh"></i>
+                    </button>
+                </div>
+                <div class="prompt-preview" id="prompt-preview" contenteditable="true" spellcheck="false"></div>
+            </div>
+
+            <!-- 구조별 카드 섹션 -->
+            <div class="ui-card ui-card--elevated">
+                <div class="ui-card-header">
+                    <h3 class="ui-card-title">🎯 프롬프트 구조 편집기</h3>
+                    <button class="ui-button ui-button--primary ui-button--sm" onclick="importPromptFromPreview()">
+                        가져오기
+                    </button>
+                </div>
+                
+                <!-- 구조 편집기 탭 -->
+                <div class="structure-tabs">
+                    <div class="structure-tab-buttons">
+                        <button type="button" class="structure-tab-button active" id="structure-tab-character" onclick="switchStructureTab('character')">캐릭터</button>
+                        <button type="button" class="structure-tab-button" id="structure-tab-general" onclick="switchStructureTab('general')">일반이미지</button>
+                    </div>
+                </div>
+                
+                <div class="prompt-cards-grid" id="prompt-cards-grid">
+                    <!-- 카드들이 동적으로 생성됩니다 -->
+                </div>
+            </div>
+
+            <!-- 버튼 그룹 -->
+            <div class="button-group">
+                <button class="ui-button ui-button--primary ui-button--lg" id="generate-prompt-btn">
+                    <i class="ti ti-layers"></i>
+                    프롬프트 생성
+                </button>
+                <button class="ui-button ui-button--ai ui-button--lg" id="ai-generate-prompt-btn" onclick="if(window.generateAIPrompt) { window.generateAIPrompt(); }">
+                    <i class="ti ti-sparkles"></i>
+                    AI 프롬프트 생성
+                </button>
+            </div>
+        </div>
+
+        <!-- 최종 프롬프트 섹션 -->
+        <div class="section" id="final-prompt-section" style="display:none;">
+            <div class="ui-card">
+                <div class="ui-card-header">
+                    <h2 class="ui-card-title">최종 프롬프트</h2>
+                </div>
+                <textarea id="final-prompt-text" class="ui-textarea" placeholder="최종 프롬프트가 여기 표시됩니다." readonly></textarea>
+                <div class="button-group" style="margin-top: var(--space-md);">
+                    <button class="ui-button ui-button--success ui-button--md" id="copy-final-prompt-btn">
+                        <i class="ti ti-copy"></i>
+                        프롬프트 복사
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Message -->
+    <div class="toast" id="toast">
+        <i class="ti ti-check" id="toast-icon"></i>
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- AI 연동 Modal -->
+    <div class="modal-overlay" id="aiModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 class="modal-title">AI API 설정</h3>
+                <button class="modal-close" onclick="closeAIModal()">
+                    <i class="ti ti-x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="ui-input-group" style="margin-bottom: var(--space-lg);">
+                    <label class="ui-input-label">API 제공자</label>
+                    <select class="ui-input" id="api-provider">
+                        <option value="">선택하세요</option>
+                        <option value="openai">OpenAI (GPT)</option>
+                        <option value="anthropic">Anthropic (Claude)</option>
+                        <option value="google">Google (Gemini)</option>
+                    </select>
+                </div>
+                <div class="ui-input-group" style="margin-bottom: var(--space-lg);">
+                    <label class="ui-input-label">API 키</label>
+                    <input type="password" class="ui-input" id="api-key" placeholder="API 키를 입력하세요">
+                </div>
+                <div class="ui-input-group">
+                    <label class="ui-input-label">모델</label>
+                    <select class="ui-input" id="api-model">
+                        <option value="">API 제공자를 먼저 선택하세요</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="ui-button ui-button--ghost ui-button--md" onclick="closeAIModal()">
+                    취소
+                </button>
+                <button class="ui-button ui-button--primary ui-button--md" onclick="saveAIConfig()">
+                    저장
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수들 - 기존 기능 유지
+        let promptData = {
+            textInput: '',
+            generatedPrompts: [],
+            structuredPrompt: {}
+        };
+        
+        let currentStructureTab = 'character';
+        let currentFocusedIndex = -1;
+        let activeDropdown = null;
+        let userEditingPreview = false;
+        
+        // 한글 제목 매핑 (전역 변수로 이동)
+        const koreanTitles = {
+            'STYLE': '스타일',
+            'MEDIUM': '매체',
+            'ERA/CULTURAL_REF': '시대/문화 참조',
+            'CHARACTER': '캐릭터',
+            'CHARACTER_SHEET': '캐릭터 시트',
+            'GAZE': '시선',
+            'CAMERA': '카메라',
+            'LIGHTING': '조명',
+            'COLOR_TONE': '색조',
+            'QUALITY': '품질',
+            'BACKGROUND': '배경',
+            'BODY_TYPE': '체형',
+            'HAIR': '헤어',
+            'FACE_SHAPE': '얼굴형',
+            'FACIAL_FEATURES': '얼굴 특징',
+            'SKIN': '피부',
+            'EXPRESSION': '표정',
+            'CLOTHING': '의상',
+            'ACCESSORIES': '액세서리',
+            'PROPS': '소품',
+            'POSE': '포즈',
+            'PARAMETERS': '파라미터'
+        };
+
+        // DOM 요소들
+        const generateBtn = document.getElementById('generate-prompt-btn');
+        const finalPromptSection = document.getElementById('final-prompt-section');
+        const finalPromptText = document.getElementById('final-prompt-text');
+        const copyFinalPromptBtn = document.getElementById('copy-final-prompt-btn');
+        const aiConnectBtn = document.getElementById('ai-connect-btn');
+        const promptPreview = document.getElementById('prompt-preview');
+        const promptCardsGrid = document.getElementById('prompt-cards-grid');
+
+        // 모든 기존 함수들 유지
+        function displayFinalPrompt(defaultPrompt) {
+            const resolvedStructure = { ...promptData.structuredPrompt };
+            const scopeSelector = currentStructureTab === 'character' ? '.character-container' : '.general-container';
+            const scope = document.querySelector(scopeSelector);
+            
+            if (scope) {
+                scope.querySelectorAll('.dropdown-container').forEach(container => {
+                    const key = container.dataset.key;
+                    if (!key) return;
+                    const appliedInput = container.querySelector(`input[data-key="${key}-applied"]`);
+                    const requestInput = container.querySelector(`input[data-key="${key}-request"]`);
+                    const existingInput = container.querySelector(`input[data-key="${key}"]`);
+                    
+                    const appliedVal = (appliedInput?.value || '').trim();
+                    const requestVal = (requestInput?.value || '').trim();
+                    const existingVal = (existingInput?.value || '').trim();
+                    
+                    let finalValue = '';
+                    
+                    if (appliedVal) {
+                        finalValue = appliedVal;
+                        if (requestVal && requestVal !== appliedVal) {
+                            const englishOnly = requestVal.split(',').map(part => part.trim())
+                                .filter(part => !/[가-힣]/.test(part))
+                                .join(', ');
+                            if (englishOnly) {
+                                finalValue = `${appliedVal}, ${englishOnly}`;
+                            }
+                        }
+                    } else if (existingVal) {
+                        finalValue = existingVal;
+                    }
+                    
+                    if (finalValue) {
+                        resolvedStructure[key] = finalValue;
+                    }
+                });
+            }
+            
+            const finalValues = Object.values(resolvedStructure).filter(v => v && v.trim());
+            const finalPrompt = finalValues.length > 0 
+                ? finalValues.join(', ') 
+                : (defaultPrompt || '프롬프트 구조를 입력해주세요.');
+            
+            finalPromptSection.style.display = 'block';
+            finalPromptText.value = finalPrompt;
+            
+            promptData.structuredPrompt = resolvedStructure;
+            saveToLocalStorage();
+        }
+
+        function loadExamplePrompt() {
+            const examplePrompt = `A mystical forest at twilight, ancient trees with glowing runes, 
+ethereal mist floating between trunks, bioluminescent plants, magical particles in the air, 
+fantasy art style, volumetric lighting, atmospheric perspective, highly detailed, 8k resolution`;
+            
+            promptPreview.innerText = examplePrompt;
+            promptData.textInput = examplePrompt;
+            saveToLocalStorage();
+        }
+
+        function parsePrompt(text) {
+            const categories = {
+                'STYLE': ['style', 'art style', 'aesthetic'],
+                'MEDIUM': ['medium', 'media', 'technique'],
+                'SUBJECT': ['subject', 'character', 'object', 'person'],
+                'ENVIRONMENT': ['environment', 'background', 'setting', 'location'],
+                'LIGHTING': ['lighting', 'light', 'illumination'],
+                'COLOR': ['color', 'colors', 'palette', 'tone'],
+                'MOOD': ['mood', 'atmosphere', 'feeling', 'emotion'],
+                'COMPOSITION': ['composition', 'framing', 'angle', 'perspective'],
+                'QUALITY': ['quality', 'resolution', 'detail']
+            };
+            
+            const structure = {};
+            const parts = text.split(',').map(p => p.trim());
+            
+            parts.forEach(part => {
+                for (const [category, keywords] of Object.entries(categories)) {
+                    if (keywords.some(keyword => part.toLowerCase().includes(keyword))) {
+                        structure[category] = part;
+                        break;
+                    }
+                }
+            });
+            
+            return structure;
+        }
+
+        function enhancePrompt(text) {
+            const enhancements = [
+                'highly detailed',
+                'professional photography',
+                'award winning',
+                'trending on artstation',
+                '8k resolution',
+                'octane render',
+                'unreal engine 5',
+                'photorealistic',
+                'volumetric lighting',
+                'cinematic composition'
+            ];
+            
+            const randomEnhancements = enhancements
+                .sort(() => 0.5 - Math.random())
+                .slice(0, 3)
+                .join(', ');
+            
+            return `${text}, ${randomEnhancements}`;
+        }
+
+        function structureToText(structure) {
+            return Object.entries(structure)
+                .filter(([key, value]) => value && value.trim())
+                .map(([key, value]) => value)
+                .join(', ');
+        }
+
+        function switchStructureTab(tab) {
+            currentStructureTab = tab;
+            document.getElementById('structure-tab-character').classList.toggle('active', tab === 'character');
+            document.getElementById('structure-tab-general').classList.toggle('active', tab === 'general');
+            createPromptCards(promptData.structuredPrompt);
+        }
+
+        function switchCharacterSubTab(categoryIndex) {
+            const characterContainer = document.querySelector('.character-container');
+            if (!characterContainer) return;
+            
+            const subTabButtons = characterContainer.querySelectorAll('.sub-tab-button');
+            const subTabContents = characterContainer.querySelectorAll('.sub-tab-content');
+            
+            subTabButtons.forEach((btn, idx) => {
+                btn.classList.toggle('active', idx === categoryIndex);
+            });
+            
+            subTabContents.forEach((content, idx) => {
+                content.classList.toggle('active', idx === categoryIndex);
+                content.style.display = idx === categoryIndex ? 'block' : 'none';
+            });
+        }
+
+        function switchGeneralSubTab(categoryIndex) {
+            const generalContainer = document.querySelector('.general-container');
+            if (!generalContainer) return;
+            
+            const subTabButtons = generalContainer.querySelectorAll('.sub-tab-button');
+            const subTabContents = generalContainer.querySelectorAll('.sub-tab-content');
+            
+            subTabButtons.forEach((btn, idx) => {
+                btn.classList.toggle('active', idx === categoryIndex);
+            });
+            
+            subTabContents.forEach((content, idx) => {
+                content.classList.toggle('active', idx === categoryIndex);
+                content.style.display = idx === categoryIndex ? 'block' : 'none';
+            });
+        }
+
+        function createPromptCards(structure) {
+            promptCardsGrid.innerHTML = '';
+            
+            // 캐릭터 탭 카테고리 (이미지 기준)
+            // 스타일 옵션 목록 (2025 Midjourney v7 최신 업데이트)
+            const styleOptions = [
+                "Abstract (추상)", "Aerial (항공)", "Analog (아날로그)", "Animated (애니메이션)",
+                "Architectural Photography (건축 사진)", "Art Deco (아르데코)", "Art Nouveau (아르누보)",
+                "Baroque (바로크)", "Bauhaus (바우하우스)", "Blobitecture (블로비텍처)", "Brutalism (브루탈리즘)",
+                "Comic Book (만화책)", "Collage (콜라주)", "Concept Art (컨셉 아트)", "Cottagecore (코티지코어)",
+                "Cubism (큐비즘)", "Cyberpunk (사이버펑크)", "Dadaism (다다이즘)", "Dark Academia (다크 아카데미아)",
+                "Dark Fantasy (다크 판타지)", "Disney Style (디즈니 스타일)", "Documentary (다큐멘터리)",
+                "Double Exposure (이중 노출)", "Dreamcore (드림코어)", "Expressionism (표현주의)", "Fantasy (판타지)",
+                "Fantasy Illustration (판타지 일러스트레이션)", "Fashion Photography (패션 사진)", "Fauvism (포비즘)",
+                "Film Noir (필름 느와르)", "Food Photography (푸드 사진)", "Fresco (프레스코)", "Glitchcore (글리치코어)",
+                "Gothic (고딕)", "Graphic Novel (그래픽 노블)", "Horror (공포)", "Hyper-Detailed (하이퍼디테일)",
+                "Hyperrealism (하이퍼리얼리즘)", "Impressionism (인상주의)", "Isometric (아이소메트릭)",
+                "Landscape (풍경)", "Liminal Space (리미널 스페이스)", "Line Art (라인 아트)", "Low Poly (로우 폴리)",
+                "Macro Photography (매크로 사진)", "Manga (망가)", "McBling (McBling)", "Minimalism (미니멀리즘)",
+                "Neo-Expressionism (네오 표현주의)", "Neon Art (네온 아트)", "Night Photography (야간 사진)",
+                "Nostalgiacore (노스탤지어코어)", "Paper Illustration (종이 일러스트레이션)",
+                "Photorealism (포토리얼리즘)", "Pixar (픽사)", "Pixel Art (픽셀 아트)", "Pointillism (점묘법)",
+                "Pop Art (팝 아트)", "Portrait (초상화)", "Psychedelic (사이키델릭)", "Renaissance (르네상스)",
+                "Retro (레트로)", "Retro Futurism (레트로 퓨처리즘)", "Rococo (로코코)", "Romanticism (낭만주의)",
+                "Sketch Style (스케치 스타일)", "Stained Glass (스테인드글라스)", "Steampunk (스팀펑크)",
+                "Still Life (정물화)", "Street Photography (스트리트 사진)", "Studio Ghibli (스튜디오 지브리)",
+                "Suprematism (절대주의)", "Surrealism (초현실주의)", "Symbolism (상징주의)", "Synthwave (신스웨이브)",
+                "Technical Drawing (기술 도면)", "Tempera (템페라)", "Traumacore (트라우마코어)", "Vaporwave (베이퍼웨이브)",
+                "Voxel Art (복셀 아트)", "Webcore (웹코어)", "Weirdcore (위어드코어)", "Whimsical (기발한)",
+                "Y2K Aesthetic (Y2K 미학)"
+            ];
+
+            // 각 섹션별 드롭다운 옵션
+            const dropdownOptions = {
+                STYLE: styleOptions,
+                MEDIUM: [
+                    "Photography (사진)", "3D Modeling (3D 모델링)", "Acrylic Painting (아크릴화)",
+                    "Animation (애니메이션)", "Concept Art (컨셉 아트)", "Digital Art (디지털 아트)",
+                    "Illustration (일러스트레이션)", "Manga (만화)", "Oil Painting (유화)", "Painting (회화)",
+                    "Pencil Sketch (연필 스케치)", "Sketch (스케치)", "Typography (타이포그래피)",
+                    "Vector Graphics (벡터 그래픽)", "Watercolor (수채화)",
+                    "Ballpoint Pen Sketch (볼펜 스케치)", "Chalk Art (분필 아트)", "Charcoal Drawing (목탄화)",
+                    "Colored Pencil (색연필)", "Conte (콩테)", "Encaustic Painting (왁스화)",
+                    "Fresco (프레스코화)", "Gouache Painting (과슈화)", "Ink Drawing (잉크 드로잉)",
+                    "Line Art (라인 아트)", "Marker Art (마커 아트)", "Pastel Drawing (파스텔화)",
+                    "Pen and Ink (펜과 잉크)", "Stippling (점묘화)", "Sumi-e (수묵화)",
+                    "Block Print (블록 프린트)", "Calligraphy (캘리그래피)", "Cyanotype (청사진 인화)",
+                    "Etching (에칭)", "Linocut (리노컷)", "Lithography (석판화)",
+                    "Poster Design (포스터 디자인)", "Risograph (리소그래프)", "Screen Printing (실크스크린 인쇄)",
+                    "Woodcut (목판화)"
+                ],
+                'ERA/CULTURAL_REF': [
+                    "Age of Exploration (대항해시대)", "American Revolution (미국 독립 전쟁)",
+                    "Crusade (십자군 전쟁)", "Fall of the Roman Empire (로마 제국의 몰락)",
+                    "French Revolution (프랑스 혁명)", "Goryeo-Khitan War (고려-거란 전쟁)",
+                    "Hundred Years' War (백년전쟁)", "Industrial Revolution (산업 혁명)",
+                    "Mongol Empire Conquests (몽골 제국의 정복)", "Napoleonic Wars (나폴레옹 전쟁)",
+                    "Renaissance era (르네상스 시대)", "Russian Revolution (러시아 혁명)",
+                    "Sejong the Great Era (세종대왕 시대)", "Vietnam War (베트남 전쟁)",
+                    "World War I (제1차 세계 대전)", "World War II (제2차 세계 대전)",
+                    "Y2K Era (Y2K 시대)", "Victorian Era (빅토리아 시대)",
+                    "Medieval (중세)", "Ancient Egypt (고대 이집트)",
+                    "Cyberpunk 2077 (사이버펑크 2077)", "Steampunk Victorian (스팀펑크 빅토리아)"
+                ],
+                CHARACTER: [
+                    "Korean male child (한국 남자 어린이)", "Korean female child (한국 여자 어린이)",
+                    "Korean male teen (한국 남자 청소년)", "Korean female teen (한국 여자 청소년)",
+                    "Korean male 20s (한국 남자 20대)", "Korean female 20s (한국 여자 20대)",
+                    "Korean male 30s (한국 남자 30대)", "Korean female 30s (한국 여자 30대)",
+                    "Korean male 40s (한국 남자 40대)", "Korean female 40s (한국 여자 40대)",
+                    "Korean male 50s (한국 남자 50대)", "Korean female 50s (한국 여자 50대)",
+                    "Japanese male teen (일본 남자 청소년)", "Japanese female teen (일본 여자 청소년)",
+                    "Japanese male 20s (일본 남자 20대)", "Japanese female 20s (일본 여자 20대)",
+                    "Japanese male 30s (일본 남자 30대)", "Japanese female 30s (일본 여자 30대)",
+                    "Chinese male 20s (중국 남자 20대)", "Chinese female 20s (중국 여자 20대)",
+                    "Chinese male 30s (중국 남자 30대)", "Chinese female 30s (중국 여자 30대)",
+                    "American male teen (미국 남자 청소년)", "American female teen (미국 여자 청소년)",
+                    "American male 20s (미국 남자 20대)", "American female 20s (미국 여자 20대)",
+                    "American male 30s (미국 남자 30대)", "American female 30s (미국 여자 30대)",
+                    "American male 40s (미국 남자 40대)", "American female 40s (미국 여자 40대)",
+                    "European male 20s (유럽 남자 20대)", "European female 20s (유럽 여자 20대)",
+                    "European male 30s (유럽 남자 30대)", "European female 30s (유럽 여자 30대)",
+                    "European male 40s (유럽 남자 40대)", "European female 40s (유럽 여자 40대)",
+                    "British male 30s (영국 남자 30대)", "British female 30s (영국 여자 30대)",
+                    "French male 30s (프랑스 남자 30대)", "French female 30s (프랑스 여자 30대)"
+                ],
+                CHARACTER_SHEET: [
+                    "character turnaround sheet, multiple views, same character, front view and face close-up, same character, detailed view (입체스트 전신)",
+                    "photo collage of same person, multiple angles, front portrait, side profile, three-quarter view, consistent person (사진전신)",
+                    "character face sheet, close-up portraits, same character, front face, side profile, 3/4 angle, facial details (입체스트 얼굴)",
+                    "photo collage of same person's face, close-up shots, front portrait, side profile, three-quarter view, consistent face (사진 얼굴)",
+                    "character reference sheet, full body shot and portrait close-up, same character, detailed view (입체스트 혼합)",
+                    "photo reference of same person, full body shot and portrait close-up, consistent person, detailed views (사진 혼합)",
+                    "character expression sheet, multiple emotions close-up, same character, face happy, sad, angry, surprised, neutral expressions (입체스트 표정 클로즈업)",
+                    "photo collage of facial expressions, close-up emotions, same person, smiling, crying, laughing, serious, thoughtful faces (사진 표정 클로즈업)"
+                ],
+                GAZE: [
+                    "Direct (정면 응시)", "Averted (시선 회피)", "Downward (아래쪽 시선)",
+                    "Upward (위쪽 시선)", "Side Glance (옆눈질)", "Over Shoulder (어깨 너머 보기)",
+                    "Closed Eyes (눈 감음)", "Half-lidded (반쯤 감은 눈)", "Wide Open (크게 뜬 눈)",
+                    "Squinting (가늘게 뜬 눈)", "Winking (윙크)", "Rolling Eyes (눈 굴리기)",
+                    "Staring (응시)", "Dreamy (몽환적인 시선)"
+                ],
+                CAMERA: [
+                    "close-up (클로즈업)", "extreme close-up (익스트림 클로즈업)", "medium shot (미디엄 샷)", 
+                    "medium close-up (미디엄 클로즈업)", "full shot (풀 샷)", "wide shot (와이드 샷)",
+                    "extreme wide shot (익스트림 와이드 샷)", "eye level (아이 레벨)", "low angle (로우 앵글)",
+                    "high angle (하이 앵글)", "bird's eye view (버드 아이 뷰)", "worm's eye view (웜즈 아이 뷰)",
+                    "dutch angle (더치 앵글)", "over the shoulder (오버 더 숄더)", "point of view (POV)",
+                    "aerial view (공중 뷰)", "side view (측면 뷰)", "front view (정면 뷰)",
+                    "back view (후면 뷰)", "three-quarter view (3/4 뷰)"
+                ],
+                LIGHTING: [
+                    "natural lighting (자연광)", "studio lighting (스튜디오 조명)", "golden hour (골든아워)",
+                    "blue hour (블루아워)", "dramatic lighting (드라마틱 조명)", "soft lighting (부드러운 조명)",
+                    "hard lighting (강한 조명)", "rim lighting (림 라이팅)", "backlighting (백라이팅)",
+                    "volumetric lighting (볼류메트릭 조명)", "cinematic lighting (시네마틱 조명)",
+                    "neon lighting (네온 조명)", "candlelight (촛불)", "moonlight (달빛)",
+                    "sunlight (햇빛)", "overcast lighting (흐린날 조명)", "twilight (황혼)",
+                    "dawn lighting (새벽 조명)", "dusk lighting (해질녘 조명)", "spotlight (스포트라이트)",
+                    "ambient lighting (앰비언트 조명)", "key lighting (키 조명)", "fill lighting (필 조명)",
+                    "three-point lighting (3점 조명)", "split lighting (스플릿 조명)"
+                ],
+                COLOR_TONE: [
+                    "warm colors (따뜻한 색상)", "cool colors (차가운 색상)", "vibrant colors (선명한 색상)",
+                    "muted colors (차분한 색상)", "pastel colors (파스텔 색상)", "monochrome (단색)",
+                    "high contrast (고대비)", "low contrast (저대비)", "saturated colors (채도 높은 색상)",
+                    "desaturated colors (채도 낮은 색상)", "neon colors (네온 색상)", "earthy tones (자연스러운 톤)",
+                    "metallic colors (메탈릭 색상)", "iridescent colors (무지개빛 색상)", "gradient colors (그레이디언트 색상)"
+                ],
+                QUALITY: [
+                    "highly detailed (매우 상세한)", "photorealistic (포토리얼리스틱)", "8k resolution (8K 해상도)",
+                    "4k resolution (4K 해상도)", "ultra HD (울트라 HD)", "masterpiece (걸작)",
+                    "best quality (최고 품질)", "professional (전문적인)", "award winning (수상작)",
+                    "trending on artstation (아트스테이션 트렌딩)", "octane render (옥테인 렌더)",
+                    "unreal engine (언리얼 엔진)", "ray tracing (레이 트레이싱)", "sharp focus (선명한 초점)"
+                ]
+            };
+            
+            if (currentStructureTab === 'character') {
+                // 캐릭터 탭 컨테이너
+                const characterContainer = document.createElement('div');
+                characterContainer.className = 'character-container';
+                
+                // 캐릭터 하위 탭
+                const subTabs = document.createElement('div');
+                subTabs.className = 'character-sub-tabs';
+                subTabs.innerHTML = `
+                    <div class="sub-tab-buttons">
+                        <button type="button" class="sub-tab-button active" data-category="0" onclick="switchCharacterSubTab(0)">기본정보</button>
+                        <button type="button" class="sub-tab-button" data-category="1" onclick="switchCharacterSubTab(1)">얼굴/표정</button>
+                        <button type="button" class="sub-tab-button" data-category="2" onclick="switchCharacterSubTab(2)">의상/액세서리</button>
+                    </div>
+                `;
+                characterContainer.appendChild(subTabs);
+                
+                // 기본정보 탭 컨텐츠
+                const basicContent = document.createElement('div');
+                basicContent.className = 'sub-tab-content active';
+                basicContent.dataset.category = '0';
+                
+                // 드롭다운 컨테이너들 생성
+                ['STYLE', 'MEDIUM', 'CHARACTER', 'CAMERA', 'GAZE', 'CHARACTER_SHEET'].forEach((key, index) => {
+                    const container = createDropdownContainer(key, index + 1, structure[key] || '', dropdownOptions[key] || []);
+                    basicContent.appendChild(container);
+                });
+                
+                characterContainer.appendChild(basicContent);
+                
+                // 얼굴/표정 탭 컨텐츠
+                const faceContent = document.createElement('div');
+                faceContent.className = 'sub-tab-content';
+                faceContent.dataset.category = '1';
+                faceContent.style.display = 'none';
+                faceContent.innerHTML = '<div style="padding: 20px; color: var(--text-secondary);">얼굴/표정 옵션이 여기 표시됩니다</div>';
+                characterContainer.appendChild(faceContent);
+                
+                // 의상/액세서리 탭 컨텐츠
+                const clothingContent = document.createElement('div');
+                clothingContent.className = 'sub-tab-content';
+                clothingContent.dataset.category = '2';
+                clothingContent.style.display = 'none';
+                clothingContent.innerHTML = '<div style="padding: 20px; color: var(--text-secondary);">의상/액세서리 옵션이 여기 표시됩니다</div>';
+                characterContainer.appendChild(clothingContent);
+                
+                promptCardsGrid.appendChild(characterContainer);
+                
+            } else {
+                // 일반이미지 탭 컨테이너
+                const generalContainer = document.createElement('div');
+                generalContainer.className = 'general-container';
+                
+                // 일반 하위 탭
+                const subTabs = document.createElement('div');
+                subTabs.className = 'general-sub-tabs';
+                subTabs.innerHTML = `
+                    <div class="sub-tab-buttons">
+                        <button type="button" class="sub-tab-button active" data-category="0" onclick="switchGeneralSubTab(0)">스타일/매체</button>
+                        <button type="button" class="sub-tab-button" data-category="1" onclick="switchGeneralSubTab(1)">장면/환경</button>
+                        <button type="button" class="sub-tab-button" data-category="2" onclick="switchGeneralSubTab(2)">카메라/조명</button>
+                    </div>
+                `;
+                generalContainer.appendChild(subTabs);
+                
+                // 스타일/매체 탭 컨텐츠
+                const styleContent = document.createElement('div');
+                styleContent.className = 'sub-tab-content active';
+                styleContent.dataset.category = '0';
+                
+                // 드롭다운 컨테이너들 생성
+                ['STYLE', 'MEDIUM', 'ERA/CULTURAL_REF', 'COLOR_TONE', 'QUALITY'].forEach((key, index) => {
+                    const container = createDropdownContainer(key, index + 1, structure[key] || '', dropdownOptions[key] || []);
+                    styleContent.appendChild(container);
+                });
+                
+                generalContainer.appendChild(styleContent);
+                
+                // 장면/환경 탭 컨텐츠
+                const sceneContent = document.createElement('div');
+                sceneContent.className = 'sub-tab-content';
+                sceneContent.dataset.category = '1';
+                sceneContent.style.display = 'none';
+                
+                ['BACKGROUND', 'LIGHTING', 'ATMOSPHERE'].forEach((key, index) => {
+                    const container = createDropdownContainer(key, index + 7, structure[key] || '', dropdownOptions[key] || []);
+                    sceneContent.appendChild(container);
+                });
+                generalContainer.appendChild(sceneContent);
+                
+                // 카메라/조명 탭 컨텐츠
+                const cameraContent = document.createElement('div');
+                cameraContent.className = 'sub-tab-content';
+                cameraContent.dataset.category = '2';
+                cameraContent.style.display = 'none';
+                
+                ['CAMERA', 'LIGHTING', 'COLOR_TONE'].forEach((key, index) => {
+                    const container = createDropdownContainer(key, index + 10, structure[key] || '', dropdownOptions[key] || []);
+                    cameraContent.appendChild(container);
+                });
+                generalContainer.appendChild(cameraContent);
+                
+                promptCardsGrid.appendChild(generalContainer);
+            }
+        }
+        
+        // 드롭다운 컨테이너 생성 함수
+        function createDropdownContainer(key, number, value, options) {
+            const container = document.createElement('div');
+            container.className = 'dropdown-container';
+            container.dataset.key = key;
+            
+            const header = document.createElement('div');
+            header.className = 'dropdown-header';
+            header.onclick = () => toggleDropdown(container);
+            
+            const titleText = koreanTitles[key] || key;
+            
+            header.innerHTML = `
+                <div class="dropdown-title">
+                    <span class="dropdown-number">${number}</span>
+                    <span>${titleText}</span>
+                </div>
+                <i class="ti ti-chevron-down dropdown-arrow"></i>
+            `;
+            
+            const content = document.createElement('div');
+            content.className = 'dropdown-content';
+            
+            const fields = document.createElement('div');
+            fields.className = 'dropdown-fields';
+            
+            // 기존내용 필드
+            const existingField = createField('기존내용', key, value, options, 'existing');
+            fields.appendChild(existingField);
+            
+            // 변경요청 필드
+            const requestField = createField('변경요청', key + '-request', '', options, 'request');
+            fields.appendChild(requestField);
+            
+            // 변경반영 필드
+            const appliedField = createField('변경반영', key + '-applied', '', options, 'applied');
+            fields.appendChild(appliedField);
+            
+            content.appendChild(fields);
+            container.appendChild(header);
+            container.appendChild(content);
+            
+            return container;
+        }
+        
+        // 필드 생성 함수
+        function createField(label, inputKey, value, options, fieldType) {
+            const field = document.createElement('div');
+            field.className = 'dropdown-field';
+            
+            const labelContainer = document.createElement('div');
+            labelContainer.className = 'dropdown-field-label-with-buttons';
+            
+            const labelElement = document.createElement('label');
+            labelElement.className = 'dropdown-field-label';
+            labelElement.textContent = label;
+            
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'field-action-buttons';
+            
+            if (fieldType === 'applied') {
+                const saveBtn = document.createElement('button');
+                saveBtn.className = 'btn-field-action btn-save';
+                saveBtn.textContent = '저장';
+                saveBtn.onclick = () => saveFieldValue(inputKey);
+                
+                const aiBtn = document.createElement('button');
+                aiBtn.className = 'btn-field-action btn-ai-save';
+                aiBtn.textContent = 'AI저장';
+                aiBtn.onclick = () => aiSaveFieldValue(inputKey);
+                
+                buttonContainer.appendChild(saveBtn);
+                buttonContainer.appendChild(aiBtn);
+            }
+            
+            labelContainer.appendChild(labelElement);
+            labelContainer.appendChild(buttonContainer);
+            field.appendChild(labelContainer);
+            
+            const inputWrapper = document.createElement('div');
+            inputWrapper.className = 'select-input-wrapper';
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'dropdown-field-input with-select';
+            input.dataset.key = inputKey;
+            input.value = value;
+            input.placeholder = `${label} 입력...`;
+            input.onchange = () => updateStructureValue(inputKey, input.value);
+            
+            inputWrapper.appendChild(input);
+            
+            if (options && options.length > 0) {
+                const toggleBtn = document.createElement('button');
+                toggleBtn.className = 'dropdown-toggle-btn';
+                toggleBtn.innerHTML = '<i class="ti ti-chevron-down"></i>';
+                toggleBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleStyleDropdown(toggleBtn);
+                };
+                
+                const dropdown = createStyleDropdown(options, inputKey);
+                inputWrapper.appendChild(toggleBtn);
+                inputWrapper.appendChild(dropdown);
+            }
+            
+            field.appendChild(inputWrapper);
+            
+            return field;
+        }
+        
+        // 스타일 드롭다운 생성 함수
+        function createStyleDropdown(options, inputKey) {
+            const dropdown = document.createElement('div');
+            dropdown.className = 'style-options-dropdown';
+            
+            const search = document.createElement('div');
+            search.className = 'style-options-search';
+            search.innerHTML = '<input type="text" placeholder="검색..." oninput="filterStyleOptions(this)">';
+            
+            const list = document.createElement('div');
+            list.className = 'style-options-list';
+            
+            options.forEach(option => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'style-option';
+                optionElement.textContent = option;
+                optionElement.onclick = () => selectStyleOption(optionElement, option, inputKey);
+                list.appendChild(optionElement);
+            });
+            
+            dropdown.appendChild(search);
+            dropdown.appendChild(list);
+            
+            return dropdown;
+        }
+        
+        // 필드 값 저장 함수
+        function saveFieldValue(inputKey) {
+            const input = document.querySelector(`input[data-key="${inputKey}"]`);
+            if (input) {
+                promptData.structuredPrompt[inputKey] = input.value;
+                saveToLocalStorage();
+                showToast('저장되었습니다', 'success');
+            }
+        }
+        
+        // AI 저장 함수
+        function aiSaveFieldValue(inputKey) {
+            const input = document.querySelector(`input[data-key="${inputKey}"]`);
+            if (input) {
+                // AI 처리 시뮬레이션
+                showToast('AI가 처리중입니다...', 'info');
+                setTimeout(() => {
+                    input.value = input.value + ' (AI Enhanced)';
+                    promptData.structuredPrompt[inputKey] = input.value;
+                    saveToLocalStorage();
+                    showToast('AI 저장 완료', 'success');
+                }, 1000);
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toast-icon');
+            const toastMessage = document.getElementById('toast-message');
+            
+            toast.className = `toast ${type} show`;
+            toastMessage.textContent = message;
+            
+            if (type === 'success') {
+                toastIcon.className = 'ti ti-check';
+            } else if (type === 'error') {
+                toastIcon.className = 'ti ti-x';
+            } else {
+                toastIcon.className = 'ti ti-info-circle';
+            }
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('promptBuilderData', JSON.stringify(promptData));
+        }
+
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('promptBuilderData');
+            if (saved) {
+                promptData = JSON.parse(saved);
+                if (promptData.textInput) {
+                    promptPreview.innerText = promptData.textInput;
+                }
+                if (Object.keys(promptData.structuredPrompt).length > 0) {
+                    createPromptCards(promptData.structuredPrompt);
+                }
+            }
+        }
+
+        function clearPromptInput() {
+            promptPreview.innerText = '';
+            promptData.textInput = '';
+            saveToLocalStorage();
+            showToast('프롬프트가 초기화되었습니다', 'success');
+        }
+
+        function importPromptFromPreview() {
+            const text = promptPreview.innerText.trim();
+            if (!text) {
+                showToast('가져올 프롬프트가 없습니다.', 'error');
+                return;
+            }
+            
+            const structure = parsePrompt(text);
+            promptData.structuredPrompt = structure;
+            createPromptCards(structure);
+            saveToLocalStorage();
+            showToast('프롬프트를 구조로 변환했습니다.', 'success');
+        }
+
+        function toggleDropdown(container) {
+            const isActive = container.classList.contains('active');
+            
+            document.querySelectorAll('.dropdown-container.active').forEach(c => {
+                c.classList.remove('active');
+            });
+            
+            if (!isActive) {
+                container.classList.add('active');
+            }
+        }
+
+        function toggleStyleDropdown(button) {
+            const wrapper = button.closest('.select-input-wrapper');
+            const dropdown = wrapper.querySelector('.style-options-dropdown');
+            const isVisible = dropdown.style.display === 'block';
+            
+            document.querySelectorAll('.style-options-dropdown').forEach(d => {
+                d.style.display = 'none';
+            });
+            document.querySelectorAll('.dropdown-toggle-btn').forEach(b => {
+                b.classList.remove('active');
+            });
+            
+            if (!isVisible) {
+                dropdown.style.display = 'block';
+                button.classList.add('active');
+                const searchInput = dropdown.querySelector('.style-options-search input');
+                if (searchInput) {
+                    searchInput.focus();
+                }
+            }
+        }
+
+        function selectStyleOption(element, value, inputKey) {
+            const wrapper = element.closest('.select-input-wrapper');
+            const input = wrapper.querySelector('.dropdown-field-input');
+            const dropdown = wrapper.querySelector('.style-options-dropdown');
+            
+            input.value = value;
+            
+            wrapper.querySelectorAll('.style-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            
+            dropdown.style.display = 'none';
+            wrapper.querySelector('.dropdown-toggle-btn').classList.remove('active');
+            
+            updateStructureValue(inputKey, value);
+        }
+
+        function filterStyleOptions(input) {
+            const searchText = input.value.toLowerCase();
+            const options = input.closest('.style-options-dropdown').querySelectorAll('.style-option');
+            
+            options.forEach(option => {
+                const text = option.textContent.toLowerCase();
+                option.classList.toggle('hidden', !text.includes(searchText));
+            });
+        }
+
+        function updateStructureValue(key, value) {
+            promptData.structuredPrompt[key] = value;
+            saveToLocalStorage();
+        }
+
+        function closeAIModal() {
+            document.getElementById('aiModal').classList.remove('show');
+        }
+
+        function saveAIConfig() {
+            const provider = document.getElementById('api-provider').value;
+            const key = document.getElementById('api-key').value;
+            const model = document.getElementById('api-model').value;
+            
+            if (!provider || !key || !model) {
+                showToast('모든 필드를 입력해주세요', 'error');
+                return;
+            }
+            
+            const config = { provider, key, model };
+            localStorage.setItem('aiApiConfig', JSON.stringify(config));
+            closeAIModal();
+            showToast('AI 설정이 저장되었습니다', 'success');
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFromLocalStorage();
+            
+            // 프롬프트 입력 이벤트
+            promptPreview.addEventListener('input', function() {
+                userEditingPreview = true;
+                promptData.textInput = this.innerText;
+                saveToLocalStorage();
+            });
+            
+            // 생성 버튼 이벤트
+            generateBtn.addEventListener('click', function() {
+                const text = promptData.textInput || promptPreview.innerText.trim();
+                
+                if (!text) {
+                    showToast('프롬프트를 입력해주세요.', 'error');
+                    return;
+                }
+                
+                const prompt = enhancePrompt(text);
+                promptData.generatedPrompts.push({
+                    timestamp: new Date().toISOString(),
+                    input: text,
+                    output: prompt
+                });
+                saveToLocalStorage();
+                displayFinalPrompt(prompt);
+            });
+            
+            // 복사 버튼 이벤트
+            copyFinalPromptBtn.addEventListener('click', function() {
+                const text = finalPromptText.value;
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('프롬프트가 복사되었습니다!', 'success');
+                }).catch(() => {
+                    showToast('복사에 실패했습니다.', 'error');
+                });
+            });
+            
+            // AI 연동 버튼 이벤트
+            aiConnectBtn.addEventListener('click', function() {
+                document.getElementById('aiModal').classList.add('show');
+            });
+            
+            // API 제공자 변경 이벤트
+            document.getElementById('api-provider').addEventListener('change', function() {
+                const modelSelect = document.getElementById('api-model');
+                modelSelect.innerHTML = '';
+                
+                if (this.value === 'openai') {
+                    modelSelect.innerHTML = `
+                        <option value="gpt-4">GPT-4</option>
+                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                    `;
+                } else if (this.value === 'anthropic') {
+                    modelSelect.innerHTML = `
+                        <option value="claude-3-opus">Claude 3 Opus</option>
+                        <option value="claude-3-sonnet">Claude 3 Sonnet</option>
+                    `;
+                } else if (this.value === 'google') {
+                    modelSelect.innerHTML = `
+                        <option value="gemini-pro">Gemini Pro</option>
+                        <option value="gemini-pro-vision">Gemini Pro Vision</option>
+                    `;
+                }
+            });
+            
+            // 외부 클릭시 드롭다운 닫기
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.select-input-wrapper')) {
+                    document.querySelectorAll('.style-options-dropdown').forEach(d => {
+                        d.style.display = 'none';
+                    });
+                    document.querySelectorAll('.dropdown-toggle-btn').forEach(b => {
+                        b.classList.remove('active');
+                    });
+                }
+            });
+        });
+
+        // AI 프롬프트 생성 함수
+        window.generateAIPrompt = function() {
+            const text = promptData.textInput || promptPreview.innerText.trim();
+            
+            if (!text) {
+                showToast('프롬프트를 입력해주세요.', 'error');
+                return;
+            }
+            
+            showToast('AI가 프롬프트를 생성중입니다...', 'info');
+            
+            // AI 처리 시뮬레이션
+            setTimeout(() => {
+                const aiEnhanced = enhancePrompt(text) + ', masterpiece, best quality';
+                displayFinalPrompt(aiEnhanced);
+                showToast('AI 프롬프트가 생성되었습니다!', 'success');
+            }, 1500);
+        };
+    </script>
+</body>
+</html>

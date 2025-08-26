@@ -115,16 +115,24 @@
             box-shadow: var(--shadow-small);
         }
         
-        /* Two Column Layout */
-        .builder-layout {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: var(--space-xl);
+        /* Prompt Input/Output Section */
+        .prompt-input-output-section {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: var(--space-lg) var(--space-lg) 0;
         }
         
-        @media (max-width: 1024px) {
-            .builder-layout {
+        .prompt-input-output-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-lg);
+            margin-bottom: var(--space-xl);
+        }
+        
+        @media (max-width: 768px) {
+            .prompt-input-output-grid {
                 grid-template-columns: 1fr;
+                gap: var(--space-md);
             }
         }
         
@@ -151,6 +159,37 @@
             }
         }
         
+        /* Responsive Improvements */
+        @media (max-width: 640px) {
+            .builder-section {
+                padding: var(--space-md);
+            }
+            
+            .modern-card {
+                padding: var(--space-md);
+            }
+            
+            .category-tabs {
+                flex-direction: column;
+            }
+            
+            .category-tab {
+                width: 100%;
+                justify-content: flex-start;
+                padding: 12px 16px;
+            }
+            
+            .option-chip {
+                font-size: 12px;
+                padding: 6px 12px;
+            }
+            
+            .preview-panel {
+                position: static;
+                margin-top: var(--space-lg);
+            }
+        }
+        
         /* Preview Panel */
         .preview-panel {
             position: sticky;
@@ -162,43 +201,49 @@
         .option-group {
             display: flex;
             flex-wrap: wrap;
-            gap: var(--space-sm);
+            gap: var(--space-xs);
+            padding: var(--space-xs) 0;
         }
         
         .option-chip {
-            padding: var(--space-xs) var(--space-md);
-            background: var(--bg-tertiary);
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.03);
             border: 1px solid var(--border-primary);
-            border-radius: 20px;
+            border-radius: 24px;
             color: var(--text-secondary);
-            font-size: var(--font-size-small);
+            font-size: 13px;
+            font-weight: 500;
             cursor: pointer;
             transition: all var(--duration-quick) var(--ease-out-quad);
             position: relative;
+            user-select: none;
+            white-space: nowrap;
         }
         
         .option-chip:hover {
-            background: var(--bg-quaternary);
+            background: rgba(255, 255, 255, 0.08);
             border-color: var(--border-secondary);
             color: var(--text-primary);
             transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
         
         .option-chip.selected {
-            background: rgba(99, 102, 241, 0.15);
+            background: rgba(99, 102, 241, 0.2);
             border-color: var(--color-brand);
             color: var(--color-brand);
+            font-weight: 600;
         }
         
         .option-chip.selected::after {
             content: '✓';
             position: absolute;
-            top: -6px;
-            right: -6px;
+            top: -4px;
+            right: -4px;
             background: var(--color-brand);
             color: white;
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -206,10 +251,95 @@
             font-size: 10px;
         }
         
+        /* Modern Card Improvements */
+        .modern-card {
+            background: rgba(20, 20, 20, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: var(--space-lg);
+            transition: all var(--duration-normal) var(--ease-out-quad);
+        }
+        
+        .modern-card:hover {
+            background: rgba(20, 20, 20, 0.8);
+            border-color: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        
+        .modern-card-header {
+            padding-bottom: var(--space-md);
+            margin-bottom: var(--space-md);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        
+        .modern-card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+            margin-bottom: 4px;
+        }
+        
+        .modern-card-description {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin: 0;
+        }
+        
+        .modern-card-content {
+            color: var(--text-secondary);
+        }
+        
+        /* Custom Prompt Section Improvements */
+        .custom-prompt-section {
+            margin-top: var(--space-lg);
+        }
+        
+        .modern-textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: var(--text-primary);
+            font-family: var(--font-family);
+            font-size: 14px;
+            resize: vertical;
+            min-height: 80px;
+            transition: all var(--duration-quick) var(--ease-out-quad);
+        }
+        
+        .modern-textarea:focus {
+            outline: none;
+            border-color: var(--color-brand);
+            background: rgba(0, 0, 0, 0.5);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        .modern-textarea::placeholder {
+            color: var(--text-quaternary);
+        }
+        
+        /* Prompt Preview Section */
+        .preview-panel .modern-card {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(99, 102, 241, 0.05));
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            position: sticky;
+            top: 100px;
+        }
+        
+        .preview-panel .modern-card:hover {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(99, 102, 241, 0.08));
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+        
         /* Prompt Preview */
         .prompt-preview {
-            background: var(--bg-primary);
-            border: 1px solid var(--border-primary);
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 8px;
             padding: var(--space-lg);
             min-height: 150px;
@@ -236,6 +366,47 @@
             display: flex;
             gap: var(--space-sm);
             flex-wrap: wrap;
+        }
+        
+        /* Modern Button Improvements */
+        .modern-button--sm {
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+        
+        .modern-button--primary {
+            background: var(--color-brand);
+            color: white;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+        }
+        
+        .modern-button--primary:hover {
+            background: var(--color-brand-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+        }
+        
+        .modern-button--secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+            border: 1px solid var(--border-secondary);
+        }
+        
+        .modern-button--secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: var(--border-tertiary);
+            transform: translateY(-1px);
+        }
+        
+        .modern-button--danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--status-error);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        
+        .modern-button--danger:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.3);
         }
         
         /* Toast Notification */
@@ -357,6 +528,71 @@
     
     <!-- Main Content -->
     <main class="main-content">
+        <!-- Prompt Input/Output Section -->
+        <div style="max-width: 1280px; margin: 0 auto; padding: var(--space-lg) var(--space-lg) 0;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg); margin-bottom: var(--space-xl);">
+                <!-- Prompt Input Section -->
+                <div style="background: #0a0a0a; border: 1px solid #262626; border-radius: 16px; padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h3 style="font-size: 14px; font-weight: 500; color: #e5e5e5; margin: 0;">프롬프트 입력</h3>
+                    </div>
+                    <textarea id="prompt-input" 
+                             style="width: 100%; background: rgba(20, 20, 20, 0.5); border: 1px solid #262626; border-radius: 8px; padding: 12px; min-height: 100px; font-size: 14px; line-height: 1.6; color: #a3a3a3; outline: none; resize: none; font-family: inherit; margin-bottom: 20px; transition: all 0.2s; box-sizing: border-box;"
+                             placeholder="프롬프트를 직접 입력하거나 아래 옵션을 선택하세요..."
+                             onfocus="this.style.borderColor='#404040'"
+                             onblur="this.style.borderColor='#262626'"></textarea>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button onclick="importToInput()" style="padding: 8px 16px; background: transparent; border: 1px solid #404040; border-radius: 8px; color: #e5e5e5; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;"
+                                onmouseover="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.borderColor='#525252';"
+                                onmouseout="this.style.background='transparent'; this.style.borderColor='#404040';">
+                            <i class="ti ti-download" style="font-size: 16px;"></i>
+                            가져오기
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Generated Prompt Section -->
+                <div style="background: #0a0a0a; border: 1px solid #262626; border-radius: 16px; padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <div>
+                            <h3 style="font-size: 14px; font-weight: 500; color: #e5e5e5; margin: 0;">생성된 프롬프트</h3>
+                        </div>
+                    </div>
+                    <textarea id="promptPreview" 
+                             style="width: 100%; background: rgba(20, 20, 20, 0.5); border: 1px solid #262626; border-radius: 8px; padding: 12px; min-height: 100px; font-size: 14px; line-height: 1.6; color: #a3a3a3; outline: none; resize: none; font-family: inherit; margin-bottom: 20px; transition: all 0.2s; box-sizing: border-box;"
+                             placeholder="여기에 생성된 프롬프트가 표시됩니다..."
+                             onfocus="this.style.borderColor='#404040'"
+                             onblur="this.style.borderColor='#262626'"></textarea>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button onclick="copyPrompt()" style="padding: 8px 16px; background: #5B5FC6; border: none; border-radius: 8px; color: white; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;"
+                                onmouseover="this.style.background='#6B6FD6';" 
+                                onmouseout="this.style.background='#5B5FC6';">
+                            <i class="ti ti-copy" style="font-size: 16px;"></i>
+                            복사
+                        </button>
+                        <button onclick="importFromPreview()" style="padding: 8px 16px; background: transparent; border: 1px solid #404040; border-radius: 8px; color: #e5e5e5; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;"
+                                onmouseover="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.borderColor='#525252';" 
+                                onmouseout="this.style.background='transparent'; this.style.borderColor='#404040';">
+                            <i class="ti ti-download" style="font-size: 16px;"></i>
+                            가져오기
+                        </button>
+                        <button onclick="generateAIPrompt()" style="padding: 8px 16px; background: #10B981; border: none; border-radius: 8px; color: white; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;"
+                                onmouseover="this.style.background='#20C997';" 
+                                onmouseout="this.style.background='#10B981';">
+                            <i class="ti ti-refresh" style="font-size: 16px;"></i>
+                            재생성
+                        </button>
+                        <button onclick="clearPrompt()" style="padding: 8px 16px; background: transparent; border: 1px solid #404040; border-radius: 8px; color: #EF4444; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;"
+                                onmouseover="this.style.background='rgba(239, 68, 68, 0.1)'; this.style.borderColor='#EF4444';" 
+                                onmouseout="this.style.background='transparent'; this.style.borderColor='#404040';">
+                            <i class="ti ti-trash" style="font-size: 16px;"></i>
+                            초기화
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Builder Section -->
         <section class="builder-section">
             <!-- Category Tabs -->
@@ -383,8 +619,8 @@
                 </button>
             </div>
             
-            <!-- Two Column Layout -->
-            <div class="builder-layout">
+            <!-- Single Column Layout (Preview moved to top) -->
+            <div>
                 <!-- Options Panel -->
                 <div class="options-panel">
                     <!-- Subject Category Content -->
@@ -598,123 +834,6 @@
                         </div>
                     </div>
                 </div>
-                
-                <!-- Preview Panel -->
-                <div class="preview-panel">
-                    <div class="modern-card modern-card--elevated" style="padding: var(--space-md);">
-                        <div class="modern-card-header" style="padding-bottom: var(--space-sm); margin-bottom: var(--space-md);">
-                            <h3 class="modern-card-title" style="font-size: var(--font-size-medium);">생성된 프롬프트</h3>
-                            <p class="modern-card-description" style="margin-top: 2px; font-size: var(--font-size-mini);">AI 이미지 생성용 최종 프롬프트</p>
-                        </div>
-                        <div class="modern-card-content" style="padding: 0;">
-                            <div class="prompt-preview" id="promptPreview" 
-                                 contenteditable="true" 
-                                 spellcheck="false"
-                                 style="min-height: 100px; padding: var(--space-md); position: relative; font-size: var(--font-size-small); line-height: 1.6; outline: none;"
-                                 data-placeholder="여기에 프롬프트를 입력하거나 아래 옵션을 선택하세요..."></div>
-                        </div>
-                        <div class="modern-card-footer" style="padding-top: var(--space-sm); margin-top: var(--space-md); border-top-color: var(--border-primary);">
-                            <div class="action-buttons" style="display: flex; gap: var(--space-xs); flex-wrap: wrap;">
-                                <button class="modern-button modern-button--primary modern-button--sm" onclick="copyPrompt()" style="height: 28px; font-size: var(--font-size-small);">
-                                    <i class="ti ti-copy" style="font-size: 14px;"></i>
-                                    복사
-                                </button>
-                                <button class="modern-button modern-button--secondary modern-button--sm" onclick="importFromPreview()" style="height: 28px; font-size: var(--font-size-small);">
-                                    <i class="ti ti-download" style="font-size: 14px;"></i>
-                                    가져오기
-                                </button>
-                                <button class="modern-button modern-button--success modern-button--sm" onclick="generateAIPrompt()" style="height: 28px; font-size: var(--font-size-small); background: var(--status-success); border-color: var(--status-success);">
-                                    <i class="ti ti-sparkles" style="font-size: 14px;"></i>
-                                    AI 생성
-                                </button>
-                                <button class="modern-button modern-button--ghost modern-button--sm" onclick="savePrompt()" style="height: 28px; font-size: var(--font-size-small);">
-                                    <i class="ti ti-bookmark" style="font-size: 14px;"></i>
-                                    저장
-                                </button>
-                                <button class="modern-button modern-button--danger modern-button--sm" onclick="clearPrompt()" style="height: 28px; font-size: var(--font-size-small);">
-                                    <i class="ti ti-trash" style="font-size: 14px;"></i>
-                                    초기화
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Structure Editor -->
-                    <div class="modern-card modern-mt-lg">
-                        <div class="modern-card-header">
-                            <h3 class="modern-card-title">🎯 프롬프트 구조 편집기</h3>
-                            <p class="modern-card-description">세부 요소를 편집하여 정교한 프롬프트를 만드세요</p>
-                        </div>
-                        <div class="modern-card-content">
-                            <div class="modern-tabs">
-                                <div class="modern-tab-list">
-                                    <button class="modern-tab modern-tab--active" onclick="switchStructureTab('character')">캐릭터</button>
-                                    <button class="modern-tab" onclick="switchStructureTab('general')">일반이미지</button>
-                                </div>
-                            </div>
-                            <div id="structure-content" class="modern-mt-md">
-                                <!-- Dynamic content will be loaded here -->
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Negative Prompt -->
-                    <div class="modern-card modern-mt-lg">
-                        <div class="modern-card-header">
-                            <h3 class="modern-card-title">네거티브 프롬프트</h3>
-                            <p class="modern-card-description">제외하고 싶은 요소들</p>
-                        </div>
-                        <div class="modern-card-content">
-                            <div class="option-group">
-                                <div class="option-chip" data-negative="low quality">저품질</div>
-                                <div class="option-chip" data-negative="blurry">흐림</div>
-                                <div class="option-chip" data-negative="bad anatomy">잘못된 해부학</div>
-                                <div class="option-chip" data-negative="extra limbs">추가 사지</div>
-                                <div class="option-chip" data-negative="watermark">워터마크</div>
-                                <div class="option-chip" data-negative="text">텍스트</div>
-                                <div class="option-chip" data-negative="ugly">못생긴</div>
-                                <div class="option-chip" data-negative="duplicate">중복</div>
-                            </div>
-                            <div class="modern-input-group modern-mt-md">
-                                <textarea class="modern-textarea" 
-                                         id="negativePrompt" 
-                                         rows="2" 
-                                         placeholder="네거티브 프롬프트를 입력하세요..."></textarea>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Model Parameters -->
-                    <div class="modern-card modern-mt-lg">
-                        <div class="modern-card-header">
-                            <h3 class="modern-card-title">모델 매개변수</h3>
-                        </div>
-                        <div class="modern-card-content">
-                            <div class="modern-input-group">
-                                <label class="modern-input-label">Aspect Ratio</label>
-                                <div class="option-group">
-                                    <div class="option-chip selected" data-ar="--ar 16:9">16:9</div>
-                                    <div class="option-chip" data-ar="--ar 1:1">1:1</div>
-                                    <div class="option-chip" data-ar="--ar 4:3">4:3</div>
-                                    <div class="option-chip" data-ar="--ar 3:4">3:4</div>
-                                    <div class="option-chip" data-ar="--ar 9:16">9:16</div>
-                                </div>
-                            </div>
-                            <div class="modern-input-group modern-mt-md">
-                                <label class="modern-input-label">Version</label>
-                                <div class="option-group">
-                                    <div class="option-chip selected" data-version="--v 6">V6</div>
-                                    <div class="option-chip" data-version="--v 5.2">V5.2</div>
-                                    <div class="option-chip" data-version="--niji 6">Niji 6</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-    
     <!-- Toast Notification -->
     <div class="toast" id="toast">
         <i class="ti ti-check" id="toastIcon"></i>
@@ -728,6 +847,11 @@
         let currentModel = 'midjourney';
         let aspectRatio = '--ar 16:9';
         let version = '--v 6';
+        
+        // Load initial structure content on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            loadCharacterStructure();
+        });
         
         // Category Tab Switching
         document.querySelectorAll('.category-tab').forEach(tab => {
@@ -893,12 +1017,23 @@
         function switchStructureTab(tab) {
             // Update tab states
             document.querySelectorAll('.modern-tab').forEach(t => {
-                t.classList.remove('modern-tab--active');
+                t.style.background = 'var(--bg-tertiary)';
+                t.style.color = 'var(--text-secondary)';
+                t.style.border = '1px solid var(--border-primary)';
             });
-            event.target.classList.add('modern-tab--active');
+            
+            // Find and activate the clicked tab
+            const tabs = document.querySelectorAll('.modern-tab');
+            tabs.forEach(t => {
+                if ((tab === 'character' && t.textContent.includes('캐릭터')) ||
+                    (tab === 'general' && t.textContent.includes('일반'))) {
+                    t.style.background = 'var(--color-brand)';
+                    t.style.color = 'white';
+                    t.style.border = 'none';
+                }
+            });
             
             // Load appropriate content
-            const contentDiv = document.getElementById('structure-content');
             if (tab === 'character') {
                 loadCharacterStructure();
             } else {
@@ -912,20 +1047,20 @@
             contentDiv.innerHTML = `
                 <div class="structure-fields">
                     <div class="field-group">
-                        <label class="field-label">캐릭터 유형</label>
-                        <input type="text" class="modern-input" placeholder="예: 젊은 여성, 노인, 어린이">
+                        <label class="field-label" style="display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-primary); font-weight: 600;">캐릭터 유형</label>
+                        <input type="text" class="modern-input" placeholder="예: 젊은 여성, 노인, 어린이" style="width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 12px 16px; color: var(--text-primary); font-size: 14px;">
                     </div>
                     <div class="field-group modern-mt-md">
-                        <label class="field-label">외모 특징</label>
-                        <input type="text" class="modern-input" placeholder="예: 긴 머리, 파란 눈, 미소">
+                        <label class="field-label" style="display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-primary); font-weight: 600;">외모 특징</label>
+                        <input type="text" class="modern-input" placeholder="예: 긴 머리, 파란 눈, 미소" style="width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 12px 16px; color: var(--text-primary); font-size: 14px;">
                     </div>
                     <div class="field-group modern-mt-md">
-                        <label class="field-label">의상</label>
-                        <input type="text" class="modern-input" placeholder="예: 빨간 드레스, 정장, 캐주얼">
+                        <label class="field-label" style="display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-primary); font-weight: 600;">의상</label>
+                        <input type="text" class="modern-input" placeholder="예: 빨간 드레스, 정장, 캐주얼" style="width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 12px 16px; color: var(--text-primary); font-size: 14px;">
                     </div>
                     <div class="field-group modern-mt-md">
-                        <label class="field-label">포즈/동작</label>
-                        <input type="text" class="modern-input" placeholder="예: 서있는, 앉아있는, 뛰는">
+                        <label class="field-label" style="display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-primary); font-weight: 600;">포즈/동작</label>
+                        <input type="text" class="modern-input" placeholder="예: 서있는, 앉아있는, 뛰는" style="width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 12px 16px; color: var(--text-primary); font-size: 14px;">
                     </div>
                 </div>
             `;
@@ -972,6 +1107,16 @@
             });
         }
         
+        // Clear prompt input
+        function clearPromptInput() {
+            const promptInput = document.getElementById('prompt-input');
+            if (promptInput) {
+                promptInput.innerText = '';
+                promptInput.classList.remove('has-content');
+            }
+            showToast('프롬프트 입력이 초기화되었습니다', 'success');
+        }
+        
         // Clear prompt
         function clearPrompt() {
             selectedOptions.clear();
@@ -993,6 +1138,44 @@
             
             updatePromptPreview();
             showToast('초기화되었습니다', 'success');
+        }
+        
+        // Import from preview
+        function importFromPreview() {
+            const promptInput = document.getElementById('prompt-input');
+            const promptPreview = document.getElementById('promptPreview');
+            
+            if (promptInput && promptPreview) {
+                const previewText = promptPreview.value || promptPreview.textContent;
+                if (previewText && previewText.trim() !== '') {
+                    promptInput.value = previewText;
+                    showToast('프롬프트를 가져왔습니다', 'success');
+                } else {
+                    showToast('가져올 프롬프트가 없습니다', 'error');
+                }
+            }
+        }
+        
+        // Import to input (from generated prompt to input)
+        function importToInput() {
+            const promptInput = document.getElementById('prompt-input');
+            const promptPreview = document.getElementById('promptPreview');
+            
+            if (promptInput && promptPreview) {
+                const previewText = promptPreview.value || promptPreview.textContent;
+                if (previewText && previewText.trim() !== '') {
+                    promptInput.value = previewText;
+                    showToast('생성된 프롬프트를 입력란으로 가져왔습니다', 'success');
+                } else {
+                    showToast('가져올 프롬프트가 없습니다', 'error');
+                }
+            }
+        }
+        
+        // Generate AI prompt (placeholder)
+        function generateAIPrompt() {
+            showToast('AI 프롬프트 생성 기능은 준비 중입니다', 'info');
+            // TODO: Implement AI generation logic
         }
         
         // Save prompt

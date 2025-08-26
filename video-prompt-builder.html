@@ -452,9 +452,9 @@
                 </div>
                 <div class="modern-card-content" style="padding: 0;">
                     <div class="prompt-preview" id="videoPromptPreview" style="min-height: 80px; padding: var(--space-md);">
-                        <button class="edit-prompt-btn" id="editPromptBtn" onclick="toggleEditMode()">
-                            <i class="ti ti-edit" id="editIcon"></i>
-                            <span id="editBtnText">수정</span>
+                        <button class="edit-prompt-btn" onclick="clearVideoPrompt()">
+                            <i class="ti ti-trash"></i>
+                            <span>초기화</span>
                         </button>
                         <span class="prompt-preview-text" id="promptText" style="font-size: var(--font-size-small);">여기에 생성된 비디오 프롬프트가 표시됩니다...</span>
                         <textarea class="prompt-preview-editor" id="promptEditor" style="min-height: 80px; font-size: var(--font-size-small);"></textarea>
@@ -466,17 +466,9 @@
                             <i class="ti ti-copy" style="font-size: 14px;"></i>
                             복사
                         </button>
-                        <button class="modern-button modern-button--secondary modern-button--sm" onclick="generateVariation()" style="height: 28px; font-size: var(--font-size-small);">
-                            <i class="ti ti-refresh" style="font-size: 14px;"></i>
-                            변형 생성
-                        </button>
-                        <button class="modern-button modern-button--ghost modern-button--sm" onclick="saveVideoPrompt()" style="height: 28px; font-size: var(--font-size-small);">
-                            <i class="ti ti-bookmark" style="font-size: 14px;"></i>
-                            저장
-                        </button>
-                        <button class="modern-button modern-button--danger modern-button--sm" onclick="clearVideoPrompt()" style="height: 28px; font-size: var(--font-size-small);">
-                            <i class="ti ti-trash" style="font-size: 14px;"></i>
-                            초기화
+                        <button class="modern-button modern-button--secondary modern-button--sm" id="editPromptBtn" onclick="toggleEditMode()" style="height: 28px; font-size: var(--font-size-small);">
+                            <i class="ti ti-edit" id="editIcon" style="font-size: 14px;"></i>
+                            <span id="editBtnText">수정</span>
                         </button>
                     </div>
                 </div>
