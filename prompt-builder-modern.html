@@ -70,11 +70,35 @@
             padding-top: 80px;
             min-height: 100vh;
         }
+        
+        /* Hero Section */
+        .hero-section {
+            padding: var(--space-2xl) var(--space-lg);
+            text-align: center;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+            border-bottom: 1px solid var(--border-primary);
+        }
+        
+        .hero-title {
+            font-size: var(--font-size-heading);
+            font-weight: 700;
+            margin-bottom: var(--space-sm);
+            background: linear-gradient(135deg, var(--color-brand), #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero-subtitle {
+            font-size: var(--font-size-medium);
+            color: var(--text-secondary);
+        }
+        
         /* Prompt Builder Section */
         .builder-section {
             max-width: 1280px;
             margin: 0 auto;
-            padding: var(--space-l) var(--space-lg);
+            padding: var(--space-2xl) var(--space-lg);
         }
         
         /* Category Tabs */
@@ -115,78 +139,35 @@
             box-shadow: var(--shadow-small);
         }
         
-        /* Prompt Input/Output Section */
-        .prompt-input-output-section {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: var(--space-lg) var(--space-lg) 0;
-        }
-        
-        .prompt-input-output-grid {
+        /* Two Column Layout */
+        .builder-layout {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: var(--space-lg);
-            margin-bottom: var(--space-xl);
+            gap: var(--space-xl);
         }
         
-        @media (max-width: 768px) {
-            .prompt-input-output-grid {
+        @media (max-width: 1024px) {
+            .builder-layout {
                 grid-template-columns: 1fr;
-                gap: var(--space-md);
             }
         }
         
         /* Options Panel */
         .options-panel {
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-lg);
-        }
-        
-        .category-content {
-            display: none;
-        }
-        
-        .category-content.active {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: var(--space-lg);
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--space-md);
+        }
+        
+        @media (max-width: 1200px) {
+            .options-panel {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
         
         @media (max-width: 768px) {
-            .category-content.active {
+            .options-panel {
                 grid-template-columns: 1fr;
-            }
-        }
-        
-        /* Responsive Improvements */
-        @media (max-width: 640px) {
-            .builder-section {
-                padding: var(--space-md);
-            }
-            
-            .modern-card {
-                padding: var(--space-md);
-            }
-            
-            .category-tabs {
-                flex-direction: column;
-            }
-            
-            .category-tab {
-                width: 100%;
-                justify-content: flex-start;
-                padding: 12px 16px;
-            }
-            
-            .option-chip {
-                font-size: 12px;
-                padding: 6px 12px;
-            }
-            
-            .preview-panel {
-                position: static;
-                margin-top: var(--space-lg);
             }
         }
         
@@ -201,49 +182,43 @@
         .option-group {
             display: flex;
             flex-wrap: wrap;
-            gap: var(--space-xs);
-            padding: var(--space-xs) 0;
+            gap: var(--space-sm);
         }
         
         .option-chip {
-            padding: 8px 16px;
-            background: rgba(255, 255, 255, 0.03);
+            padding: var(--space-xs) var(--space-md);
+            background: var(--bg-tertiary);
             border: 1px solid var(--border-primary);
-            border-radius: 24px;
+            border-radius: 20px;
             color: var(--text-secondary);
-            font-size: 13px;
-            font-weight: 500;
+            font-size: var(--font-size-small);
             cursor: pointer;
             transition: all var(--duration-quick) var(--ease-out-quad);
             position: relative;
-            user-select: none;
-            white-space: nowrap;
         }
         
         .option-chip:hover {
-            background: rgba(255, 255, 255, 0.08);
+            background: var(--bg-quaternary);
             border-color: var(--border-secondary);
             color: var(--text-primary);
             transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
         
         .option-chip.selected {
-            background: rgba(99, 102, 241, 0.2);
+            background: rgba(99, 102, 241, 0.15);
             border-color: var(--color-brand);
             color: var(--color-brand);
-            font-weight: 600;
         }
         
         .option-chip.selected::after {
             content: '✓';
             position: absolute;
-            top: -4px;
-            right: -4px;
+            top: -6px;
+            right: -6px;
             background: var(--color-brand);
             color: white;
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -251,114 +226,21 @@
             font-size: 10px;
         }
         
-        /* Modern Card Improvements */
-        .modern-card {
-            background: rgba(20, 20, 20, 0.6);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-            padding: var(--space-lg);
-            transition: all var(--duration-normal) var(--ease-out-quad);
-        }
-        
-        .modern-card:hover {
-            background: rgba(20, 20, 20, 0.8);
-            border-color: rgba(255, 255, 255, 0.12);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-        }
-        
-        .modern-card-header {
-            padding-bottom: var(--space-md);
-            margin-bottom: var(--space-md);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-        }
-        
-        .modern-card-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin: 0;
-            margin-bottom: 4px;
-        }
-        
-        .modern-card-description {
-            font-size: 12px;
-            color: var(--text-tertiary);
-            margin: 0;
-        }
-        
-        .modern-card-content {
-            color: var(--text-secondary);
-        }
-        
-        /* Custom Prompt Section Improvements */
-        .custom-prompt-section {
-            margin-top: var(--space-lg);
-        }
-        
-        .modern-textarea {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 12px 16px;
-            color: var(--text-primary);
-            font-family: var(--font-family);
-            font-size: 14px;
-            resize: vertical;
-            min-height: 80px;
-            transition: all var(--duration-quick) var(--ease-out-quad);
-        }
-        
-        .modern-textarea:focus {
-            outline: none;
-            border-color: var(--color-brand);
-            background: rgba(0, 0, 0, 0.5);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-        }
-        
-        .modern-textarea::placeholder {
-            color: var(--text-quaternary);
-        }
-        
-        /* Prompt Preview Section */
-        .preview-panel .modern-card {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(99, 102, 241, 0.05));
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            position: sticky;
-            top: 100px;
-        }
-        
-        .preview-panel .modern-card:hover {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(99, 102, 241, 0.08));
-            border-color: rgba(99, 102, 241, 0.3);
-        }
-        
         /* Prompt Preview */
         .prompt-preview {
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
             padding: var(--space-lg);
             min-height: 150px;
-            font-size: var(--font-size-small);
-            line-height: 1.5;
+            font-size: var(--font-size-regular);
+            line-height: 1.6;
             color: var(--text-primary);
-            position: relative;
         }
         
-        /* Contenteditable placeholder */
-        .prompt-preview:empty:before {
-            content: attr(data-placeholder);
+        .prompt-preview:empty::after {
+            content: '생성된 프롬프트가 여기에 표시됩니다...';
             color: var(--text-tertiary);
-            pointer-events: none;
-        }
-        
-        .prompt-preview:focus {
-            border-color: var(--color-brand) !important;
-            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
         }
         
         /* Action Buttons */
@@ -366,47 +248,6 @@
             display: flex;
             gap: var(--space-sm);
             flex-wrap: wrap;
-        }
-        
-        /* Modern Button Improvements */
-        .modern-button--sm {
-            padding: 8px 16px;
-            font-size: 13px;
-        }
-        
-        .modern-button--primary {
-            background: var(--color-brand);
-            color: white;
-            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
-        }
-        
-        .modern-button--primary:hover {
-            background: var(--color-brand-hover);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
-        }
-        
-        .modern-button--secondary {
-            background: rgba(255, 255, 255, 0.08);
-            color: var(--text-primary);
-            border: 1px solid var(--border-secondary);
-        }
-        
-        .modern-button--secondary:hover {
-            background: rgba(255, 255, 255, 0.12);
-            border-color: var(--border-tertiary);
-            transform: translateY(-1px);
-        }
-        
-        .modern-button--danger {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--status-error);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-        }
-        
-        .modern-button--danger:hover {
-            background: rgba(239, 68, 68, 0.2);
-            border-color: rgba(239, 68, 68, 0.3);
         }
         
         /* Toast Notification */
@@ -528,73 +369,44 @@
     
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Prompt Input/Output Section -->
-        <div style="max-width: 1280px; margin: 0 auto; padding: var(--space-lg) var(--space-lg) 0;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg); margin-bottom: var(--space-xl);">
-                <!-- Prompt Input Section -->
-                <div style="background: #0a0a0a; border: 1px solid #262626; border-radius: 16px; padding: 20px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                        <h3 style="font-size: 14px; font-weight: 500; color: #e5e5e5; margin: 0;">프롬프트 입력</h3>
-                    </div>
-                    <textarea id="prompt-input" 
-                             style="width: 100%; background: rgba(20, 20, 20, 0.5); border: 1px solid #262626; border-radius: 8px; padding: 12px; min-height: 100px; font-size: 14px; line-height: 1.6; color: #a3a3a3; outline: none; resize: none; font-family: inherit; margin-bottom: 20px; transition: all 0.2s; box-sizing: border-box;"
-                             placeholder="프롬프트를 직접 입력하거나 아래 옵션을 선택하세요..."
-                             onfocus="this.style.borderColor='#404040'"
-                             onblur="this.style.borderColor='#262626'"></textarea>
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <button onclick="importToInput()" style="padding: 8px 16px; background: transparent; border: 1px solid #404040; border-radius: 8px; color: #e5e5e5; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;"
-                                onmouseover="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.borderColor='#525252';"
-                                onmouseout="this.style.background='transparent'; this.style.borderColor='#404040';">
-                            <i class="ti ti-download" style="font-size: 16px;"></i>
-                            가져오기
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Generated Prompt Section -->
-                <div style="background: #0a0a0a; border: 1px solid #262626; border-radius: 16px; padding: 20px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                        <div>
-                            <h3 style="font-size: 14px; font-weight: 500; color: #e5e5e5; margin: 0;">생성된 프롬프트</h3>
-                        </div>
-                    </div>
-                    <textarea id="promptPreview" 
-                             style="width: 100%; background: rgba(20, 20, 20, 0.5); border: 1px solid #262626; border-radius: 8px; padding: 12px; min-height: 100px; font-size: 14px; line-height: 1.6; color: #a3a3a3; outline: none; resize: none; font-family: inherit; margin-bottom: 20px; transition: all 0.2s; box-sizing: border-box;"
-                             placeholder="여기에 생성된 프롬프트가 표시됩니다..."
-                             onfocus="this.style.borderColor='#404040'"
-                             onblur="this.style.borderColor='#262626'"></textarea>
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <button onclick="copyPrompt()" style="padding: 8px 16px; background: #5B5FC6; border: none; border-radius: 8px; color: white; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;"
-                                onmouseover="this.style.background='#6B6FD6';" 
-                                onmouseout="this.style.background='#5B5FC6';">
-                            <i class="ti ti-copy" style="font-size: 16px;"></i>
-                            복사
-                        </button>
-                        <button onclick="importFromPreview()" style="padding: 8px 16px; background: transparent; border: 1px solid #404040; border-radius: 8px; color: #e5e5e5; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;"
-                                onmouseover="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.borderColor='#525252';" 
-                                onmouseout="this.style.background='transparent'; this.style.borderColor='#404040';">
-                            <i class="ti ti-download" style="font-size: 16px;"></i>
-                            가져오기
-                        </button>
-                        <button onclick="generateAIPrompt()" style="padding: 8px 16px; background: #10B981; border: none; border-radius: 8px; color: white; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;"
-                                onmouseover="this.style.background='#20C997';" 
-                                onmouseout="this.style.background='#10B981';">
-                            <i class="ti ti-refresh" style="font-size: 16px;"></i>
-                            재생성
-                        </button>
-                        <button onclick="clearPrompt()" style="padding: 8px 16px; background: transparent; border: 1px solid #404040; border-radius: 8px; color: #EF4444; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;"
-                                onmouseover="this.style.background='rgba(239, 68, 68, 0.1)'; this.style.borderColor='#EF4444';" 
-                                onmouseout="this.style.background='transparent'; this.style.borderColor='#404040';">
-                            <i class="ti ti-trash" style="font-size: 16px;"></i>
-                            초기화
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <h1 class="hero-title">AI 이미지 프롬프트 빌더</h1>
+            <p class="hero-subtitle">강력한 AI 이미지를 위한 완벽한 프롬프트를 생성하세요</p>
+        </section>
         
         <!-- Builder Section -->
         <section class="builder-section">
+            <!-- Model Selector -->
+            <div class="modern-card modern-card--elevated">
+                <div class="modern-card-header">
+                    <h3 class="modern-card-title">AI 모델 선택</h3>
+                    <p class="modern-card-description">사용할 AI 모델을 선택하세요</p>
+                </div>
+                <div class="model-selector">
+                    <button class="model-chip active" data-model="midjourney">
+                        <i class="ti ti-brand-medium"></i>
+                        Midjourney
+                    </button>
+                    <button class="model-chip" data-model="dalle">
+                        <i class="ti ti-brand-openai"></i>
+                        DALL-E 3
+                    </button>
+                    <button class="model-chip" data-model="stable">
+                        <i class="ti ti-atom"></i>
+                        Stable Diffusion
+                    </button>
+                    <button class="model-chip" data-model="flux">
+                        <i class="ti ti-sparkles"></i>
+                        Flux
+                    </button>
+                    <button class="model-chip" data-model="leonardo">
+                        <i class="ti ti-brush"></i>
+                        Leonardo AI
+                    </button>
+                </div>
+            </div>
+            
             <!-- Category Tabs -->
             <div class="category-tabs">
                 <button class="category-tab active" data-category="subject">
@@ -619,8 +431,8 @@
                 </button>
             </div>
             
-            <!-- Single Column Layout (Preview moved to top) -->
-            <div>
+            <!-- Two Column Layout -->
+            <div class="builder-layout">
                 <!-- Options Panel -->
                 <div class="options-panel">
                     <!-- Subject Category Content -->
@@ -834,6 +646,92 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Preview Panel -->
+                <div class="preview-panel">
+                    <div class="modern-card modern-card--elevated">
+                        <div class="modern-card-header">
+                            <h3 class="modern-card-title">생성된 프롬프트</h3>
+                            <p class="modern-card-description">선택한 옵션들이 자동으로 조합됩니다</p>
+                        </div>
+                        <div class="modern-card-content">
+                            <div class="prompt-preview" id="promptPreview"></div>
+                        </div>
+                        <div class="modern-card-footer">
+                            <div class="action-buttons">
+                                <button class="modern-button modern-button--primary modern-button--md" onclick="copyPrompt()">
+                                    <i class="ti ti-copy"></i>
+                                    복사하기
+                                </button>
+                                <button class="modern-button modern-button--secondary modern-button--md" onclick="clearPrompt()">
+                                    <i class="ti ti-trash"></i>
+                                    초기화
+                                </button>
+                                <button class="modern-button modern-button--ghost modern-button--md" onclick="savePrompt()">
+                                    <i class="ti ti-bookmark"></i>
+                                    저장
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Negative Prompt -->
+                    <div class="modern-card modern-mt-lg">
+                        <div class="modern-card-header">
+                            <h3 class="modern-card-title">네거티브 프롬프트</h3>
+                            <p class="modern-card-description">제외하고 싶은 요소들</p>
+                        </div>
+                        <div class="modern-card-content">
+                            <div class="option-group">
+                                <div class="option-chip" data-negative="low quality">저품질</div>
+                                <div class="option-chip" data-negative="blurry">흐림</div>
+                                <div class="option-chip" data-negative="bad anatomy">잘못된 해부학</div>
+                                <div class="option-chip" data-negative="extra limbs">추가 사지</div>
+                                <div class="option-chip" data-negative="watermark">워터마크</div>
+                                <div class="option-chip" data-negative="text">텍스트</div>
+                                <div class="option-chip" data-negative="ugly">못생긴</div>
+                                <div class="option-chip" data-negative="duplicate">중복</div>
+                            </div>
+                            <div class="modern-input-group modern-mt-md">
+                                <textarea class="modern-textarea" 
+                                         id="negativePrompt" 
+                                         rows="2" 
+                                         placeholder="네거티브 프롬프트를 입력하세요..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Model Parameters -->
+                    <div class="modern-card modern-mt-lg">
+                        <div class="modern-card-header">
+                            <h3 class="modern-card-title">모델 매개변수</h3>
+                        </div>
+                        <div class="modern-card-content">
+                            <div class="modern-input-group">
+                                <label class="modern-input-label">Aspect Ratio</label>
+                                <div class="option-group">
+                                    <div class="option-chip selected" data-ar="--ar 16:9">16:9</div>
+                                    <div class="option-chip" data-ar="--ar 1:1">1:1</div>
+                                    <div class="option-chip" data-ar="--ar 4:3">4:3</div>
+                                    <div class="option-chip" data-ar="--ar 3:4">3:4</div>
+                                    <div class="option-chip" data-ar="--ar 9:16">9:16</div>
+                                </div>
+                            </div>
+                            <div class="modern-input-group modern-mt-md">
+                                <label class="modern-input-label">Version</label>
+                                <div class="option-group">
+                                    <div class="option-chip selected" data-version="--v 6">V6</div>
+                                    <div class="option-chip" data-version="--v 5.2">V5.2</div>
+                                    <div class="option-chip" data-version="--niji 6">Niji 6</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
     <!-- Toast Notification -->
     <div class="toast" id="toast">
         <i class="ti ti-check" id="toastIcon"></i>
@@ -847,11 +745,6 @@
         let currentModel = 'midjourney';
         let aspectRatio = '--ar 16:9';
         let version = '--v 6';
-        
-        // Load initial structure content on page load
-        window.addEventListener('DOMContentLoaded', function() {
-            loadCharacterStructure();
-        });
         
         // Category Tab Switching
         document.querySelectorAll('.category-tab').forEach(tab => {
@@ -944,22 +837,7 @@
                 if (version) finalPrompt += ' ' + version;
             }
             
-            const promptTextElement = document.getElementById('promptText');
-            if (promptTextElement) {
-                if (finalPrompt) {
-                    promptTextElement.textContent = finalPrompt;
-                } else {
-                    promptTextElement.textContent = '여기에 생성된 이미지 프롬프트가 표시됩니다...';
-                }
-            }
-            
-            // Update editor if in edit mode
-            if (isEditMode) {
-                const promptEditor = document.getElementById('promptEditor');
-                if (promptEditor) {
-                    promptEditor.value = finalPrompt || '';
-                }
-            }
+            document.getElementById('promptPreview').textContent = finalPrompt || '';
         }
         
         // Update negative prompt
@@ -968,134 +846,10 @@
             document.getElementById('negativePrompt').value = negativeParts.join(', ');
         }
         
-        // Contenteditable prompt input
-        const promptPreview = document.getElementById('promptPreview');
-        
-        // Monitor input changes
-        promptPreview.addEventListener('input', function() {
-            // Auto-update based on input
-            const text = this.innerText || this.textContent;
-            if (text.trim()) {
-                // Remove placeholder appearance
-                this.classList.remove('empty');
-            } else {
-                this.classList.add('empty');
-            }
-        });
-        
-        // Import from preview
-        function importFromPreview() {
-            const promptText = promptPreview.innerText || promptPreview.textContent;
-            if (!promptText || promptText.trim() === '') {
-                showToast('가져올 프롬프트가 없습니다', 'error');
-                return;
-            }
-            
-            // Parse and populate structure fields
-            // This would analyze the prompt and fill in the structure editor
-            showToast('프롬프트를 구조 편집기로 가져왔습니다', 'success');
-        }
-        
-        // Generate AI Prompt
-        function generateAIPrompt() {
-            // Simulate AI generation
-            const templates = [
-                'A stunning portrait of a young woman with flowing hair, dramatic lighting, professional photography',
-                'Ethereal fantasy landscape with floating islands, magical atmosphere, vibrant colors',
-                'Cyberpunk cityscape at night, neon lights, rain-soaked streets, futuristic architecture',
-                'Majestic dragon soaring through cloudy skies, epic scale, detailed scales and wings'
-            ];
-            
-            const randomTemplate = templates[Math.floor(Math.random() * templates.length)];
-            promptPreview.innerText = randomTemplate;
-            promptPreview.classList.remove('empty');
-            
-            showToast('AI 프롬프트가 생성되었습니다', 'success');
-        }
-        
-        // Switch structure tab
-        function switchStructureTab(tab) {
-            // Update tab states
-            document.querySelectorAll('.modern-tab').forEach(t => {
-                t.style.background = 'var(--bg-tertiary)';
-                t.style.color = 'var(--text-secondary)';
-                t.style.border = '1px solid var(--border-primary)';
-            });
-            
-            // Find and activate the clicked tab
-            const tabs = document.querySelectorAll('.modern-tab');
-            tabs.forEach(t => {
-                if ((tab === 'character' && t.textContent.includes('캐릭터')) ||
-                    (tab === 'general' && t.textContent.includes('일반'))) {
-                    t.style.background = 'var(--color-brand)';
-                    t.style.color = 'white';
-                    t.style.border = 'none';
-                }
-            });
-            
-            // Load appropriate content
-            if (tab === 'character') {
-                loadCharacterStructure();
-            } else {
-                loadGeneralStructure();
-            }
-        }
-        
-        // Load character structure
-        function loadCharacterStructure() {
-            const contentDiv = document.getElementById('structure-content');
-            contentDiv.innerHTML = `
-                <div class="structure-fields">
-                    <div class="field-group">
-                        <label class="field-label" style="display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-primary); font-weight: 600;">캐릭터 유형</label>
-                        <input type="text" class="modern-input" placeholder="예: 젊은 여성, 노인, 어린이" style="width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 12px 16px; color: var(--text-primary); font-size: 14px;">
-                    </div>
-                    <div class="field-group modern-mt-md">
-                        <label class="field-label" style="display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-primary); font-weight: 600;">외모 특징</label>
-                        <input type="text" class="modern-input" placeholder="예: 긴 머리, 파란 눈, 미소" style="width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 12px 16px; color: var(--text-primary); font-size: 14px;">
-                    </div>
-                    <div class="field-group modern-mt-md">
-                        <label class="field-label" style="display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-primary); font-weight: 600;">의상</label>
-                        <input type="text" class="modern-input" placeholder="예: 빨간 드레스, 정장, 캐주얼" style="width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 12px 16px; color: var(--text-primary); font-size: 14px;">
-                    </div>
-                    <div class="field-group modern-mt-md">
-                        <label class="field-label" style="display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-primary); font-weight: 600;">포즈/동작</label>
-                        <input type="text" class="modern-input" placeholder="예: 서있는, 앉아있는, 뛰는" style="width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 12px 16px; color: var(--text-primary); font-size: 14px;">
-                    </div>
-                </div>
-            `;
-        }
-        
-        // Load general structure
-        function loadGeneralStructure() {
-            const contentDiv = document.getElementById('structure-content');
-            contentDiv.innerHTML = `
-                <div class="structure-fields">
-                    <div class="field-group">
-                        <label class="field-label">주제</label>
-                        <input type="text" class="modern-input" placeholder="예: 풍경, 건물, 정물화">
-                    </div>
-                    <div class="field-group modern-mt-md">
-                        <label class="field-label">스타일</label>
-                        <input type="text" class="modern-input" placeholder="예: 사실적, 만화, 수채화">
-                    </div>
-                    <div class="field-group modern-mt-md">
-                        <label class="field-label">분위기</label>
-                        <input type="text" class="modern-input" placeholder="예: 평화로운, 드라마틱, 신비로운">
-                    </div>
-                    <div class="field-group modern-mt-md">
-                        <label class="field-label">조명</label>
-                        <input type="text" class="modern-input" placeholder="예: 자연광, 스튜디오 조명, 황금 시간대">
-                    </div>
-                </div>
-            `;
-        }
-        
         // Copy prompt
         function copyPrompt() {
-            const promptText = promptPreview.innerText || promptPreview.textContent;
-            
-            if (!promptText || promptText.trim() === '') {
+            const promptText = document.getElementById('promptPreview').textContent;
+            if (!promptText) {
                 showToast('복사할 프롬프트가 없습니다', 'error');
                 return;
             }
@@ -1107,16 +861,6 @@
             });
         }
         
-        // Clear prompt input
-        function clearPromptInput() {
-            const promptInput = document.getElementById('prompt-input');
-            if (promptInput) {
-                promptInput.innerText = '';
-                promptInput.classList.remove('has-content');
-            }
-            showToast('프롬프트 입력이 초기화되었습니다', 'success');
-        }
-        
         // Clear prompt
         function clearPrompt() {
             selectedOptions.clear();
@@ -1126,69 +870,14 @@
             });
             document.getElementById('customPrompt').value = '';
             document.getElementById('negativePrompt').value = '';
-            
-            // Clear the prompt preview
-            promptPreview.innerText = '';
-            promptPreview.classList.add('empty');
-            
-            // Clear structure fields
-            document.querySelectorAll('.modern-input').forEach(input => {
-                input.value = '';
-            });
-            
             updatePromptPreview();
             showToast('초기화되었습니다', 'success');
         }
         
-        // Import from preview
-        function importFromPreview() {
-            const promptInput = document.getElementById('prompt-input');
-            const promptPreview = document.getElementById('promptPreview');
-            
-            if (promptInput && promptPreview) {
-                const previewText = promptPreview.value || promptPreview.textContent;
-                if (previewText && previewText.trim() !== '') {
-                    promptInput.value = previewText;
-                    showToast('프롬프트를 가져왔습니다', 'success');
-                } else {
-                    showToast('가져올 프롬프트가 없습니다', 'error');
-                }
-            }
-        }
-        
-        // Import to input (from generated prompt to input)
-        function importToInput() {
-            const promptInput = document.getElementById('prompt-input');
-            const promptPreview = document.getElementById('promptPreview');
-            
-            if (promptInput && promptPreview) {
-                const previewText = promptPreview.value || promptPreview.textContent;
-                if (previewText && previewText.trim() !== '') {
-                    promptInput.value = previewText;
-                    showToast('생성된 프롬프트를 입력란으로 가져왔습니다', 'success');
-                } else {
-                    showToast('가져올 프롬프트가 없습니다', 'error');
-                }
-            }
-        }
-        
-        // Generate AI prompt (placeholder)
-        function generateAIPrompt() {
-            showToast('AI 프롬프트 생성 기능은 준비 중입니다', 'info');
-            // TODO: Implement AI generation logic
-        }
-        
         // Save prompt
         function savePrompt() {
-            // Exit edit mode if active and save changes
-            if (isEditMode) {
-                toggleEditMode();
-            }
-            
-            const promptTextElement = document.getElementById('promptText');
-            const promptText = promptTextElement ? promptTextElement.textContent : '';
-            
-            if (!promptText || promptText === '여기에 생성된 이미지 프롬프트가 표시됩니다...') {
+            const promptText = document.getElementById('promptPreview').textContent;
+            if (!promptText) {
                 showToast('저장할 프롬프트가 없습니다', 'error');
                 return;
             }

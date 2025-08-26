@@ -147,18 +147,12 @@
         /* Scene Controls */
         .scene-controls {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: var(--space-md);
             width: 100%;
         }
         
-        @media (max-width: 1400px) {
-            .scene-controls {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-        
-        @media (max-width: 1024px) {
+        @media (max-width: 1200px) {
             .scene-controls {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -613,6 +607,23 @@
                                 <div class="transition-chip" data-transition="wipe">와이프</div>
                                 <div class="transition-chip" data-transition="morph">모프</div>
                                 <div class="transition-chip" data-transition="match-cut">매치 컷</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 5. Duration Settings -->
+                    <div class="modern-card">
+                        <div class="modern-card-header">
+                            <h3 class="modern-card-title">5. 지속 시간</h3>
+                            <p class="modern-card-description">비디오 클립의 길이를 설정하세요</p>
+                        </div>
+                        <div class="modern-card-content">
+                            <input type="range" class="duration-slider" id="duration" 
+                                   min="3" max="30" value="10" step="1">
+                            <div class="duration-display">
+                                <span>3초</span>
+                                <span id="durationValue">10초</span>
+                                <span>30초</span>
                             </div>
                         </div>
                     </div>
