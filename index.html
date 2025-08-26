@@ -339,11 +339,11 @@
                             </div>
                             <span class="tool-arrow">→</span>
                         </a>
-                        <a href="https://aififrame.netlify.app/" target="_blank" class="tool-item">
-                            <span class="tool-icon tool-icon-frame"></span>
+                        <a href="https://www.midjourney.com/home" target="_blank" class="tool-item">
+                            <span class="tool-icon tool-icon-midjourney"></span>
                             <div class="tool-info">
-                                <h4>프레임 추출기</h4>
-                                <p>비디오 프레임 추출</p>
+                                <h4>미드저니</h4>
+                                <p>바로가기</p>
                             </div>
                             <span class="tool-arrow">→</span>
                         </a>
@@ -352,21 +352,37 @@
                 
                 <!-- Development Tools -->
                 <div class="tool-category">
-                    <h3 class="tool-category-title">개발 도구</h3>
+                    <h3 class="tool-category-title">유용한툴</h3>
                     <div class="tool-items">
-                        <a href="https://jsoneditoronline.org/" target="_blank" class="tool-item">
-                            <span class="tool-icon tool-icon-json"></span>
-                            <div class="tool-info">
-                                <h4>JSON 에디터</h4>
-                                <p>데이터 편집 도구</p>
-                            </div>
-                            <span class="tool-arrow">→</span>
-                        </a>
                         <a href="https://midstudy.netlify.app/" target="_blank" class="tool-item">
                             <span class="tool-icon tool-icon-prompt-builder"></span>
                             <div class="tool-info">
                                 <h4>프롬프트 빌더</h4>
                                 <p>미드저니 SREF</p>
+                            </div>
+                            <span class="tool-arrow">→</span>
+                        </a>
+                        <a href="https://aififrame.netlify.app/" target="_blank" class="tool-item">
+                            <span class="tool-icon tool-icon-frame"></span>
+                            <div class="tool-info">
+                                <h4>프레임 추출기</h4>
+                                <p>비디오 프레임 추출</p>
+                            </div>
+                            <span class="tool-arrow">→</span>
+                        </a>
+                        <a href="https://www.deepl.com/ko/translator" target="_blank" class="tool-item">
+                            <span class="tool-icon tool-icon-translator"></span>
+                            <div class="tool-info">
+                                <h4>번역 프로그램</h4>
+                                <p>DeepL</p>
+                            </div>
+                            <span class="tool-arrow">→</span>
+                        </a>
+                        <a href="https://jsoneditoronline.org/" target="_blank" class="tool-item">
+                            <span class="tool-icon tool-icon-json"></span>
+                            <div class="tool-info">
+                                <h4>JSON 에디터</h4>
+                                <p>데이터 편집 도구</p>
                             </div>
                             <span class="tool-arrow">→</span>
                         </a>
@@ -878,6 +894,22 @@
                 toolIconPromptBuilder.innerHTML = getTablerIcon('sparkles', 24);
                 if (!toolIconPromptBuilder.innerHTML || toolIconPromptBuilder.innerHTML === '') {
                     toolIconPromptBuilder.innerHTML = getTablerIcon('edit', 24);
+                }
+            }
+            
+            const toolIconTranslator = document.querySelector('.tool-icon-translator');
+            if (toolIconTranslator) {
+                toolIconTranslator.innerHTML = getTablerIcon('world', 24);
+                if (!toolIconTranslator.innerHTML || toolIconTranslator.innerHTML === '') {
+                    toolIconTranslator.innerHTML = getTablerIcon('fileText', 24);
+                }
+            }
+            
+            const toolIconMidjourney = document.querySelector('.tool-icon-midjourney');
+            if (toolIconMidjourney) {
+                toolIconMidjourney.innerHTML = getTablerIcon('palette', 24);
+                if (!toolIconMidjourney.innerHTML || toolIconMidjourney.innerHTML === '') {
+                    toolIconMidjourney.innerHTML = getTablerIcon('photo', 24);
                 }
             }
         });
