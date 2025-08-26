@@ -6639,7 +6639,16 @@ try {
                                     }
                                     
                                     newData.shots.forEach(shotData => {
-                                        const shotId = shotData.shot_id;
+                                        // shot_id를 일관된 형식으로 처리
+                                        let shotId = shotData.shot_id;
+                                        
+                                        // shot_id가 숫자만 있는 경우 "shot_" 접두사 추가
+                                        if (/^\d+$/.test(shotId)) {
+                                            const paddedNumber = shotId.padStart(2, '0');
+                                            shotId = `shot_${paddedNumber}`;
+                                            console.log(`📌 Stage 6 Shot ID 형식 변환: ${shotData.shot_id} → ${shotId}`);
+                                        }
+                                        
                                         console.log(`📌 Stage 6 처리 중 - Shot ID: ${shotId}`);
                                         console.log(`   - 이미지 수: ${shotData.images?.length || 0}`);
                                         
