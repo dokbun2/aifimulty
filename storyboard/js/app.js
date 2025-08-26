@@ -3820,6 +3820,8 @@ console.log('🔍 Stage 5 CSV 데이터 확인:', shot.id, Object.keys(csvMappin
 const stage6Data = window.stage6ImagePrompts || {};
 const shotStage6Data = stage6Data[shot.id] || {};
 console.log('🔍 Stage 6 데이터 확인:', shot.id, Object.keys(shotStage6Data).length, 'images');
+console.log('📊 Stage 6 전체 데이터:', window.stage6ImagePrompts);
+console.log('📊 현재 샷의 Stage 6 데이터:', shotStage6Data);
 
 // 플랜별 이미지 프롬프트 데이터 가져오기
 const imagePromptsByPlan = shot.image_prompts_by_plan || {
@@ -3832,6 +3834,8 @@ console.log('📋 플랜별 이미지 프롬프트:', {
     'Plan B': Object.keys(imagePromptsByPlan.plan_b).length,
     'Plan C': Object.keys(imagePromptsByPlan.plan_c).length
 });
+console.log('📊 샷의 image_prompts 데이터:', shot.image_prompts);
+console.log('📊 샷의 전체 데이터:', shot);
 
 let planSelectorHtml = '';
 let selectedPlanData = null;
@@ -3985,14 +3989,18 @@ let aiSectionsHtml = '';
 						let hasPrompt = false;
 						if (ai.id === 'universal') {
 							// universal은 문자열로 직접 저장되거나 universal_translated와 함께 있음
-							hasPrompt = !!(imageStage6Data.prompts?.universal || imageStage6Data.prompts?.universal_translated || hasStage5Prompt);
+							hasPrompt = !!(imageStage6Data.prompts?.universal || imageStage6Data.prompts?.universal_translated || 
+							              shot.image_prompts?.universal || hasStage5Prompt);
 						} else if (ai.id === 'nanobabana') {
 							// nanobabana도 문자열로 직접 저장되거나 nanobabana_translated와 함께 있음
 							hasPrompt = !!(imageStage6Data.prompts?.nanobabana || imageStage6Data.prompts?.nanobabana_translated || 
-							              shot.image_prompts?.nanobabana?.main_prompt);
+							              shot.image_prompts?.nanobabana?.main_prompt || shot.image_prompts?.nanobabana);
 						} else {
 							const imagePrompts = imageStage6Data.prompts?.[ai.id] || {};
-							hasPrompt = !!(imagePrompts.prompt || imagePrompts.main_prompt);
+							// shot.image_prompts에서도 확인
+							const shotImagePrompts = shot.image_prompts?.[ai.id] || {};
+							hasPrompt = !!(imagePrompts.prompt || imagePrompts.main_prompt || 
+							              shotImagePrompts.prompt || shotImagePrompts.main_prompt);
 						}
 						
 						// 수정된 프롬프트도 확인
@@ -4064,7 +4072,7 @@ let aiSectionsHtml = '';
 						const imageCsvData = csvMapping[dataLookupId] || csvMapping[imageId] || {};
 						console.log(`  🖼️ AI: ${ai.name}, Plan ${planImage.planId}, Image ${imgIdx + 1}:`, imageId, 'has Stage6:', !!imageStage6Data.prompts, 'has Stage5:', !!imageCsvData.SCENE);
 						
-						let imagePrompts = imageStage6Data.prompts?.[ai.id] || {};
+						let imagePrompts = imageStage6Data.prompts?.[ai.id] || shot.image_prompts?.[ai.id] || {};
 						
 						// universal 프롬프트 특별 처리
 						if (ai.id === 'universal') {
