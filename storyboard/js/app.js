@@ -1409,17 +1409,38 @@ function createTestData() {
    if (!file) { 
        return; 
    }
+   
+   // 파일 크기 체크 (50MB 제한)
+   const maxSize = 50 * 1024 * 1024; // 50MB
+   if (file.size > maxSize) {
+       showMessage(`파일 크기가 너무 큽니다. 최대 50MB까지 가능합니다. (현재: ${(file.size / 1024 / 1024).toFixed(2)}MB)`, 'error');
+       event.target.value = '';
+       return;
+   }
+   
+   console.log(`📁 파일 업로드 시작: ${file.name} (${(file.size / 1024).toFixed(2)}KB)`);
 
    const reader = new FileReader();
+   reader.onerror = function(error) {
+       console.error('파일 읽기 오류:', error);
+       showMessage('파일을 읽는 중 오류가 발생했습니다.', 'error');
+       event.target.value = '';
+   };
+   
    reader.onload = function(e) {
        try {
+           console.log('📖 파일 읽기 완료, JSON 파싱 시작...');
 					// 새로운 실용적 JSON 핸들러 사용
 					const result = practicalJSONHandler(e.target.result);
 
 					if (!result.success) {
+						console.error('❌ JSON 파싱 실패:', result.error || 'Unknown error');
+						showMessage('JSON 파일 형식이 올바르지 않습니다. 콘솔에서 자세한 내용을 확인하세요.', 'error');
 						event.target.value = '';
 						return;
 					}
+					
+					console.log('✅ JSON 파싱 성공');
 
 					const newData = result.data;
 					let updated = false;
@@ -2131,16 +2152,13 @@ function createTestData() {
            }
 
        } catch (parseError) {
+           console.error('❌ JSON 파싱 오류:', parseError);
            showMessage(`JSON 파싱 오류: ${parseError.message}`, 'error');
+           event.target.value = '';
        }
    };
    
-   reader.onerror = function(error) {
-       showMessage('파일 읽기 오류', 'error');
-   };
-   
    reader.readAsText(file);
-   event.target.value = '';
        }
    // 새로운 함수: Stage 2 데이터 처리
 			function handleStage2Data(jsonData) {
