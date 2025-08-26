@@ -2810,36 +2810,67 @@ document.addEventListener('DOMContentLoaded', function() {
             isPlayAttempted = false;
         });
         
+        // Dropbox URL 에러 처리 및 재시도 로직
+        let retryCount = 0;
+        const maxRetries = 2;
+        const fallbackVideoUrl = 'hero-background.mp4'; // 로컬 파일 폴백
+        
         heroVideo.addEventListener('error', (e) => {
             const error = heroVideo.error;
             console.error('❌ 비디오 에러:', {
                 code: error?.code,
                 message: error?.message,
-                src: heroVideo.currentSrc
+                src: heroVideo.currentSrc,
+                retryCount: retryCount
             });
             
             // 에러 코드별 처리
-            if (error?.code === 4) {
-                console.error('지원되지 않는 비디오 형식 또는 파일을 찾을 수 없음');
+            if (error?.code === 4 || error?.code === 2) {
+                console.error('네트워크 에러 또는 파일을 찾을 수 없음');
                 
-                // 비디오 요소에 에러 클래스 추가
-                heroVideo.classList.add('error');
-                
-                // 히어로 섹션에 비디오 에러 클래스 추가 (폴백 배경 활성화)
-                const heroSection = document.querySelector('.hero-section');
-                if (heroSection) {
-                    heroSection.classList.add('video-error');
-                }
-                
-                // 대체 비디오 시도
-                const sources = heroVideo.querySelectorAll('source');
-                if (sources.length > 1 && !heroVideo.dataset.fallbackTried) {
-                    console.log('🔄 대체 비디오 소스 시도');
-                    heroVideo.dataset.fallbackTried = 'true';
-                    sources[0].remove(); // 첫 번째 소스 제거
-                    heroVideo.load(); // 다시 로드
+                // Dropbox URL 실패 시 재시도
+                if (retryCount < maxRetries && heroVideo.currentSrc.includes('dropbox.com')) {
+                    retryCount++;
+                    console.log(`🔄 Dropbox 비디오 재시도 ${retryCount}/${maxRetries}`);
+                    
+                    // 잠시 대기 후 재시도
+                    setTimeout(() => {
+                        heroVideo.load();
+                        heroVideo.play().catch(e => console.log('재시도 실패:', e));
+                    }, 1000 * retryCount); // 점진적 대기
+                    
+                } else if (heroVideo.currentSrc.includes('dropbox.com')) {
+                    // Dropbox 실패 후 로컬 폴백
+                    console.log('📁 로컬 비디오로 폴백');
+                    const sources = heroVideo.querySelectorAll('source');
+                    if (sources[0]) {
+                        sources[0].src = fallbackVideoUrl;
+                        heroVideo.load();
+                        heroVideo.play().catch(e => {
+                            console.error('로컬 비디오도 실패:', e);
+                            // 비디오 요소에 에러 클래스 추가
+                            heroVideo.classList.add('error');
+                            
+                            // 히어로 섹션에 비디오 에러 클래스 추가 (폴백 배경 활성화)
+                            const heroSection = document.querySelector('.hero-section');
+                            if (heroSection) {
+                                heroSection.classList.add('video-error');
+                            }
+                            
+                            // 사운드 컨트롤 버튼 숨기기
+                            if (soundControlBtn) {
+                                soundControlBtn.style.display = 'none';
+                            }
+                        });
+                    }
                 } else {
-                    // 모든 시도 실패 시 사운드 컨트롤 버튼 숨기기
+                    // 모든 시도 실패
+                    console.error('❌ 모든 비디오 로드 실패');
+                    heroVideo.classList.add('error');
+                    const heroSection = document.querySelector('.hero-section');
+                    if (heroSection) {
+                        heroSection.classList.add('video-error');
+                    }
                     if (soundControlBtn) {
                         soundControlBtn.style.display = 'none';
                     }
