@@ -932,6 +932,14 @@ function createTestData() {
 
 				const parsedData = JSON.parse(savedData);
 				
+				// Universal 이미지 데이터 확인
+				console.log('🔍 로드된 데이터에서 Universal 이미지 확인:');
+				parsedData.breakdown_data?.shots?.forEach(shot => {
+					if (shot.image_design?.ai_generated_images?.universal) {
+						console.log(`  샷 ${shot.id}:`, shot.image_design.ai_generated_images.universal);
+					}
+				});
+				
 				// Stage 6, 7 데이터 복원
 				const savedStage6 = localStorage.getItem(`stage6ImagePrompts_${jsonFileName}`);
 				if (savedStage6) {
@@ -1038,6 +1046,7 @@ function createTestData() {
 					try {
 						localStorage.setItem(`breakdownData_${jsonFileName}`, dataString);
 						localStorage.setItem(`lastSaved_${jsonFileName}`, new Date().toISOString());
+						return true; // 성공 시 true 반환
 					} catch (quotaError) {
 						if (quotaError.name === 'QuotaExceededError') {
 							showMessage('저장 공간이 부족합니다. 이미지 데이터를 정리하거나 JSON으로 백업 후 초기화하세요.', 'error');
@@ -1067,9 +1076,12 @@ function createTestData() {
 						}
 					}
 
+					return true; // 저장 성공
 				}
+				return false; // currentData가 없음
 			} catch (error) { 
 				showMessage('로컬 저장 실패: ' + error.message, 'error'); 
+				return false; // 오류 발생
 			}
 		}
 
@@ -3830,7 +3842,41 @@ const imageDesign = shot.image_design || {};
 const imageDesignPlans = imageDesign.plans || {};
 const selectedPlan = imageDesign.selected_plan || 'A';
 const complexity = imageDesign.complexity || 'complex';
-const aiGeneratedImages = imageDesign.ai_generated_images || {};
+
+// AI 생성 이미지 데이터 초기화 - 배열 형식으로 통일
+let aiGeneratedImages = imageDesign.ai_generated_images || {};
+
+// 각 AI 도구별로 배열 형식으로 변환 또는 초기화
+const aiTools = ['universal', 'luma', 'kling', 'veo2', 'runway', 'minimax', 'pika2', 'haiper2', 'lightricks', 'genmo'];
+aiTools.forEach(aiId => {
+    if (!aiGeneratedImages[aiId]) {
+        // 데이터가 없으면 빈 배열로 초기화
+        aiGeneratedImages[aiId] = [];
+    } else if (!Array.isArray(aiGeneratedImages[aiId])) {
+        // 객체 형식이면 배열로 변환
+        const oldData = aiGeneratedImages[aiId];
+        const newArray = [];
+        for (let i = 0; i < 3; i++) {
+            const key = String(i);
+            newArray.push(oldData[key] || { url: '', description: '' });
+        }
+        aiGeneratedImages[aiId] = newArray;
+    }
+    
+    // 배열 크기가 부족하면 빈 객체로 채우기
+    while (aiGeneratedImages[aiId].length < 3) {
+        aiGeneratedImages[aiId].push({ url: '', description: '' });
+    }
+    
+    // Universal AI 데이터 확인 로그
+    if (aiId === 'universal' && aiGeneratedImages[aiId].some(img => img.url)) {
+        console.log('✅ Universal 이미지 데이터 초기화 완료:', {
+            shotId: shot.id,
+            universalData: aiGeneratedImages[aiId]
+        });
+    }
+});
+
 const referenceImagesData = shot.reference_images || [];
 
 // Stage 5 CSV 데이터 (csv_mapping)에서 프롬프트 가져오기
@@ -4185,8 +4231,63 @@ let aiSectionsHtml = '';
 							parameters = editedPrompt.parameters || parameters;
 						}
 
-						// AI별 생성된 이미지 데이터
-						const imageData = aiGeneratedImages[ai.id]?.[imageId] || { url: '', description: '' };
+						// AI별 생성된 이미지 데이터 (배열에서 가져오기)
+						let imageData;
+						const imageIndex = parseImageIndex(imageId);
+						
+						// 디버깅 로그 추가
+						if (ai.id === 'universal') {
+							console.log('🔍 Universal 이미지 데이터 확인:', {
+								shotId: shot.id,
+								aiId: ai.id,
+								imageId: imageId,
+								imageIndex: imageIndex,
+								aiGeneratedImages: aiGeneratedImages,
+								aiData: aiGeneratedImages[ai.id],
+								isArray: Array.isArray(aiGeneratedImages[ai.id])
+							});
+						}
+						
+						if (Array.isArray(aiGeneratedImages[ai.id])) {
+							// 배열인 경우 (새 구조) - parseImageIndex 사용
+							imageData = aiGeneratedImages[ai.id][imageIndex] || { url: '', description: '' };
+							
+							if (ai.id === 'universal') {
+								console.log('🔍 Universal 이미지 데이터 (배열):', {
+									imageIndex,
+									imageData,
+									전체배열: aiGeneratedImages[ai.id]
+								});
+							}
+						} else if (aiGeneratedImages[ai.id] && typeof aiGeneratedImages[ai.id] === 'object') {
+							// 객체인 경우 (구 구조 호환성)
+							imageData = aiGeneratedImages[ai.id][imageId] || { url: '', description: '' };
+							
+							if (ai.id === 'universal') {
+								console.log('🔍 Universal 이미지 데이터 (객체):', {
+									imageId,
+									imageData,
+									전체객체: aiGeneratedImages[ai.id]
+								});
+							}
+						} else {
+							// 데이터가 없는 경우
+							imageData = { url: '', description: '' };
+							
+							if (ai.id === 'universal') {
+								console.log('⚠️ Universal 이미지 데이터 없음');
+							}
+						}
+						
+						// Universal 이미지 로드 확인
+						if (ai.id === 'universal') {
+							console.log('🔍 Universal 이미지 로드 확인:', {
+								imageId,
+								imageData,
+								allUniversalImages: aiGeneratedImages.universal,
+								shot: shot
+							});
+						}
 
 						planContentHtml += `
 							<div style="margin-bottom: 30px; padding: 15px; background: #1a1a1a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px;">
@@ -4461,31 +4562,147 @@ try {
     }
     
     // 이미지별 URL 업데이트 (새로운 구조)
+	// imageId를 안전하게 인덱스로 변환하는 헬퍼 함수
+	function parseImageIndex(imageId) {
+		// 이미 숫자인 경우
+		if (typeof imageId === 'number') {
+			return imageId;
+		}
+		
+		// 문자열을 String으로 변환
+		const idStr = String(imageId);
+		
+		// 문자열 숫자인 경우 (e.g., "0", "1", "2")
+		const directParse = parseInt(idStr);
+		if (!isNaN(directParse) && directParse >= 0 && directParse <= 2) {
+			return directParse;
+		}
+		
+		// Stage 형식 처리 (e.g., "S01.01-A-01", "S01.01-B-02")
+		// Plan별 이미지 ID 처리: -A-01은 Plan A의 첫 번째 이미지
+		const stageMatch = idStr.match(/[A-C]-(\d+)/);
+		if (stageMatch) {
+			const num = parseInt(stageMatch[1]);
+			// 01 → 0, 02 → 1, 03 → 2
+			if (num >= 1 && num <= 3) {
+				return num - 1;
+			}
+		}
+		
+		// IMG 형식 처리 (e.g., "IMG_001", "IMG_002")
+		const imgMatch = idStr.match(/IMG_(\d+)/);
+		if (imgMatch) {
+			const num = parseInt(imgMatch[1]);
+			// 001 → 0, 002 → 1, 003 → 2
+			if (num >= 1 && num <= 3) {
+				return num - 1;
+			}
+		}
+		
+		// 일반적인 마지막 숫자 추출
+		const matches = idStr.match(/(\d+)(?!.*\d)/);
+		if (matches) {
+			const num = parseInt(matches[1]);
+			// 1-3을 0-2로 매핑
+			if (num >= 1 && num <= 3) {
+				return num - 1;
+			}
+			// 이미 0-2 범위인 경우
+			if (num >= 0 && num <= 2) {
+				return num;
+			}
+		}
+		
+		// 기본값: 첫 번째 슬롯 사용
+		console.warn('⚠️ imageId를 파싱할 수 없음, 기본값 0 사용:', imageId);
+		return 0;
+	}
+
 	function updateImageUrl(shotId, aiType, imageId, newUrl) {
 		try {
+			console.log('📸 updateImageUrl 호출:', { shotId, aiType, imageId, newUrl });
+			
 			const shot = currentData.breakdown_data.shots.find(s => s.id === shotId);
-			if (!shot) return showMessage('샷 데이터를 찾을 수 없습니다.', 'error');
+			if (!shot) {
+				console.error('❌ 샷을 찾을 수 없음:', shotId);
+				return showMessage('샷 데이터를 찾을 수 없습니다.', 'error');
+			}
 
+			// imageId를 안전하게 인덱스로 변환
+			const imageIndex = parseImageIndex(imageId);
+			
 			// 드롭박스 URL 자동 변환
 			const processedUrl = convertDropboxUrl(newUrl);
 
-			if (!shot.image_design) shot.image_design = {};
-			if (!shot.image_design.ai_generated_images) shot.image_design.ai_generated_images = {};
+			// image_design 구조 초기화
+			if (!shot.image_design) {
+				shot.image_design = { 
+					aspect_ratio: "16:9", 
+					selected_plan: "plan_a",
+					ai_generated_images: {}
+				};
+			}
+			if (!shot.image_design.ai_generated_images) {
+				shot.image_design.ai_generated_images = {};
+			}
+			
+			// AI 도구별 배열 초기화 또는 변환
 			if (!shot.image_design.ai_generated_images[aiType]) {
-				shot.image_design.ai_generated_images[aiType] = {};
+				// 새로운 배열 생성
+				shot.image_design.ai_generated_images[aiType] = [];
+				for (let i = 0; i < 3; i++) {
+					shot.image_design.ai_generated_images[aiType].push({ url: '', description: '' });
+				}
+			} else if (!Array.isArray(shot.image_design.ai_generated_images[aiType])) {
+				// 객체를 배열로 변환 (기존 데이터 호환성)
+				const oldData = shot.image_design.ai_generated_images[aiType];
+				const newArray = [];
+				for (let i = 0; i < 3; i++) {
+					const key = String(i);
+					newArray.push(oldData[key] || { url: '', description: '' });
+				}
+				shot.image_design.ai_generated_images[aiType] = newArray;
 			}
 
-			// 이미지 ID별로 저장
-			if (!shot.image_design.ai_generated_images[aiType][imageId]) {
-				shot.image_design.ai_generated_images[aiType][imageId] = { url: '', description: '' };
+			// 배열 크기 확인 및 확장 (안전하게)
+			while (shot.image_design.ai_generated_images[aiType].length <= imageIndex) {
+				shot.image_design.ai_generated_images[aiType].push({ url: '', description: '' });
 			}
 
-			shot.image_design.ai_generated_images[aiType][imageId].url = processedUrl;
-			saveDataToLocalStorage();
+			// 해당 인덱스의 객체 확인 및 생성
+			if (!shot.image_design.ai_generated_images[aiType][imageIndex] || 
+				typeof shot.image_design.ai_generated_images[aiType][imageIndex] !== 'object') {
+				shot.image_design.ai_generated_images[aiType][imageIndex] = { url: '', description: '' };
+			}
 
-			// 미리보기 업데이트 - ID 기반으로 찾기
+			// URL 저장
+			shot.image_design.ai_generated_images[aiType][imageIndex].url = processedUrl;
+			
+			// 저장 전 최종 데이터 확인
+			console.log('✅ Universal 이미지 저장:', {
+				aiType,
+				imageId,
+				imageIndex,
+				url: processedUrl,
+				전체배열: shot.image_design.ai_generated_images[aiType],
+				저장된데이터: shot.image_design.ai_generated_images[aiType][imageIndex]
+			});
+			
+			const saveResult = saveDataToLocalStorage();
+			console.log('💾 저장 결과:', saveResult !== false ? '성공' : '실패');
+			
+			// 저장 후 확인
+			if (aiType === 'universal') {
+				console.log('🔍 Universal 저장 후 확인:', {
+					shot: shot.id,
+					universal배열: shot.image_design.ai_generated_images.universal
+				});
+			}
+
+			// 미리보기 업데이트 - ID 기반으로 찾기 (원래 imageId 문자열 사용)
 			updateImagePreview(shotId, aiType, imageId, processedUrl);
 		} catch (e) {
+			console.error('❌ URL 업데이트 오류:', e);
 			showMessage('URL 업데이트 중 오류가 발생했습니다.', 'error');
 		}
 	}
@@ -4607,13 +4824,39 @@ try {
 				if (!shot.image_design) shot.image_design = {};
 				if (!shot.image_design.ai_generated_images) shot.image_design.ai_generated_images = {};
 				if (!shot.image_design.ai_generated_images[aiType]) {
-					shot.image_design.ai_generated_images[aiType] = {};
+					// 배열로 초기화
+					shot.image_design.ai_generated_images[aiType] = [
+						{ url: '', description: '' },
+						{ url: '', description: '' },
+						{ url: '', description: '' }
+					];
 				}
-				if (!shot.image_design.ai_generated_images[aiType][imageId]) {
-					shot.image_design.ai_generated_images[aiType][imageId] = { url: '', description: '' };
+				
+				// 배열이 아니면 배열로 변환 (기존 데이터 호환성)
+				if (!Array.isArray(shot.image_design.ai_generated_images[aiType])) {
+					const oldData = shot.image_design.ai_generated_images[aiType];
+					shot.image_design.ai_generated_images[aiType] = [
+						oldData['0'] || { url: '', description: '' },
+						oldData['1'] || { url: '', description: '' },
+						oldData['2'] || { url: '', description: '' }
+					];
+				}
+				
+				// imageId를 안전하게 인덱스로 변환
+				const imageIndex = parseImageIndex(imageId);
+				
+				// 배열 크기 확인 및 확장
+				while (shot.image_design.ai_generated_images[aiType].length <= imageIndex) {
+					shot.image_design.ai_generated_images[aiType].push({ url: '', description: '' });
 				}
 
-				shot.image_design.ai_generated_images[aiType][imageId].url = resizedDataUrl;
+				// 해당 인덱스에 객체가 없거나 null인 경우 새로 생성
+				if (!shot.image_design.ai_generated_images[aiType][imageIndex] || 
+					shot.image_design.ai_generated_images[aiType][imageIndex] === null) {
+					shot.image_design.ai_generated_images[aiType][imageIndex] = { url: '', description: '' };
+				}
+
+				shot.image_design.ai_generated_images[aiType][imageIndex].url = resizedDataUrl;
 				
 				// localStorage 저장 시도
 				try {
@@ -4657,17 +4900,42 @@ try {
 			const shot = currentData.breakdown_data.shots.find(s => s.id === shotId);
 			if (!shot) return showMessage('샷 데이터를 찾을 수 없습니다.', 'error');
 
+			// imageId를 안전하게 인덱스로 변환
+			const imageIndex = parseImageIndex(imageId);
+
 			if (!shot.image_design) shot.image_design = {};
 			if (!shot.image_design.ai_generated_images) shot.image_design.ai_generated_images = {};
 			if (!shot.image_design.ai_generated_images[aiType]) {
-				shot.image_design.ai_generated_images[aiType] = {};
+				// 배열로 초기화
+				shot.image_design.ai_generated_images[aiType] = [
+					{ url: '', description: '' },
+					{ url: '', description: '' },
+					{ url: '', description: '' }
+				];
+			}
+			
+			// 배열이 아니면 배열로 변환 (기존 데이터 호환성)
+			if (!Array.isArray(shot.image_design.ai_generated_images[aiType])) {
+				const oldData = shot.image_design.ai_generated_images[aiType];
+				shot.image_design.ai_generated_images[aiType] = [
+					oldData['0'] || { url: '', description: '' },
+					oldData['1'] || { url: '', description: '' },
+					oldData['2'] || { url: '', description: '' }
+				];
+			}
+			
+			// 배열 크기 확인 및 확장
+			while (shot.image_design.ai_generated_images[aiType].length <= imageIndex) {
+				shot.image_design.ai_generated_images[aiType].push({ url: '', description: '' });
 			}
 
-			if (!shot.image_design.ai_generated_images[aiType][imageId]) {
-				shot.image_design.ai_generated_images[aiType][imageId] = { url: '', description: '' };
+			// 해당 인덱스에 객체가 없거나 null인 경우 새로 생성
+			if (!shot.image_design.ai_generated_images[aiType][imageIndex] || 
+				shot.image_design.ai_generated_images[aiType][imageIndex] === null) {
+				shot.image_design.ai_generated_images[aiType][imageIndex] = { url: '', description: '' };
 			}
 
-			shot.image_design.ai_generated_images[aiType][imageId].description = newDescription;
+			shot.image_design.ai_generated_images[aiType][imageIndex].description = newDescription;
 			saveDataToLocalStorage();
 		} catch (e) {
 			showMessage('설명 업데이트 중 오류가 발생했습니다.', 'error');

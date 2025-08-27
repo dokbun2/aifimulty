@@ -53,6 +53,52 @@
             opacity: 0.8;
         }
         
+        /* 카테고리 필터 스타일 */
+        .category-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+            padding: 0 20px;
+        }
+        
+        .filter-btn {
+            padding: 6px 14px;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        
+        .filter-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .filter-btn.active {
+            background: var(--apple-blue);
+            border-color: var(--apple-blue);
+            color: white;
+        }
+        
+        .filter-btn-count {
+            margin-left: 4px;
+            opacity: 0.8;
+            font-size: 11px;
+        }
+        
+        .filter-divider {
+            width: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 0 8px;
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -170,7 +216,7 @@
         /* Gallery Grid - 스토리보드/컨셉아트와 동일한 스타일 */
         .gallery-grid {
             display: grid !important;
-            grid-template-columns: repeat(3, 1fr) !important;
+            grid-template-columns: repeat(4, 1fr) !important;
             gap: 20px !important;
             min-height: 400px;
             padding: 20px 0;
@@ -352,7 +398,7 @@
         
         .scene-shots {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 20px;
         }
         
@@ -486,7 +532,17 @@
         }
         
         /* Responsive */
-        @media (max-width: 1200px) {
+        @media (max-width: 1400px) {
+            .gallery-grid {
+                grid-template-columns: repeat(3, 1fr) !important;
+            }
+            
+            .scene-shots {
+                grid-template-columns: repeat(3, 1fr) !important;
+            }
+        }
+        
+        @media (max-width: 1024px) {
             .gallery-grid {
                 grid-template-columns: repeat(2, 1fr) !important;
             }
@@ -601,6 +657,13 @@
                     <span class="sub-tab-count" id="storyboard-videos-count">(0)</span>
                 </button>
             </div>
+            <!-- 스토리보드 필터 -->
+            <div class="category-filters" id="storyboard-filters" style="display: none;">
+                <button class="filter-btn active" onclick="filterStoryboard('all')">
+                    전체 보기 <span class="filter-btn-count" id="filter-all-count"></span>
+                </button>
+                <!-- 샷별 필터 버튼들이 동적으로 추가됨 -->
+            </div>
             <div class="gallery-grid" id="storyboard-gallery">
                 <!-- 스토리보드 갤러리 아이템들이 여기에 동적으로 로드됨 -->
             </div>
@@ -608,7 +671,26 @@
 
         <!-- Concept Art Tab -->
         <div id="conceptart-tab" class="tab-content">
-            <!-- 컨셉아트는 이미지만 있으므로 탭 없음 -->
+            <!-- 컨셉아트 필터 -->
+            <div class="category-filters" id="conceptart-filters">
+                <button class="filter-btn active" onclick="filterConceptArt('all')">
+                    전체 보기 <span class="filter-btn-count" id="ca-filter-all-count"></span>
+                </button>
+                <div class="filter-divider"></div>
+                <button class="filter-btn" onclick="filterConceptArt('characters')">
+                    캐릭터 <span class="filter-btn-count" id="ca-filter-characters-count"></span>
+                </button>
+                <button class="filter-btn" onclick="filterConceptArt('locations')">
+                    장소 <span class="filter-btn-count" id="ca-filter-locations-count"></span>
+                </button>
+                <button class="filter-btn" onclick="filterConceptArt('props')">
+                    소품 <span class="filter-btn-count" id="ca-filter-props-count"></span>
+                </button>
+                <div class="filter-divider" id="character-divider" style="display: none;"></div>
+                <div id="character-filters" style="display: inline-flex; gap: 8px;">
+                    <!-- 개별 캐릭터 필터 버튼들이 동적으로 추가됨 -->
+                </div>
+            </div>
             <div class="gallery-grid" id="conceptart-gallery">
                 <!-- 컨셉아트 갤러리 아이템들이 여기에 동적으로 로드됨 -->
             </div>
@@ -639,13 +721,21 @@
             storyboard: {
                 images: [],
                 videos: [],
-                all: []
+                all: [],
+                shots: {} // 샷별 데이터
             },
-            conceptart: []
+            conceptart: [],
+            characterList: [], // 개별 캐릭터 리스트
+            categoryData: { // 카테고리별 데이터
+                characters: [],
+                locations: [],
+                props: []
+            }
         };
         
         // 현재 활성화된 서브 탭
         let currentSubTab = 'images';
+        let currentFilter = 'all'; // 현재 필터 상태
 
         // 초기화
         document.addEventListener('DOMContentLoaded', function() {
@@ -821,12 +911,45 @@
                                 };
                             }
                             
+                            // 디버깅을 위한 데이터 구조 확인
+                            console.log(`📊 Shot ${shotId} 데이터 구조:`, {
+                                hasImageDesign: !!shot.image_design,
+                                hasAiGeneratedImages: !!(shot.image_design && shot.image_design.ai_generated_images),
+                                imageDesignKeys: shot.image_design ? Object.keys(shot.image_design) : [],
+                                aiGeneratedKeys: shot.image_design && shot.image_design.ai_generated_images ? 
+                                    Object.keys(shot.image_design.ai_generated_images) : []
+                            });
+                            
                             // 1. AI 생성 이미지 추출 (새로운 구조)
                             if (shot.image_design && shot.image_design.ai_generated_images) {
-                                const aiTools = ['midjourney', 'ideogram', 'leonardo', 'imagefx', 'openart', 'universal'];
+                                // 스토리보드에서 사용하는 모든 AI 도구들
+                                const aiTools = ['universal', 'nanobana', 'midjourney', 'ideogram', 'dalle3', 'flux', 'leonardo', 'imagefx', 'openart'];
+                                
+                                // 대소문자 변형 및 다른 형식도 처리
+                                const toolVariations = {
+                                    'universal': ['universal', 'Universal'],
+                                    'nanobana': ['nanobana', 'Nanobana'],
+                                    'midjourney': ['midjourney', 'Midjourney'],
+                                    'ideogram': ['ideogram', 'Ideogram'],
+                                    'dalle3': ['dalle3', 'dall-e-3', 'dalle-3', 'Dalle3', 'DALL-E 3'],
+                                    'flux': ['flux', 'Flux'],
+                                    'leonardo': ['leonardo', 'Leonardo'],
+                                    'imagefx': ['imagefx', 'ImageFX'],
+                                    'openart': ['openart', 'OpenArt']
+                                };
                                 
                                 aiTools.forEach(tool => {
-                                    const toolImages = shot.image_design.ai_generated_images[tool];
+                                    // 도구 이름의 다양한 변형 시도
+                                    const variations = toolVariations[tool] || [tool];
+                                    let toolImages = null;
+                                    
+                                    for (const variant of variations) {
+                                        if (shot.image_design.ai_generated_images[variant]) {
+                                            toolImages = shot.image_design.ai_generated_images[variant];
+                                            break;
+                                        }
+                                    }
+                                    
                                     if (toolImages) {
                                         Object.entries(toolImages).forEach(([imageId, imageData]) => {
                                             let url = '';
@@ -840,6 +963,7 @@
                                             }
                                             
                                             if (url && url.trim()) {
+                                                console.log(`✅ Found ${tool} image:`, imageId, url);
                                                 shotGroups[shotId].images.push({
                                                     url: url,
                                                     title: `${tool.toUpperCase()} - ${imageId}`,
@@ -850,6 +974,72 @@
                                                 totalImages++;
                                             }
                                         });
+                                    }
+                                });
+                            }
+                            
+                            // 1-2. 추가 경로에서 이미지 확인 (이미지탭 데이터)
+                            if (shot.images) {
+                                // shot.images 직접 확인
+                                if (Array.isArray(shot.images)) {
+                                    shot.images.forEach((img, idx) => {
+                                        if (img && img.url) {
+                                            shotGroups[shotId].images.push({
+                                                url: img.url,
+                                                title: `이미지 ${idx + 1}`,
+                                                description: img.description || '',
+                                                tool: 'shot-images',
+                                                imageId: `img-${idx}`
+                                            });
+                                            totalImages++;
+                                        }
+                                    });
+                                } else if (typeof shot.images === 'object') {
+                                    // 객체 형태인 경우
+                                    Object.entries(shot.images).forEach(([key, img]) => {
+                                        if (img && (img.url || typeof img === 'string')) {
+                                            const imgUrl = typeof img === 'string' ? img : img.url;
+                                            if (imgUrl) {
+                                                shotGroups[shotId].images.push({
+                                                    url: imgUrl,
+                                                    title: key,
+                                                    description: img.description || '',
+                                                    tool: 'shot-images',
+                                                    imageId: key
+                                                });
+                                                totalImages++;
+                                            }
+                                        }
+                                    });
+                                }
+                            }
+                            
+                            // 1-3. 이미지 디자인 플랜의 이미지들도 확인
+                            if (shot.image_design) {
+                                // universal, nanobana 등 직접 필드로 있는 경우
+                                ['universal', 'nanobana', 'midjourney', 'ideogram', 'dalle3', 'flux'].forEach(aiTool => {
+                                    if (shot.image_design[aiTool]) {
+                                        const toolData = shot.image_design[aiTool];
+                                        if (typeof toolData === 'object') {
+                                            Object.entries(toolData).forEach(([key, value]) => {
+                                                // images 필드가 있는 경우
+                                                if (value && value.images) {
+                                                    Object.entries(value.images).forEach(([imgId, imgUrl]) => {
+                                                        if (imgUrl) {
+                                                            shotGroups[shotId].images.push({
+                                                                url: imgUrl,
+                                                                title: `${aiTool.toUpperCase()} - ${imgId}`,
+                                                                description: value.prompt || '',
+                                                                tool: aiTool,
+                                                                imageId: imgId
+                                                            });
+                                                            totalImages++;
+                                                            console.log(`Found ${aiTool} image:`, imgId, imgUrl);
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        }
                                     }
                                 });
                             }
@@ -950,7 +1140,8 @@
                             title: displayTitle,
                             subtitle: `${image.tool.toUpperCase()} - ${image.imageId}`,
                             type: 'image',
-                            tool: image.tool
+                            tool: image.tool,
+                            shotId: shotId
                         });
                     });
                     
@@ -1028,6 +1219,14 @@
             document.getElementById('storyboard-count').textContent = totalImages + totalVideos;
             document.getElementById('storyboard-images-count').textContent = `(${totalImages})`;
             document.getElementById('storyboard-videos-count').textContent = `(${totalVideos})`;
+            
+            // 디버깅 요약
+            console.log('📈 스토리보드 미디어 로드 완료:', {
+                총이미지: totalImages,
+                총비디오: totalVideos,
+                샷그룹수: Object.keys(shotGroups).length,
+                상세: shotGroups
+            });
         }
 
         // 컨셉아트 미디어 로드
@@ -1094,15 +1293,22 @@
                                 const mainImageUrl = item.main_image_url || item.image_url;
                                 if (mainImageUrl) {
                                     console.log(`    🖼️ 메인 이미지 URL:`, mainImageUrl);
+                                    const itemName = item.name || item.name_kr || '이름 없음';
                                     categoryGroups[category].items.push({
                                         url: mainImageUrl,
-                                        title: item.name || item.name_kr || '이름 없음',
+                                        title: itemName,
                                         description: item.description || '',
                                         type: 'image',
                                         category: category,
-                                        source: 'main'
+                                        source: 'main',
+                                        characterName: category === 'characters' ? itemName : undefined
                                     });
                                     totalMedia++;
+                                    
+                                    // 캐릭터 리스트에 추가
+                                    if (category === 'characters' && !galleryData.characterList.includes(itemName)) {
+                                        galleryData.characterList.push(itemName);
+                                    }
                                 }
                                 
                                 // additional_images 필드 확인 (image_1, image_2, image_3)
@@ -1122,7 +1328,8 @@
                                                 description: imageData.description || `${conceptName} - 참조 ${i}`,
                                                 type: 'image',
                                                 category: category,
-                                                source: 'additional'
+                                                source: 'additional',
+                                                characterName: category === 'characters' ? conceptName : undefined
                                             });
                                             totalMedia++;
                                         }
@@ -1141,7 +1348,8 @@
                                                         description: imgData.description || `${conceptName} - ${key} ${index + 1}`,
                                                         type: 'image',
                                                         category: category,
-                                                        source: 'additional'
+                                                        source: 'additional',
+                                                        characterName: category === 'characters' ? conceptName : undefined
                                                     });
                                                     totalMedia++;
                                                 }
@@ -1255,6 +1463,11 @@
                 conceptArtGallery.innerHTML = galleryHTML;
                 // 카운트 업데이트
                 document.getElementById('conceptart-count').textContent = totalCount;
+                
+                // 필터 카운트 업데이트
+                setTimeout(() => {
+                    updateFilterCounts();
+                }, 100);
             } else {
                 console.log('⚠️ 컨셉아트 데이터 없음 - 빈 상태 표시');
                 console.log('   hasMedia:', hasMedia);
@@ -1275,6 +1488,12 @@
 
         // 갤러리 아이템 생성
         function createGalleryItem(item) {
+            // 데이터 속성 준비
+            const dataAttrs = [];
+            if (item.shotId) dataAttrs.push(`data-shot-id="${item.shotId}"`);
+            if (item.category) dataAttrs.push(`data-category="${item.category}"`);
+            if (item.characterName) dataAttrs.push(`data-character="${item.characterName}"`);
+            const dataAttrString = dataAttrs.join(' ');
             if (item.type === 'video') {
                 let videoUrl = item.url;
                 let thumbnailUrl = '';
@@ -1387,7 +1606,7 @@
                 }
                 
                 return `
-                    <div class="gallery-item" data-type="${item.type}" data-video-source="${videoSource}">
+                    <div class="gallery-item" data-type="${item.type}" data-video-source="${videoSource}" ${dataAttrString}>
                         <div class="gallery-item-video ${!thumbnailHTML ? 'no-thumbnail' : ''}" 
                              onclick="openLightbox('${videoUrl}', '${item.type}')"
                              style="background: linear-gradient(135deg, #1a1a1a, #2a2a2a);">
@@ -1412,7 +1631,7 @@
                 // 이미지 아이템
                 console.log('🖼️ 이미지 아이템 생성:', item.title, item.url);
                 return `
-                    <div class="gallery-item" data-type="${item.type}">
+                    <div class="gallery-item" data-type="${item.type}" ${dataAttrString}>
                         <div class="gallery-item-image-container" onclick="openLightbox('${item.url}', '${item.type}')">
                             <img class="gallery-item-image" 
                                  src="${item.url}" 
@@ -1705,6 +1924,147 @@
             const modal = document.getElementById('sync-modal');
             modal.style.display = 'none';
         }
+        
+        // 스토리보드 필터링
+        function filterStoryboard(filter) {
+            currentFilter = filter;
+            const gallery = document.getElementById('storyboard-gallery');
+            const items = gallery.querySelectorAll('.gallery-item, .scene-group');
+            
+            // 필터 버튼 활성화 상태 업데이트
+            document.querySelectorAll('#storyboard-filters .filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // 필터링 적용
+            if (filter === 'all') {
+                items.forEach(item => {
+                    item.style.display = '';
+                });
+            } else {
+                items.forEach(item => {
+                    if (item.classList.contains('scene-group')) {
+                        // scene-group은 샷 ID 확인
+                        const shotItems = item.querySelectorAll('.gallery-item');
+                        let hasMatch = false;
+                        shotItems.forEach(shotItem => {
+                            if (shotItem.dataset.shotId === filter) {
+                                hasMatch = true;
+                            }
+                        });
+                        item.style.display = hasMatch ? '' : 'none';
+                    } else {
+                        // 개별 아이템
+                        item.style.display = item.dataset.shotId === filter ? '' : 'none';
+                    }
+                });
+            }
+        }
+        
+        // 컨셉아트 필터링
+        function filterConceptArt(filter) {
+            currentFilter = filter;
+            const gallery = document.getElementById('conceptart-gallery');
+            const items = gallery.querySelectorAll('.gallery-item, .scene-group');
+            
+            // 필터 버튼 활성화 상태 업데이트
+            document.querySelectorAll('#conceptart-filters .filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
+            
+            // 캐릭터 개별 필터 표시/숨기기
+            const characterFilters = document.getElementById('character-filters');
+            const characterDivider = document.getElementById('character-divider');
+            
+            if (filter === 'characters' || galleryData.characterList.some(char => char === filter)) {
+                characterFilters.style.display = 'inline-flex';
+                characterDivider.style.display = 'block';
+            } else {
+                characterFilters.style.display = 'none';
+                characterDivider.style.display = 'none';
+            }
+            
+            // 필터링 적용
+            if (filter === 'all') {
+                items.forEach(item => {
+                    item.style.display = '';
+                });
+            } else if (filter === 'characters' || filter === 'locations' || filter === 'props') {
+                // 카테고리별 필터링
+                items.forEach(item => {
+                    if (item.classList.contains('scene-group')) {
+                        const groupItems = item.querySelectorAll('.gallery-item');
+                        let hasMatch = false;
+                        groupItems.forEach(groupItem => {
+                            if (groupItem.dataset.category === filter) {
+                                hasMatch = true;
+                            }
+                        });
+                        item.style.display = hasMatch ? '' : 'none';
+                    } else {
+                        item.style.display = item.dataset.category === filter ? '' : 'none';
+                    }
+                });
+            } else {
+                // 개별 캐릭터 필터링
+                items.forEach(item => {
+                    if (item.classList.contains('scene-group')) {
+                        const groupItems = item.querySelectorAll('.gallery-item');
+                        let hasMatch = false;
+                        groupItems.forEach(groupItem => {
+                            if (groupItem.dataset.character === filter) {
+                                hasMatch = true;
+                            }
+                        });
+                        item.style.display = hasMatch ? '' : 'none';
+                    } else {
+                        item.style.display = item.dataset.character === filter ? '' : 'none';
+                    }
+                });
+            }
+        }
+        
+        // 캐릭터 필터 버튼 생성
+        function createCharacterFilters() {
+            const characterFilters = document.getElementById('character-filters');
+            characterFilters.innerHTML = '';
+            
+            galleryData.characterList.forEach(character => {
+                const count = document.querySelectorAll(`.gallery-item[data-character="${character}"]`).length;
+                if (count > 0) {
+                    const btn = document.createElement('button');
+                    btn.className = 'filter-btn';
+                    btn.innerHTML = `${character} <span class="filter-btn-count">(${count})</span>`;
+                    btn.onclick = () => filterConceptArt(character);
+                    characterFilters.appendChild(btn);
+                }
+            });
+        }
+        
+        // 필터 카운트 업데이트
+        function updateFilterCounts() {
+            // 컨셉아트 카테고리 카운트
+            const caAll = document.querySelectorAll('#conceptart-gallery .gallery-item').length;
+            const caCharacters = document.querySelectorAll('#conceptart-gallery .gallery-item[data-category="characters"]').length;
+            const caLocations = document.querySelectorAll('#conceptart-gallery .gallery-item[data-category="locations"]').length;
+            const caProps = document.querySelectorAll('#conceptart-gallery .gallery-item[data-category="props"]').length;
+            
+            document.getElementById('ca-filter-all-count').textContent = `(${caAll})`;
+            document.getElementById('ca-filter-characters-count').textContent = `(${caCharacters})`;
+            document.getElementById('ca-filter-locations-count').textContent = `(${caLocations})`;
+            document.getElementById('ca-filter-props-count').textContent = `(${caProps})`;
+            
+            // 캐릭터 개별 필터 생성
+            createCharacterFilters();
+        }
+        
+        // window 스코프에 함수 노출
+        window.filterStoryboard = filterStoryboard;
+        window.filterConceptArt = filterConceptArt;
         
         // Tabler Icons Rendering for Media Gallery
         document.addEventListener('DOMContentLoaded', function() {
