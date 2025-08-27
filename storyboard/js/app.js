@@ -4211,9 +4211,11 @@ let aiSectionsHtml = '';
 									<button class="edit-btn" onclick="editImagePrompt('${shot.id}', '${ai.name}', '${imageId}', '${escapeHtmlAttribute(mainPrompt)}', '${escapeHtmlAttribute(translatedPrompt || '')}', '${escapeHtmlAttribute(parameters || '')}')" style="margin-left: 8px;">
 										프롬프트 수정
 									</button>
-									<button class="ai-edit-btn" onclick="aiEditImagePrompt('${shot.id}', '${ai.name}', '${imageId}', '${escapeHtmlAttribute(mainPrompt)}')" style="margin-left: 8px; background-color: #8b5cf6;">
-										AI 수정
-									</button>
+									${ai.name !== 'Nanobana' ? `
+										<button class="ai-edit-btn" onclick="aiEditImagePrompt('${shot.id}', '${ai.name}', '${imageId}', '${escapeHtmlAttribute(mainPrompt)}')" style="margin-left: 8px; background-color: #8b5cf6;">
+											AI 수정
+										</button>
+									` : ''}
 								</div>
 
 								<div style="margin-top: 15px;">
