@@ -710,6 +710,19 @@
     gap: 20px;
 }
 
+/* Universal & Nanobana 2-column Grid */
+.universal-nanobana-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .universal-nanobana-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .reference-image-slot {
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.08);

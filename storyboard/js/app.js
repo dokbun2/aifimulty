@@ -5,14 +5,16 @@ let selectedId = null;
 let selectedSceneId = null;
 let hasStage2Structure = false; // Stage 2 구조 로드 여부
 let editedPrompts = {}; // 프롬프트 수정 데이터 저장용
+let imageUrlCache = {}; // 이미지 URL 캐시 저장용
 
 // HTML 속성용 문자열 이스케이프 함수
 function escapeHtmlAttribute(str) {
     if (!str) return '';
     return str
-        .replace(/\\/g, '\\\\')  // 백슬래시를 먼저 이스케이프
-        .replace(/'/g, "\\'")     // 작은따옴표 이스케이프
+        .replace(/&/g, '&amp;')   // & 를 먼저 이스케이프
         .replace(/"/g, '&quot;')  // 큰따옴표를 HTML 엔티티로 변경
+        .replace(/</g, '&lt;')    // < 를 HTML 엔티티로 변경
+        .replace(/>/g, '&gt;')    // > 를 HTML 엔티티로 변경
         .replace(/\n/g, '\\n')    // 줄바꿈 이스케이프
         .replace(/\r/g, '\\r')    // 캐리지 리턴 이스케이프
         .replace(/\t/g, '\\t');   // 탭 이스케이프
@@ -913,6 +915,10 @@ function createTestData() {
 		async function loadData() {
 			try {
 				const jsonFileName = getProjectFileName();
+				
+				// 이미지 캐시 로드
+				loadImageCacheFromLocalStorage();
+				
         const savedData = localStorage.getItem(`breakdownData_${jsonFileName}`);
 				if (!savedData) {
 					// 저장된 데이터가 없는 경우, 임시 데이터를 처리할 수 있도록 처리 플래그 초기화
@@ -935,15 +941,16 @@ function createTestData() {
 				// Universal 이미지 데이터 확인 및 배열 구조 보장
 				console.log('🔍 로드된 데이터에서 Universal 이미지 확인 및 정규화:');
 				parsedData.breakdown_data?.shots?.forEach(shot => {
-					// image_design 구조 초기화
+					// image_design 구조 초기화 (ai_generated_images는 따로 처리)
 					if (!shot.image_design) {
 						shot.image_design = { 
 							aspect_ratio: "16:9", 
-							selected_plan: "plan_a",
-							ai_generated_images: {}
+							selected_plan: "plan_a"
+							// ai_generated_images는 여기서 초기화하지 않음! 기존 데이터 보존
 						};
 					}
 					
+					// ai_generated_images가 없을 때만 초기화
 					if (!shot.image_design.ai_generated_images) {
 						shot.image_design.ai_generated_images = {};
 					}
@@ -1087,6 +1094,18 @@ function createTestData() {
 			try {
 				if (currentData) {
 					const jsonFileName = getProjectFileName();
+					
+					// Universal/Nanobana 데이터 저장 확인
+					const universalData = currentData.breakdown_data?.shots?.map(shot => ({
+						shotId: shot.id,
+						universal: shot.image_design?.ai_generated_images?.universal,
+						nanobana: shot.image_design?.ai_generated_images?.nanobana
+					})).filter(item => item.universal?.some(img => img?.url) || item.nanobana?.some(img => img?.url));
+					
+					if (universalData.length > 0) {
+						console.log('💾 Universal/Nanobana 데이터 저장 중:', universalData);
+					}
+					
 					const dataString = JSON.stringify(currentData);
 					
 					// localStorage 용량 체크 및 처리
@@ -2709,7 +2728,7 @@ function createTestData() {
        } else {
            document.getElementById('content-area').innerHTML = `
                <div class="empty-state">
-                   <div class="empty-state-icon">🎬</div>
+                   <div class="empty-state-icon">▶️</div>
                    <div>시퀀스, 씬, 또는 샷을 선택하여 상세 정보를 확인하세요</div>
                </div>`;
        }
@@ -2761,7 +2780,7 @@ function createTestData() {
        if (!currentData || !currentData.breakdown_data) {
 					navContent.innerHTML = `
 						<div class="empty-state" id="nav-empty">
-							<div class="empty-state-icon">📁</div>
+							<div class="empty-state-icon">📂</div>
 							<div>데이터가 없습니다</div>
 							<div style="font-size: 0.9rem; margin-top: 10px;">JSON 가져오기를 사용해 데이터를 로드해주세요</div>
 						</div>`;
@@ -3229,7 +3248,7 @@ function createTestData() {
 			const sceneShots = currentData.breakdown_data.shots.filter(shot => shot.scene_id === sceneId);
 
 			if (sceneShots.length === 0) {
-				return '<div class="empty-state"><div class="empty-state-icon">🖼️</div><div>이 씬에 샷이 없습니다</div></div>';
+				return '<div class="empty-state"><div class="empty-state-icon">🎞️</div><div>이 씬에 샷이 없습니다</div></div>';
 			}
 
 			let html = '<div style="padding: 20px;">';
@@ -3301,7 +3320,7 @@ function createTestData() {
 			const sceneShots = currentData.breakdown_data.shots.filter(shot => shot.scene_id === sceneId);
 
 			if (sceneShots.length === 0) {
-				return '<div class="empty-state"><div class="empty-state-icon">🎬</div><div>이 씬에 샷이 없습니다</div></div>';
+				return '<div class="empty-state"><div class="empty-state-icon">▶️</div><div>이 씬에 샷이 없습니다</div></div>';
 			}
 
 			let html = '<div style="padding: 20px;">';
@@ -3891,15 +3910,16 @@ const selectedPlan = imageDesign.selected_plan || 'A';
 const complexity = imageDesign.complexity || 'complex';
 
 // AI 생성 이미지 데이터 가져오기
-// shot.image_design이 없거나 ai_generated_images가 없으면 초기화
+// shot.image_design이 없을 때만 초기화 (기존 데이터 보존)
 if (!shot.image_design) {
     shot.image_design = {
         aspect_ratio: "16:9",
-        selected_plan: "plan_a",
-        ai_generated_images: {}
+        selected_plan: "plan_a"
+        // ai_generated_images는 여기서 초기화하지 않음!
     };
 }
 
+// ai_generated_images가 없을 때만 초기화 (기존 데이터 보존)
 if (!shot.image_design.ai_generated_images) {
     shot.image_design.ai_generated_images = {};
 }
@@ -3933,7 +3953,7 @@ if (complexity === 'simple' && imageDesignPlans.single) {
     selectedPlanData = imageDesignPlans.single;
     planSelectorHtml = `
         <div class="image-design-plan-selector">
-            <h4>🎨 이미지 설계 (Simple - 단일 이미지)</h4>
+            <h4>🖌️ 이미지 설계 (Simple - 단일 이미지)</h4>
             <div class="plan-info">
                 <h5>${selectedPlanData.description || '단일 이미지로 표현'}</h5>
                 <div class="plan-metadata">
@@ -3949,7 +3969,7 @@ else {
     console.log('📸 선택된 플랜:', selectedPlan, 'images:', selectedPlanData.images?.length);
     planSelectorHtml = `
         <div class="image-design-plan-selector">
-            <h4>🎨 이미지 설계 플랜 선택</h4>
+            <h4>🖌️ 이미지 설계 플랜 선택</h4>
             <div class="plan-tabs">
                 ${['A', 'B', 'C'].map(planId => {
                     const plan = imageDesignPlans[planId];
@@ -4317,7 +4337,7 @@ let aiSectionsHtml = '';
 							});
 						}
 						
-						// Universal 이미지 로드 확인
+						// 이미지 로드 확인 (디버깅용)
 						if (ai.id === 'universal') {
 							console.log('🔍 Universal 이미지 로드 확인:', {
 								imageId,
@@ -4329,10 +4349,27 @@ let aiSectionsHtml = '';
 								shotId: shot.id
 							});
 						}
+						
+						// DOM이 렌더링된 후 값을 다시 설정하기 위해 저장 (모든 AI 도구에 적용)
+						if (imageData.url) {
+							setTimeout(() => {
+								const inputId = `url-input-${shot.id}-${ai.id}-${imageId}`;
+								const inputElement = document.getElementById(inputId);
+								if (inputElement && !inputElement.value) {
+									console.log(`📝 ${ai.name} URL 입력 필드에 값 설정:`, inputId, imageData.url);
+									inputElement.value = imageData.url;
+								}
+								
+								// Universal과 Nanobana의 경우 미리보기도 업데이트
+								if (ai.id === 'universal' || ai.id === 'nanobana') {
+									updateImagePreview(shot.id, ai.id, imageId, imageData.url);
+								}
+							}, 100);
+						}
 
 						planContentHtml += `
 							<div style="margin-bottom: 30px; padding: 15px; background: #1a1a1a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px;">
-								<h5 style="color: #ccc; margin-bottom: 10px;">📸 [플랜 ${planImage.planId}] ${imageId}: ${planImage.description || '설명 없음'} 
+								<h5 style="color: #ccc; margin-bottom: 10px;">📷 [플랜 ${planImage.planId}] ${imageId}: ${planImage.description || '설명 없음'} 
 									${editedPrompt ? '<span style="background: #4ade80; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; margin-left: 10px;">수정됨</span>' : ''}
 									${isFromStage5 ? '<span style="background: #3b82f6; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; margin-left: 10px;">Stage 5</span>' : ''}
 								</h5>
@@ -4360,6 +4397,7 @@ let aiSectionsHtml = '';
 									` : ''}
 								</div>
 
+								${(ai.id !== 'universal' && ai.id !== 'nanobana') ? `
 								<div style="margin-top: 15px;">
 									<h6>생성된 이미지</h6>
 									<div class="image-slot-card">
@@ -4376,15 +4414,15 @@ let aiSectionsHtml = '';
 											<label class="form-label">URL:</label>
 											<div style="display: flex; gap: 8px; align-items: center;">
 												<input type="text" class="form-input" 
-													   id="url-input-${shot.id}-${ai.id}-${imageIndex}"
-													   value="${(imageData && imageData.url) ? escapeHtmlAttribute(imageData.url) : ''}" 
+													   id="url-input-${shot.id}-${ai.id}-${imageId}"
+													   value="${(imageData && imageData.url) ? imageData.url.replace(/"/g, '&quot;') : ''}" 
 													   placeholder="${ai.name} URL" 
-													   onchange="updateImageUrl('${shot.id}', '${ai.id}', '${imageIndex}', this.value)"
+													   onchange="updateImageUrl('${shot.id}', '${ai.id}', '${imageId}', this.value)"
 													   style="flex: 1;">
 												<button type="button" class="btn btn-secondary btn-small" 
-														onclick="uploadImageForShot('${shot.id}', '${ai.id}', '${imageIndex}')" 
+														onclick="uploadImageForShot('${shot.id}', '${ai.id}', '${imageId}')" 
 														title="로컬 파일 업로드">
-													📁 파일 업로드
+													📤 파일 업로드
 												</button>
 											</div>
 										</div>
@@ -4392,10 +4430,10 @@ let aiSectionsHtml = '';
 											<label class="form-label">설명:</label>
 											<textarea class="form-textarea" 
 													  placeholder="${ai.name} 설명" 
-													  onchange="updateImageDescription('${shot.id}', '${ai.id}', '${imageIndex}', this.value)">${(imageData && imageData.description) ? escapeHtmlAttribute(imageData.description) : ''}</textarea>
+													  onchange="updateImageDescription('${shot.id}', '${ai.id}', '${imageId}', this.value)">${(imageData && imageData.description) ? imageData.description : ''}</textarea>
 										</div>
 									</div>
-								</div>
+								</div>` : ''}
 							</div>
 						`;
 						});
@@ -4404,7 +4442,7 @@ let aiSectionsHtml = '';
 						if (planHasContent) {
 							aiContentHtml += `
 								<div style="margin-bottom: 20px; padding: 10px; background: rgba(102, 126, 234, 0.1); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px;">
-									<h4 style="color: #667eea; margin-bottom: 15px;">📋 플랜 ${planId}: ${imageDesignPlans[planId]?.description || '설명 없음'}</h4>
+									<h4 style="color: #667eea; margin-bottom: 15px;">📝 플랜 ${planId}: ${imageDesignPlans[planId]?.description || '설명 없음'}</h4>
 									${planContentHtml}
 								</div>
 							`;
@@ -4467,17 +4505,224 @@ for (let i = 0; i < 3; i++) {
         </div>`;
 }
 
+// 복제용 참조 이미지 섹션 (2개만)
+let referenceSlotsHtmlDuplicate = '';
+for (let i = 0; i < 2; i++) {
+    const refData = referenceImagesData[i] || { url: '', description: '', type: 'composition' };
+    const uniqueRefId = `${shot.id}-ref-dup${i}`;
+    referenceSlotsHtmlDuplicate += `
+        <div class="reference-image-slot">
+            <div class="reference-preview" id="ref-preview-${uniqueRefId}">
+                ${refData.url ? 
+                    `<img src="${refData.url}" alt="참조 ${i+1}" style="cursor: pointer;" onclick="openImageModal('${refData.url}')">` : 
+                    `<div style="color:#ccc;font-size:0.8rem;">참조 ${i+1} URL</div>`
+                }
+            </div>
+            <div class="form-group">
+                <label class="form-label">URL:</label>
+                <input type="text" class="form-input" 
+                       value="${refData.url || ''}" 
+                       placeholder="참조 ${i+1} URL" 
+                       onchange="updateReferenceImage('${shot.id}', ${i}, 'url', this.value)">
+            </div>
+            <div class="form-group">
+                <label class="form-label">설명:</label>
+                <textarea class="form-textarea" 
+                          onchange="updateReferenceImage('${shot.id}', ${i}, 'description', this.value)">${refData.description || ''}</textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">유형:</label>
+                <select class="form-select" 
+                        onchange="updateReferenceImage('${shot.id}', ${i}, 'type', this.value)">
+                    <option value="composition" ${refData.type === 'composition' ? 'selected' : ''}>구도</option>
+                    <option value="style" ${refData.type === 'style' ? 'selected' : ''}>스타일</option>
+                    <option value="lighting" ${refData.type === 'lighting' ? 'selected' : ''}>조명</option>
+                    <option value="mood" ${refData.type === 'mood' ? 'selected' : ''}>분위기</option>
+                </select>
+            </div>
+        </div>`;
+}
+
+// Universal과 Nanobana를 분리하여 상단에 표시
+let otherAIsHtml = '';
+
+// Universal과 Nanobana만 처리
+const priorityAIs = ['universal', 'nanobana'];
+const priorityAIDetails = [
+    { id: 'universal', name: 'Universal' },
+    { id: 'nanobana', name: 'Nanobana' }
+];
+
+// Universal과 Nanobana 프롬프트 정보 수집
+let universalPromptHtml = '';
+let nanobanaPromptHtml = '';
+
+// 프롬프트 정보 추출 (첫 번째 이미지의 프롬프트를 대표로 사용)
+if (selectedPlanData && selectedPlanData.images && selectedPlanData.images.length > 0) {
+    const firstImageId = selectedPlanData.images[0].id;
+    const imageStage6Data = shotStage6Data[firstImageId] || {};
+    
+    // Universal 프롬프트
+    if (imageStage6Data.prompts?.universal) {
+        const universalData = imageStage6Data.prompts.universal;
+        const universalPrompt = typeof universalData === 'string' ? universalData : 
+                                (universalData.prompt || universalData.main_prompt || '');
+        const universalTranslated = imageStage6Data.prompts.universal_translated || 
+                                   (typeof universalData === 'object' ? 
+                                    (universalData.prompt_translated || universalData.main_prompt_translated || '') : '');
+        
+        if (universalPrompt) {
+            universalPromptHtml = `
+                <div style="margin-bottom: 15px; padding: 15px; background: rgba(102, 126, 234, 0.1); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px;">
+                    <h5 style="color: #667eea; margin-bottom: 10px;">Universal 프롬프트</h5>
+                    <div style="color: #e5e5e5; line-height: 1.6; margin-bottom: 10px;">${universalPrompt}</div>
+                    ${universalTranslated ? `
+                        <div style="color: #999; font-size: 0.9em; line-height: 1.5; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1);">
+                            <strong>번역:</strong> ${universalTranslated}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+    }
+    
+    // Nanobana 프롬프트
+    if (imageStage6Data.prompts?.nanobana) {
+        const nanobanaData = imageStage6Data.prompts.nanobana;
+        const nanobanaPrompt = typeof nanobanaData === 'string' ? nanobanaData : 
+                              (nanobanaData.prompt || nanobanaData.main_prompt || '');
+        const nanobanaTranslated = imageStage6Data.prompts.nanobana_translated || 
+                                  (typeof nanobanaData === 'object' ? 
+                                   (nanobanaData.prompt_translated || nanobanaData.main_prompt_translated || '') : '');
+        
+        if (nanobanaPrompt) {
+            nanobanaPromptHtml = `
+                <div style="margin-bottom: 15px; padding: 15px; background: rgba(236, 72, 153, 0.1); border: 1px solid rgba(236, 72, 153, 0.3); border-radius: 8px;">
+                    <h5 style="color: #ec4899; margin-bottom: 10px;">Nanobana 프롬프트</h5>
+                    <div style="color: #e5e5e5; line-height: 1.6; margin-bottom: 10px;">${nanobanaPrompt}</div>
+                    ${nanobanaTranslated ? `
+                        <div style="color: #999; font-size: 0.9em; line-height: 1.5; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1);">
+                            <strong>번역:</strong> ${nanobanaTranslated}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+    }
+}
+
+// Universal과 Nanobana 이미지 슬롯 생성 (참조이미지와 동일한 구조)
+let universalNanobanaHtml = '';
+
+// Universal과 Nanobana는 항상 1개씩 표시 (플랜 데이터 없이도 동작)
+// Universal 슬롯 생성
+const universalImageId = 'A-01';  // 고정 ID 사용
+const universalIndex = 0;  // 첫 번째 인덱스만 사용
+
+// Universal 데이터 처리
+if (!aiGeneratedImages['universal']) {
+    aiGeneratedImages['universal'] = [];
+}
+while (aiGeneratedImages['universal'].length <= universalIndex) {
+    aiGeneratedImages['universal'].push({ url: '', description: '' });
+}
+
+const universalData = aiGeneratedImages['universal'][universalIndex] || { url: '', description: '' };
+const universalId = `${shot.id}-universal-${universalImageId}`;
+
+universalNanobanaHtml += `
+    <div class="reference-image-slot">
+        <div class="reference-preview" id="preview-${universalId}">
+            ${universalData.url ? 
+                `<img src="${universalData.url}" alt="Universal" 
+                     style="cursor: pointer;" 
+                     onclick="openImageModal('${universalData.url}')"
+                     onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=&quot;color:#999;font-size:0.8rem;&quot;>로드 실패</div>';">` :
+                `<div style="color:#ccc;font-size:0.8rem;">Universal 1</div>`
+            }
+        </div>
+        <div class="form-group">
+            <label class="form-label">UNIVERSAL URL:</label>
+            <input type="text" class="form-input" 
+                   id="url-input-${universalId}"
+                   value="${universalData.url || ''}" 
+                   placeholder="Universal URL" 
+                   onchange="updateImageUrl('${shot.id}', 'universal', '${universalImageId}', this.value)">
+        </div>
+        <div class="form-group">
+            <label class="form-label">설명:</label>
+            <textarea class="form-textarea" 
+                      onchange="updateImageDescription('${shot.id}', 'universal', '${universalImageId}', this.value)">${universalData.description || ''}</textarea>
+        </div>
+    </div>
+`;
+
+// Nanobana 슬롯 생성
+const nanobanaImageId = 'A-01';  // 고정 ID 사용
+const nanobanaIndex = 0;  // 첫 번째 인덱스만 사용
+
+// Nanobana 데이터 처리
+if (!aiGeneratedImages['nanobana']) {
+    aiGeneratedImages['nanobana'] = [];
+}
+while (aiGeneratedImages['nanobana'].length <= nanobanaIndex) {
+    aiGeneratedImages['nanobana'].push({ url: '', description: '' });
+}
+
+const nanobanaData = aiGeneratedImages['nanobana'][nanobanaIndex] || { url: '', description: '' };
+const nanobanaId = `${shot.id}-nanobana-${nanobanaImageId}`;
+
+universalNanobanaHtml += `
+    <div class="reference-image-slot">
+        <div class="reference-preview" id="preview-${nanobanaId}">
+            ${nanobanaData.url ? 
+                `<img src="${nanobanaData.url}" alt="Nanobana" 
+                     style="cursor: pointer;" 
+                     onclick="openImageModal('${nanobanaData.url}')"
+                     onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=&quot;color:#999;font-size:0.8rem;&quot;>로드 실패</div>';">` :
+                `<div style="color:#ccc;font-size:0.8rem;">Nanobana 1</div>`
+            }
+        </div>
+        <div class="form-group">
+            <label class="form-label">NANOBANA URL:</label>
+            <input type="text" class="form-input" 
+                   id="url-input-${nanobanaId}"
+                   value="${nanobanaData.url || ''}" 
+                   placeholder="Nanobana URL" 
+                   onchange="updateImageUrl('${shot.id}', 'nanobana', '${nanobanaImageId}', this.value)">
+        </div>
+        <div class="form-group">
+            <label class="form-label">설명:</label>
+            <textarea class="form-textarea" 
+                      onchange="updateImageDescription('${shot.id}', 'nanobana', '${nanobanaImageId}', this.value)">${nanobanaData.description || ''}</textarea>
+        </div>
+    </div>
+`;
+
+// 기타 AI 도구들은 기존 aiSectionsHtml 사용 (모든 AI 포함)
+otherAIsHtml = aiSectionsHtml;
+
 const tabHtml = `
     ${planSelectorHtml}
+    
+    <!-- 기타 AI 도구 섹션 -->
     <div class="info-section">
-        <h3>🎨 AI 이미지 생성 및 관리</h3>
+        <h3>🔧 기타 AI 이미지 생성 도구</h3>
         <p style="font-size:0.9em;color:#ccc;margin-bottom:20px;">
             각 이미지별로 AI 도구의 프롬프트를 확인하고 생성된 이미지를 관리하세요.
         </p>
-        ${aiSectionsHtml || '<p style="color:#ccc;">프롬프트 데이터가 없습니다.</p>'}
+        ${otherAIsHtml || '<p style="color:#ccc;">프롬프트 데이터가 없습니다.</p>'}
     </div>
+    
+    <!-- 메인 이미지 섹션 (2개) -->
     <div class="info-section reference-image-slots-container">
-        <h3>🖼️ 참조 이미지</h3>
+        <h3>🎨 메인 이미지</h3>
+        <div class="reference-image-slots-grid">${referenceSlotsHtmlDuplicate}</div>
+    </div>
+    
+    <!-- 참조 이미지 섹션 (원본 - 3개) -->
+    <div class="info-section reference-image-slots-container">
+        <h3>📌 참조 이미지</h3>
         <div class="reference-image-slots-grid">${referenceSlotsHtml}</div>
     </div>`;
 
@@ -4489,6 +4734,10 @@ if (selectedPlanData && selectedPlanData.images) {
         universalData: aiGeneratedImages.universal
     });
 }
+
+// Universal과 Nanobana의 DOM이 렌더링된 후 값과 미리보기 업데이트
+// 참고: Universal과 Nanobana는 이미 HTML 생성 시 값이 설정되므로 별도 복원 불필요
+// HTML에서 value="${universalData.url || ''}" 형태로 이미 설정됨
 
 return tabHtml;
     
@@ -4686,13 +4935,27 @@ try {
 			
 			// 드롭박스 URL 자동 변환
 			const processedUrl = convertDropboxUrl(newUrl);
+			
+			// URL을 캐시에 저장 (참조이미지와 동일한 방식)
+			if (processedUrl) {
+				const cacheKey = `${shotId}_${aiType}_${imageId}`;
+				imageUrlCache[cacheKey] = {
+					url: processedUrl,
+					timestamp: new Date().toISOString(),
+					shotId: shotId,
+					aiType: aiType,
+					imageId: imageId
+				};
+				saveImageCacheToLocalStorage();
+				console.log('💾 URL 캐시 저장:', cacheKey, processedUrl);
+			}
 
-			// image_design 구조 초기화
+			// image_design 구조 초기화 (ai_generated_images는 따로 처리)
 			if (!shot.image_design) {
 				shot.image_design = { 
 					aspect_ratio: "16:9", 
-					selected_plan: "plan_a",
-					ai_generated_images: {}
+					selected_plan: "plan_a"
+					// ai_generated_images는 여기서 초기화하지 않음! 기존 데이터 보존
 				};
 			}
 			if (!shot.image_design.ai_generated_images) {
@@ -4788,10 +5051,78 @@ try {
 		}
 	}
 
+	// 이미지 캐시를 localStorage에 저장
+	function saveImageCacheToLocalStorage() {
+		try {
+			const jsonFileName = getProjectFileName();
+			const cacheKey = `imageUrlCache_${jsonFileName}`;
+			localStorage.setItem(cacheKey, JSON.stringify(imageUrlCache));
+			console.log('✅ 이미지 캐시 저장 완료:', Object.keys(imageUrlCache).length, '개 항목');
+			return true;
+		} catch (e) {
+			console.error('❌ 이미지 캐시 저장 실패:', e);
+			return false;
+		}
+	}
+
+	// 이미지 캐시를 localStorage에서 로드
+	function loadImageCacheFromLocalStorage() {
+		try {
+			const jsonFileName = getProjectFileName();
+			const cacheKey = `imageUrlCache_${jsonFileName}`;
+			const cached = localStorage.getItem(cacheKey);
+			if (cached) {
+				imageUrlCache = JSON.parse(cached);
+				console.log('✅ 이미지 캐시 로드 완료:', Object.keys(imageUrlCache).length, '개 항목');
+				return true;
+			}
+		} catch (e) {
+			console.error('❌ 이미지 캐시 로드 실패:', e);
+		}
+		return false;
+	}
+
+	// 캐시된 URL 가져오기
+	function getCachedUrl(shotId, aiType, imageId) {
+		const cacheKey = `${shotId}_${aiType}_${imageId}`;
+		const cached = imageUrlCache[cacheKey];
+		if (cached) {
+			console.log('🔍 캐시된 URL 발견:', cacheKey, cached.url);
+			return cached.url;
+		}
+		return null;
+	}
+
 	// 이미지 미리보기 업데이트 함수
 	function updateImagePreview(shotId, aiType, imageId, newUrl) {
 		try {
-			// 해당 이미지 슬롯의 미리보기 영역을 찾기
+			// Universal과 Nanobana의 경우 다른 ID 형식 사용
+			if (aiType === 'universal' || aiType === 'nanobana') {
+				const uniqueId = `${shotId}-${aiType}-${imageId}`;
+				const preview = document.getElementById(`preview-${uniqueId}`);
+				
+				if (preview) {
+					if (newUrl && newUrl.trim() !== '') {
+						// blob URL 감지 및 경고
+						if (newUrl.startsWith('blob:')) {
+							preview.innerHTML = `<div style="color:#ff9800;font-size:0.8rem;">임시 이미지 - 다시 업로드해주세요</div>`;
+						} else {
+							preview.innerHTML = `<img src="${newUrl}" alt="${aiType} - ${imageId}" 
+								style="cursor: pointer;" 
+								onclick="openImageModal('${newUrl}')"
+								onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=&quot;color:#999;font-size:0.8rem;&quot;>로드 실패</div>';">`;
+						}
+					} else {
+						preview.innerHTML = `<div style="color:#ccc;font-size:0.8rem;">${aiType === 'universal' ? 'Universal' : 'Nanobana'} ${imageId}</div>`;
+					}
+					console.log(`✅ ${aiType} 미리보기 업데이트 완료:`, uniqueId, newUrl);
+				} else {
+					console.warn(`⚠️ ${aiType} 미리보기 요소를 찾을 수 없음:`, `preview-${uniqueId}`);
+				}
+				return;
+			}
+			
+			// 기타 AI 도구의 경우 기존 방식 사용
 			const inputElement = document.querySelector(`input[onchange*="updateImageUrl('${shotId}', '${aiType}', '${imageId}',"]`);
 			if (!inputElement) {
 				return;

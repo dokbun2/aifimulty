@@ -197,7 +197,7 @@ body {
 }
 
 .search-box::before {
-    content: "🔍" !important;
+    content: "🔎" !important;
     position: absolute !important;
     left: 12px !important;
     top: 50% !important;
