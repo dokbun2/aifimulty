@@ -4716,7 +4716,7 @@ const tabHtml = `
     
     <!-- 메인 이미지 섹션 (2개) -->
     <div class="info-section reference-image-slots-container">
-        <h3>🎨 메인 이미지</h3>
+        <h3>🎨 MAIN 이미지(유니버셜 & 나노바나나)</h3>
         <div class="reference-image-slots-grid">${referenceSlotsHtmlDuplicate}</div>
     </div>
     
