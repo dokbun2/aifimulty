@@ -932,11 +932,58 @@ function createTestData() {
 
 				const parsedData = JSON.parse(savedData);
 				
-				// Universal 이미지 데이터 확인
-				console.log('🔍 로드된 데이터에서 Universal 이미지 확인:');
+				// Universal 이미지 데이터 확인 및 배열 구조 보장
+				console.log('🔍 로드된 데이터에서 Universal 이미지 확인 및 정규화:');
 				parsedData.breakdown_data?.shots?.forEach(shot => {
+					// image_design 구조 초기화
+					if (!shot.image_design) {
+						shot.image_design = { 
+							aspect_ratio: "16:9", 
+							selected_plan: "plan_a",
+							ai_generated_images: {}
+						};
+					}
+					
+					if (!shot.image_design.ai_generated_images) {
+						shot.image_design.ai_generated_images = {};
+					}
+					
+					// 각 AI 도구별 배열 구조 보장 (모든 AI 도구 포함)
+					const aiTools = ['universal', 'nanobana', 'midjourney', 'ideogram', 'leonardo', 'imagefx', 'luma', 'kling', 'veo2', 'runway', 'minimax', 'cogvideo', 'pika', 'haiper', 'pixverse', 'morph', 'hotshot', 'hunyuan', 'pika2', 'haiper2', 'lightricks', 'genmo'];
+					aiTools.forEach(aiId => {
+						if (!shot.image_design.ai_generated_images[aiId]) {
+							shot.image_design.ai_generated_images[aiId] = [];
+						} else if (!Array.isArray(shot.image_design.ai_generated_images[aiId])) {
+							// 객체를 배열로 변환
+							const oldData = shot.image_design.ai_generated_images[aiId];
+							const newArray = [];
+							for (let i = 0; i < 3; i++) {
+								const key = String(i);
+								newArray.push(oldData[key] || { url: '', description: '' });
+							}
+							shot.image_design.ai_generated_images[aiId] = newArray;
+						}
+						
+						// 배열 크기 및 요소 검증
+						while (shot.image_design.ai_generated_images[aiId].length < 3) {
+							shot.image_design.ai_generated_images[aiId].push({ url: '', description: '' });
+						}
+						
+						// 각 요소가 올바른 객체인지 확인
+						for (let i = 0; i < shot.image_design.ai_generated_images[aiId].length; i++) {
+							if (!shot.image_design.ai_generated_images[aiId][i] || typeof shot.image_design.ai_generated_images[aiId][i] !== 'object') {
+								shot.image_design.ai_generated_images[aiId][i] = { url: '', description: '' };
+							}
+						}
+					});
+					
+					// Universal 및 다른 AI 도구 데이터 확인
 					if (shot.image_design?.ai_generated_images?.universal) {
-						console.log(`  샷 ${shot.id}:`, shot.image_design.ai_generated_images.universal);
+						const universalData = shot.image_design.ai_generated_images.universal;
+						const urlCount = universalData.filter(img => img && img.url).length;
+						if (urlCount > 0) {
+							console.log(`✅ 샷 ${shot.id} Universal 데이터 로드: ${urlCount}개 URL`, universalData);
+						}
 					}
 				});
 				
@@ -3843,38 +3890,28 @@ const imageDesignPlans = imageDesign.plans || {};
 const selectedPlan = imageDesign.selected_plan || 'A';
 const complexity = imageDesign.complexity || 'complex';
 
-// AI 생성 이미지 데이터 초기화 - 배열 형식으로 통일
-let aiGeneratedImages = imageDesign.ai_generated_images || {};
+// AI 생성 이미지 데이터 가져오기
+// shot.image_design이 없거나 ai_generated_images가 없으면 초기화
+if (!shot.image_design) {
+    shot.image_design = {
+        aspect_ratio: "16:9",
+        selected_plan: "plan_a",
+        ai_generated_images: {}
+    };
+}
 
-// 각 AI 도구별로 배열 형식으로 변환 또는 초기화
-const aiTools = ['universal', 'luma', 'kling', 'veo2', 'runway', 'minimax', 'pika2', 'haiper2', 'lightricks', 'genmo'];
-aiTools.forEach(aiId => {
-    if (!aiGeneratedImages[aiId]) {
-        // 데이터가 없으면 빈 배열로 초기화
-        aiGeneratedImages[aiId] = [];
-    } else if (!Array.isArray(aiGeneratedImages[aiId])) {
-        // 객체 형식이면 배열로 변환
-        const oldData = aiGeneratedImages[aiId];
-        const newArray = [];
-        for (let i = 0; i < 3; i++) {
-            const key = String(i);
-            newArray.push(oldData[key] || { url: '', description: '' });
-        }
-        aiGeneratedImages[aiId] = newArray;
-    }
-    
-    // 배열 크기가 부족하면 빈 객체로 채우기
-    while (aiGeneratedImages[aiId].length < 3) {
-        aiGeneratedImages[aiId].push({ url: '', description: '' });
-    }
-    
-    // Universal AI 데이터 확인 로그
-    if (aiId === 'universal' && aiGeneratedImages[aiId].some(img => img.url)) {
-        console.log('✅ Universal 이미지 데이터 초기화 완료:', {
-            shotId: shot.id,
-            universalData: aiGeneratedImages[aiId]
-        });
-    }
+if (!shot.image_design.ai_generated_images) {
+    shot.image_design.ai_generated_images = {};
+}
+
+const aiGeneratedImages = shot.image_design.ai_generated_images;
+
+// Universal 데이터 확인 로그
+console.log('🎨 createShotImageTab 시작 - 전체 이미지 데이터:', {
+    shotId: shot.id,
+    imageDesign: shot.image_design,
+    aiGeneratedImages: aiGeneratedImages,
+    universal: aiGeneratedImages.universal
 });
 
 const referenceImagesData = shot.reference_images || [];
@@ -4232,60 +4269,64 @@ let aiSectionsHtml = '';
 						}
 
 						// AI별 생성된 이미지 데이터 (배열에서 가져오기)
-						let imageData;
 						const imageIndex = parseImageIndex(imageId);
 						
-						// 디버깅 로그 추가
-						if (ai.id === 'universal') {
-							console.log('🔍 Universal 이미지 데이터 확인:', {
-								shotId: shot.id,
-								aiId: ai.id,
-								imageId: imageId,
-								imageIndex: imageIndex,
-								aiGeneratedImages: aiGeneratedImages,
-								aiData: aiGeneratedImages[ai.id],
-								isArray: Array.isArray(aiGeneratedImages[ai.id])
-							});
+						// aiGeneratedImages가 제대로 초기화되었는지 확인
+						if (!aiGeneratedImages[ai.id]) {
+							aiGeneratedImages[ai.id] = [];
 						}
 						
-						if (Array.isArray(aiGeneratedImages[ai.id])) {
-							// 배열인 경우 (새 구조) - parseImageIndex 사용
-							imageData = aiGeneratedImages[ai.id][imageIndex] || { url: '', description: '' };
-							
-							if (ai.id === 'universal') {
-								console.log('🔍 Universal 이미지 데이터 (배열):', {
-									imageIndex,
-									imageData,
-									전체배열: aiGeneratedImages[ai.id]
-								});
+						// 배열이 아니면 배열로 변환
+						if (!Array.isArray(aiGeneratedImages[ai.id])) {
+							const oldData = aiGeneratedImages[ai.id];
+							aiGeneratedImages[ai.id] = [];
+							for (let i = 0; i < 3; i++) {
+								aiGeneratedImages[ai.id].push(oldData[String(i)] || { url: '', description: '' });
 							}
-						} else if (aiGeneratedImages[ai.id] && typeof aiGeneratedImages[ai.id] === 'object') {
-							// 객체인 경우 (구 구조 호환성)
-							imageData = aiGeneratedImages[ai.id][imageId] || { url: '', description: '' };
-							
-							if (ai.id === 'universal') {
-								console.log('🔍 Universal 이미지 데이터 (객체):', {
-									imageId,
-									imageData,
-									전체객체: aiGeneratedImages[ai.id]
-								});
-							}
-						} else {
-							// 데이터가 없는 경우
+						}
+						
+						// 배열 크기 보장
+						while (aiGeneratedImages[ai.id].length <= imageIndex) {
+							aiGeneratedImages[ai.id].push({ url: '', description: '' });
+						}
+						
+						// imageData 가져오기 - 참조 이미지와 동일한 패턴 사용
+						let imageData = aiGeneratedImages[ai.id][imageIndex] || { url: '', description: '' };
+						
+						// 객체가 아닌 경우 초기화
+						if (typeof imageData !== 'object' || imageData === null) {
 							imageData = { url: '', description: '' };
-							
-							if (ai.id === 'universal') {
-								console.log('⚠️ Universal 이미지 데이터 없음');
-							}
+							aiGeneratedImages[ai.id][imageIndex] = imageData;
+						}
+						
+						// URL과 description이 undefined인 경우 빈 문자열로 초기화
+						if (!imageData.url && imageData.url !== '') {
+							imageData.url = '';
+						}
+						if (!imageData.description && imageData.description !== '') {
+							imageData.description = '';
+						}
+						
+						// 디버깅 로그
+						if (ai.id === 'universal' && imageData.url) {
+							console.log('🎨 Universal 이미지 URL 발견:', {
+								shotId: shot.id,
+								imageId: imageId,
+								imageIndex: imageIndex,
+								url: imageData.url
+							});
 						}
 						
 						// Universal 이미지 로드 확인
 						if (ai.id === 'universal') {
 							console.log('🔍 Universal 이미지 로드 확인:', {
 								imageId,
+								imageIndex,
 								imageData,
+								url: imageData.url || '(비어있음)',
+								description: imageData.description || '(비어있음)',
 								allUniversalImages: aiGeneratedImages.universal,
-								shot: shot
+								shotId: shot.id
 							});
 						}
 
@@ -4323,10 +4364,10 @@ let aiSectionsHtml = '';
 									<h6>생성된 이미지</h6>
 									<div class="image-slot-card">
 										<div class="image-slot-preview">
-											${imageData.url ? 
-												`<img src="${imageData.url}" alt="${ai.name} - ${imageId}" 
+											${(imageData && imageData.url) ? 
+												`<img src="${escapeHtmlAttribute(imageData.url)}" alt="${ai.name} - ${imageId}" 
 												style="cursor: pointer;" 
-												onclick="openImageModal('${imageData.url}')"
+												onclick="openImageModal('${escapeHtmlAttribute(imageData.url)}')"
 												onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=&quot;color:#999;font-size:0.8rem;&quot;>로드 실패</div>';">` :
 												`<div style="color:#ccc;font-size:0.8rem;">URL 입력</div>`
 											}
@@ -4335,12 +4376,13 @@ let aiSectionsHtml = '';
 											<label class="form-label">URL:</label>
 											<div style="display: flex; gap: 8px; align-items: center;">
 												<input type="text" class="form-input" 
-													   value="${imageData.url || ''}" 
+													   id="url-input-${shot.id}-${ai.id}-${imageIndex}"
+													   value="${(imageData && imageData.url) ? escapeHtmlAttribute(imageData.url) : ''}" 
 													   placeholder="${ai.name} URL" 
-													   onchange="updateImageUrl('${shot.id}', '${ai.id}', '${imageId}', this.value)"
+													   onchange="updateImageUrl('${shot.id}', '${ai.id}', '${imageIndex}', this.value)"
 													   style="flex: 1;">
 												<button type="button" class="btn btn-secondary btn-small" 
-														onclick="uploadImageForShot('${shot.id}', '${ai.id}', '${imageId}')" 
+														onclick="uploadImageForShot('${shot.id}', '${ai.id}', '${imageIndex}')" 
 														title="로컬 파일 업로드">
 													📁 파일 업로드
 												</button>
@@ -4350,7 +4392,7 @@ let aiSectionsHtml = '';
 											<label class="form-label">설명:</label>
 											<textarea class="form-textarea" 
 													  placeholder="${ai.name} 설명" 
-													  onchange="updateImageDescription('${shot.id}', '${ai.id}', '${imageId}', this.value)">${imageData.description || ''}</textarea>
+													  onchange="updateImageDescription('${shot.id}', '${ai.id}', '${imageIndex}', this.value)">${(imageData && imageData.description) ? escapeHtmlAttribute(imageData.description) : ''}</textarea>
 										</div>
 									</div>
 								</div>
@@ -4425,7 +4467,7 @@ for (let i = 0; i < 3; i++) {
         </div>`;
 }
 
-return `
+const tabHtml = `
     ${planSelectorHtml}
     <div class="info-section">
         <h3>🎨 AI 이미지 생성 및 관리</h3>
@@ -4438,6 +4480,17 @@ return `
         <h3>🖼️ 참조 이미지</h3>
         <div class="reference-image-slots-grid">${referenceSlotsHtml}</div>
     </div>`;
+
+// AI 이미지 데이터 확인 및 재검증
+if (selectedPlanData && selectedPlanData.images) {
+    console.log('🎨 AI 이미지 데이터 검증:', {
+        shotId: shot.id,
+        planImages: selectedPlanData.images.length,
+        universalData: aiGeneratedImages.universal
+    });
+}
+
+return tabHtml;
     
     } catch (error) {
 console.error('❌ createShotImageTab 오류:', error);
@@ -4628,8 +4681,8 @@ try {
 				return showMessage('샷 데이터를 찾을 수 없습니다.', 'error');
 			}
 
-			// imageId를 안전하게 인덱스로 변환
-			const imageIndex = parseImageIndex(imageId);
+			// imageId를 안전하게 인덱스로 변환 (이미 숫자인 경우도 처리)
+			const imageIndex = typeof imageId === 'number' ? imageId : parseImageIndex(imageId);
 			
 			// 드롭박스 URL 자동 변환
 			const processedUrl = convertDropboxUrl(newUrl);
@@ -4691,12 +4744,40 @@ try {
 			const saveResult = saveDataToLocalStorage();
 			console.log('💾 저장 결과:', saveResult !== false ? '성공' : '실패');
 			
-			// 저장 후 확인
+			// 저장 후 currentData를 다시 로드하여 동기화
+			if (saveResult) {
+				const jsonFileName = getProjectFileName();
+				const savedData = localStorage.getItem(`breakdownData_${jsonFileName}`);
+				if (savedData) {
+					const reloadedData = JSON.parse(savedData);
+					currentData = reloadedData;
+					window.currentData = currentData;
+					console.log('♻️ currentData 재동기화 완료');
+				}
+			}
+			
+			// 저장 후 확인 - localStorage에서 직접 읽어와 확인
 			if (aiType === 'universal') {
 				console.log('🔍 Universal 저장 후 확인:', {
 					shot: shot.id,
 					universal배열: shot.image_design.ai_generated_images.universal
 				});
+				
+				// localStorage에서 실제 저장된 데이터 확인
+				const jsonFileName = getProjectFileName();
+				const savedData = localStorage.getItem(`breakdownData_${jsonFileName}`);
+				if (savedData) {
+					try {
+						const parsedData = JSON.parse(savedData);
+						const savedShot = parsedData.breakdown_data.shots.find(s => s.id === shotId);
+						if (savedShot && savedShot.image_design && savedShot.image_design.ai_generated_images) {
+							console.log('📦 localStorage에 실제 저장된 Universal 데이터:', 
+								savedShot.image_design.ai_generated_images.universal);
+						}
+					} catch (e) {
+						console.error('localStorage 데이터 파싱 실패:', e);
+					}
+				}
 			}
 
 			// 미리보기 업데이트 - ID 기반으로 찾기 (원래 imageId 문자열 사용)
@@ -4900,8 +4981,8 @@ try {
 			const shot = currentData.breakdown_data.shots.find(s => s.id === shotId);
 			if (!shot) return showMessage('샷 데이터를 찾을 수 없습니다.', 'error');
 
-			// imageId를 안전하게 인덱스로 변환
-			const imageIndex = parseImageIndex(imageId);
+			// imageId를 안전하게 인덱스로 변환 (이미 숫자인 경우도 처리)
+			const imageIndex = typeof imageId === 'number' ? imageId : parseImageIndex(imageId);
 
 			if (!shot.image_design) shot.image_design = {};
 			if (!shot.image_design.ai_generated_images) shot.image_design.ai_generated_images = {};

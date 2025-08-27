@@ -1,0 +1,106 @@
+{
+  "project_info": {
+    "name": "Universal AI 이미지 테스트",
+    "description": "Universal AI 이미지 URL 유지 테스트용 데이터"
+  },
+  "breakdown_data": {
+    "sequences": [
+      {
+        "id": "SEQ01",
+        "title": "시퀀스 1: 테스트",
+        "description": "테스트 시퀀스"
+      }
+    ],
+    "scenes": [
+      {
+        "id": "SC01",
+        "sequence_id": "SEQ01",
+        "title": "씬 1: 테스트 씬",
+        "description": "Universal AI 이미지 테스트용 씬"
+      }
+    ],
+    "shots": [
+      {
+        "id": "S01.01",
+        "scene_id": "SC01",
+        "title": "테스트 샷",
+        "shot_type": "Wide",
+        "description": "Universal AI 이미지 URL 테스트용 샷",
+        "image_design": {
+          "aspect_ratio": "16:9",
+          "selected_plan": "A",
+          "complexity": "complex",
+          "plans": {
+            "A": {
+              "description": "플랜 A",
+              "images": [
+                {
+                  "id": "S01.01-A-01",
+                  "description": "첫 번째 이미지"
+                },
+                {
+                  "id": "S01.01-A-02",
+                  "description": "두 번째 이미지"
+                },
+                {
+                  "id": "S01.01-A-03",
+                  "description": "세 번째 이미지"
+                }
+              ]
+            }
+          },
+          "ai_generated_images": {
+            "universal": [
+              {
+                "url": "",
+                "description": ""
+              },
+              {
+                "url": "",
+                "description": ""
+              },
+              {
+                "url": "",
+                "description": ""
+              }
+            ],
+            "midjourney": [
+              {
+                "url": "",
+                "description": ""
+              },
+              {
+                "url": "",
+                "description": ""
+              },
+              {
+                "url": "",
+                "description": ""
+              }
+            ]
+          }
+        },
+        "reference_images": [
+          {
+            "id": "ref_img_1_S01.01",
+            "url": "",
+            "description": "",
+            "type": "composition"
+          },
+          {
+            "id": "ref_img_2_S01.01",
+            "url": "",
+            "description": "",
+            "type": "composition"
+          },
+          {
+            "id": "ref_img_3_S01.01",
+            "url": "",
+            "description": "",
+            "type": "composition"
+          }
+        ]
+      }
+    ]
+  }
+}
