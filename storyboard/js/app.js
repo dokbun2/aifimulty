@@ -1571,6 +1571,12 @@ function createTestData() {
                            urlUpdateCount++;
                        }
                        
+                       // 메인 이미지 복원
+                       if (shotUrls.main_images) {
+                           shot.main_images = shotUrls.main_images;
+                           urlUpdateCount++;
+                       }
+                       
                        // 참조 이미지 복원
                        if (shotUrls.reference_images) {
                            shot.reference_images = shotUrls.reference_images;
@@ -2171,6 +2177,12 @@ function createTestData() {
                            };
                        }
                        
+                       // 메인 이미지 초기화 (없는 경우)
+                       if (!shot.main_images) {
+                           shot.main_images = [];
+                       }
+                       
+                       // 참조 이미지 초기화 (없는 경우)
                        if (!shot.reference_images) {
                            shot.reference_images = [];
                        }
