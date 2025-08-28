@@ -1559,7 +1559,55 @@ function createTestData() {
 					let updated = false;
 					let message = '';
 
-           // 전체 프로젝트 백업 파일 처리
+           // v1.1.0 형식은 바로 처리 (디버깅 강화)
+           console.log('📌 업로드된 파일 분석 중...');
+           console.log('  - schema_version:', newData.schema_version);
+           console.log('  - breakdown_data 존재:', !!newData.breakdown_data);
+           if (newData.breakdown_data) {
+               console.log('  - sequences 존재:', !!newData.breakdown_data.sequences, newData.breakdown_data.sequences?.length || 0, '개');
+               console.log('  - scenes 존재:', !!newData.breakdown_data.scenes, newData.breakdown_data.scenes?.length || 0, '개');
+               console.log('  - shots 존재:', !!newData.breakdown_data.shots, newData.breakdown_data.shots?.length || 0, '개');
+           }
+           
+           if (newData.schema_version === "1.1.0" && newData.breakdown_data && 
+               newData.breakdown_data.sequences && newData.breakdown_data.scenes && newData.breakdown_data.shots) {
+               console.log('✅ v1.1.0 형식 조건 매치! 파일 처리 시작...');
+               
+               // v1.1.0 형식은 그 자체가 완전한 데이터
+               currentData = newData;
+               window.currentData = currentData;
+               hasStage2Structure = true;
+               
+               // project_info가 없으면 기본값 설정
+               if (!currentData.project_info) {
+                   currentData.project_info = {
+                       name: 'storyboard_project',
+                       created_at: new Date().toISOString()
+                   };
+               }
+               
+               console.log('🔄 데이터 저장 시도...');
+               saveDataToLocalStorage();
+               console.log('🔄 UI 업데이트 시도...');
+               updateUI();
+               
+               const totalShots = currentData.breakdown_data.shots ? currentData.breakdown_data.shots.length : 0;
+               const totalScenes = currentData.breakdown_data.scenes ? currentData.breakdown_data.scenes.length : 0;
+               const totalSequences = currentData.breakdown_data.sequences ? currentData.breakdown_data.sequences.length : 0;
+               
+               showMessage(
+                   `✅ v1.1.0 프로젝트 데이터가 성공적으로 로드되었습니다!\n` +
+                   `시퀀스: ${totalSequences}개, ` +
+                   `씬: ${totalScenes}개, ` +
+                   `샷: ${totalShots}개`, 
+                   'success'
+               );
+               
+               event.target.value = '';
+               return;
+           }
+           
+           // 일반 전체 프로젝트 백업 파일 처리
            if (newData.type === 'full_project_backup' && newData.data) {
                const confirmRestore = confirm(
                    '전체 프로젝트 백업 파일입니다.\n' +
@@ -2140,9 +2188,13 @@ function createTestData() {
                      saveDataToLocalStorage();
 						}
             // 3.5 스테이지 5 씬 단위 데이터 처리 (Stage 2보다 먼저 체크)
-					else if (newData.film_metadata && newData.film_metadata.current_scene !== undefined && newData.breakdown_data && 
+            // v1.1.0이 아닌 경우에만 Stage 5로 처리
+					else if (newData.schema_version !== "1.1.0" && // v1.1.0은 여기서 처리하지 않음
+                    newData.film_metadata && newData.film_metadata.current_scene !== undefined && newData.breakdown_data && 
                     newData.breakdown_data.shots) { // shots 배열이 있으면 Stage 5
-              // Stage 2 구조 확인 (완화된 체크)
+               console.log('📌 Stage 5 씬 데이터로 인식됨 (v1.1.0이 아님)');
+               // Stage 2 구조 확인 (일반적인 Stage 5 데이터의 경우)
+               // v1.1.0은 이미 완전한 구조를 가지고 있으므로 위에서 이미 처리됨
                if (!hasStage2Structure && 
                    (!currentData?.breakdown_data?.sequences || currentData.breakdown_data.sequences.length === 0) &&
                    !currentData?.stage2_data) {
