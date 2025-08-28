@@ -1889,6 +1889,11 @@ function createTestData() {
 								window.stage6ImagePrompts = {};
 							}
 
+							// generation_settings 저장 (선택된 AI 도구 정보 포함)
+							if (newData.generation_settings) {
+								window.stage6ImagePrompts.generation_settings = newData.generation_settings;
+							}
+
 							newData.shots.forEach(shotData => {
 								const shotId = shotData.shot_id;
 								// 기존 데이터를 완전히 대체 (업데이트)
@@ -4509,8 +4514,26 @@ let aiSectionsHtml = '';
 			console.log('📊 CSV 매핑 데이터 확인:', csvMapping);
 			
 			if (allPlanImages.length > 0) {
-				// 프롬프트가 있는 AI 도구만 필터링
+				// Stage 6에서 선택된 AI 도구 확인
+				let selectedAITools = [];
+				if (window.stage6ImagePrompts && window.stage6ImagePrompts.generation_settings) {
+					selectedAITools = window.stage6ImagePrompts.generation_settings.selected_ai_tools || [];
+				}
+				
+				// 프롬프트가 있는 AI 도구만 필터링 (Midjourney 제외)
 				const validAIs = imageAIs.filter(ai => {
+					// Midjourney는 제외
+					if (ai.id === 'midjourney') {
+						return false;
+					}
+					
+					// Stage 6에서 선택된 도구만 표시
+					if (selectedAITools.length > 0) {
+						// 선택된 도구 목록이 있으면, 선택된 도구만 표시
+						return selectedAITools.includes(ai.id);
+					}
+					
+					// 선택된 도구 목록이 없으면 프롬프트가 있는 도구만 표시
 					return allPlanImages.some(planImage => {
 						const imageId = planImage.id;
 						// 데이터 조회를 위한 ID 매핑
@@ -7699,6 +7722,12 @@ try {
                                         if (!window.stage6ImagePrompts) {
                                             window.stage6ImagePrompts = {};
                                         }
+                                        
+                                        // generation_settings 저장 (선택된 AI 도구 정보 포함)
+                                        if (newData.generation_settings) {
+                                            window.stage6ImagePrompts.generation_settings = newData.generation_settings;
+                                        }
+                                        
                                         newData.shots.forEach(shotData => {
                                             const shotId = shotData.shot_id;
                                             window.stage6ImagePrompts[shotId] = {};
@@ -7743,12 +7772,7 @@ try {
                                                                     parameters: firstImageData.csv_data?.PARAMETERS || ''
                                                                 };
                                                                 
-                                                                // universal을 다른 AI 도구 형식으로도 저장 (호환성)
-                                                                shot.image_prompts.midjourney = {
-                                                                    main_prompt: shot.image_prompts.universal.main_prompt,
-                                                                    main_prompt_translated: shot.image_prompts.universal.main_prompt_translated,
-                                                                    parameters: shot.image_prompts.universal.parameters
-                                                                };
+                                                                // universal은 universal로만 저장 (midjourney로 복사하지 않음)
                                                             } else if (aiTool === 'universal_translated') {
                                                                 // universal_translated는 이미 universal에서 처리됨
                                                                 return;
@@ -7854,6 +7878,11 @@ try {
                                         window.stage6ImagePrompts = {};
                                     }
                                     
+                                    // generation_settings 저장 (선택된 AI 도구 정보 포함)
+                                    if (newData.generation_settings) {
+                                        window.stage6ImagePrompts.generation_settings = newData.generation_settings;
+                                    }
+                                    
                                     newData.shots.forEach(shotData => {
                                         const shotId = shotData.shot_id;
                                         // 기존 데이터를 완전히 대체 (업데이트)
@@ -7916,28 +7945,11 @@ try {
                                                         const universalTranslated = firstImageData.prompts.universal_translated || '';
                                                         const csvParams = firstImageData.csv_data?.PARAMETERS || '';
                                                         
-                                                        // universal 프롬프트 저장
+                                                        // universal 프롬프트만 저장 (다른 AI 도구로 복사하지 않음)
                                                         shot.image_prompts.universal = {
                                                             main_prompt: universalPrompt,
                                                             main_prompt_translated: universalTranslated,
                                                             parameters: csvParams
-                                                        };
-                                                        
-                                                        // 호환성을 위해 다른 AI 도구 형식으로도 저장
-                                                        shot.image_prompts.midjourney = {
-                                                            main_prompt: universalPrompt,
-                                                            main_prompt_translated: universalTranslated,
-                                                            parameters: csvParams
-                                                        };
-                                                        shot.image_prompts.dalle3 = {
-                                                            main_prompt: universalPrompt,
-                                                            main_prompt_translated: universalTranslated,
-                                                            parameters: ''
-                                                        };
-                                                        shot.image_prompts.stable_diffusion = {
-                                                            main_prompt: universalPrompt,
-                                                            main_prompt_translated: universalTranslated,
-                                                            parameters: ''
                                                         };
                                                     } else if (aiTool === 'universal_translated') {
                                                         // universal_translated는 이미 universal에서 처리됨
