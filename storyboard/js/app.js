@@ -1531,6 +1531,16 @@ function createTestData() {
                    console.log('🔄 백업 복원 완료 - 시퀀스 목록:', 
                        currentData.breakdown_data.sequences.map(s => `${s.id}: ${s.title}`));
                    
+                   // shots 배열 존재 여부 및 개수 확인
+                   if (currentData.breakdown_data.shots) {
+                       console.log(`📊 전체 shots 배열 데이터: ${currentData.breakdown_data.shots.length}개`);
+                       currentData.breakdown_data.shots.forEach(shot => {
+                           console.log(`  - ${shot.id}: "${shot.title}" (scene_id: ${shot.scene_id})`);
+                       });
+                   } else {
+                       console.log('⚠️ shots 배열이 없습니다!');
+                   }
+                   
                    // 시퀀스별 씬과 샷 정보 출력
                    currentData.breakdown_data.sequences.forEach(seq => {
                        const seqScenes = currentData.breakdown_data.scenes.filter(scene => scene.sequence_id === seq.id);
@@ -1538,16 +1548,16 @@ function createTestData() {
                        console.log(`  - 씬 개수: ${seqScenes.length}`);
                        seqScenes.forEach(scene => {
                            const shotCount = scene.shot_ids ? scene.shot_ids.length : 0;
-                           console.log(`    - ${scene.id}: ${scene.title} (샷 ${shotCount}개)`);
+                           console.log(`    - ${scene.id}: ${scene.title} (shot_ids: ${shotCount}개)`);
                            
                            // 샷 데이터 확인
                            if (scene.shot_ids && scene.shot_ids.length > 0) {
                                scene.shot_ids.forEach(shotId => {
-                                   const shot = currentData.breakdown_data.shots.find(s => s.id === shotId);
+                                   const shot = currentData.breakdown_data.shots?.find(s => s.id === shotId);
                                    if (shot) {
-                                       const hasImagePrompts = shot.image_prompts && Object.keys(shot.image_prompts).length > 0;
-                                       const hasVideoPrompts = shot.video_prompts && Object.keys(shot.video_prompts).length > 0;
-                                       console.log(`      - 샷 ${shotId}: 이미지프롬프트=${hasImagePrompts}, 비디오프롬프트=${hasVideoPrompts}`);
+                                       console.log(`      ✅ ${shotId}: "${shot.title}" 데이터 있음`);
+                                   } else {
+                                       console.log(`      ❌ ${shotId}: shots 배열에 데이터 없음`);
                                    }
                                });
                            }
@@ -3090,25 +3100,46 @@ function createTestData() {
    try {
        if (!currentData || !currentData.breakdown_data) return;
        
+       console.log(`🔍 Loading shots for scene: ${sceneId}`);
+       
        // 두 가지 데이터 구조 모두 지원
        let shots = [];
        
        // 방법 1: shots 배열에서 scene_id로 필터링
        if (currentData.breakdown_data.shots) {
            shots = currentData.breakdown_data.shots.filter(shot => shot.scene_id === sceneId);
+           console.log(`  방법 1: shots 배열에서 ${shots.length}개 찾음`);
        }
        
        // 방법 2: 씬의 shot_ids를 사용하여 샷 찾기
        if (shots.length === 0) {
            const scene = currentData.breakdown_data.scenes.find(s => s.id === sceneId);
            if (scene && scene.shot_ids && scene.shot_ids.length > 0) {
+               console.log(`  방법 2: scene.shot_ids 사용 (${scene.shot_ids.length}개)`);
+               
                // shot_ids 배열을 사용하여 샷 생성
                shots = scene.shot_ids.map((shotId, index) => {
-                   // 실제 샷 데이터가 있으면 사용, 없으면 기본 구조 생성
+                   // 실제 샷 데이터가 있으면 사용
                    const existingShot = currentData.breakdown_data.shots?.find(s => s.id === shotId);
-                   return existingShot || {
+                   if (existingShot) {
+                       console.log(`    ✅ ${shotId}: "${existingShot.title}" 찾음`);
+                       return existingShot;
+                   }
+                   
+                   // 샷 데이터가 없으면 shotId로부터 더 의미있는 제목 생성
+                   // 예: "S01.01" -> "S01 샷 01"
+                   let shotTitle = `샷 ${index + 1}`;
+                   if (shotId && shotId.includes('.')) {
+                       const parts = shotId.split('.');
+                       if (parts.length === 2) {
+                           shotTitle = `샷 ${parts[1]}`;
+                       }
+                   }
+                   
+                   console.log(`    ⚠️ ${shotId}: 기본 제목 사용 "${shotTitle}"`);
+                   return {
                        id: shotId,
-                       title: `샷 ${index + 1}`,
+                       title: shotTitle,
                        scene_id: sceneId
                    };
                });

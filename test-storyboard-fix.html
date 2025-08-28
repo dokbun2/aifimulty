@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스토리보드 백업 복원 테스트</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #007AFF;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .test-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+        .test-result {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-family: 'Monaco', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #10B981;
+        }
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #EF4444;
+        }
+        .warning {
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            color: #FCD34D;
+        }
+        .info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #60A5FA;
+        }
+        button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #0051D5;
+        }
+        .file-input {
+            display: inline-block;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .file-input:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 스토리보드 백업 복원 테스트</h1>
+    
+    <div class="test-section">
+        <div class="test-title">1️⃣ JSON 파일 로드 테스트</div>
+        <label class="file-input">
+            <input type="file" id="jsonFileInput" accept=".json">
+            JSON 파일 선택
+        </label>
+        <button onclick="loadSampleData()">샘플 데이터 로드</button>
+        <div id="loadResult" class="test-result info" style="display: none;"></div>
+    </div>
+    
+    <div class="test-section">
+        <div class="test-title">2️⃣ 시퀀스별 샷 데이터 분석</div>
+        <button onclick="analyzeShots()">샷 데이터 분석</button>
+        <div id="shotAnalysis" class="test-result info" style="display: none;"></div>
+    </div>
+    
+    <div class="test-section">
+        <div class="test-title">3️⃣ 샷 렌더링 시뮬레이션</div>
+        <button onclick="simulateRendering()">렌더링 시뮬레이션</button>
+        <div id="renderSimulation" class="test-result info" style="display: none;"></div>
+    </div>
+    
+    <div class="test-section">
+        <div class="test-title">4️⃣ 문제 진단 및 해결 확인</div>
+        <button onclick="diagnoseIssues()">문제 진단</button>
+        <div id="issuesDiagnosis" class="test-result info" style="display: none;"></div>
+    </div>
+
+    <script>
+        let testData = null;
+        
+        // JSON 파일 로드
+        document.getElementById('jsonFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    testData = JSON.parse(event.target.result);
+                    showLoadResult(testData);
+                } catch (error) {
+                    showResult('loadResult', `❌ JSON 파싱 오류: ${error.message}`, 'error');
+                }
+            };
+            reader.readAsText(file);
+        });
+        
+        // 샘플 데이터 로드
+        function loadSampleData() {
+            // 간단한 샘플 데이터
+            testData = {
+                breakdown_data: {
+                    sequences: [
+                        { id: "SEQ1", title: "시퀀스 1" },
+                        { id: "SEQ2", title: "시퀀스 2" }
+                    ],
+                    scenes: [
+                        { id: "S01", sequence_id: "SEQ1", title: "씬 1", shot_ids: ["S01.01", "S01.02", "S01.03"] },
+                        { id: "S02", sequence_id: "SEQ1", title: "씬 2", shot_ids: ["S02.01", "S02.02"] },
+                        { id: "S03", sequence_id: "SEQ2", title: "씬 3", shot_ids: ["S03.01", "S03.02", "S03.03", "S03.04"] }
+                    ],
+                    shots: [
+                        { id: "S01.01", scene_id: "S01", title: "총구 화염과 격렬한 전투" },
+                        { id: "S01.02", scene_id: "S01", title: "아수라장 복도" },
+                        { id: "S01.03", scene_id: "S01", title: "좀비와의 격투" },
+                        { id: "S02.01", scene_id: "S02", title: "복도 질주" },
+                        { id: "S02.02", scene_id: "S02", title: "손목 단말기 클로즈업" },
+                        { id: "S03.01", scene_id: "S03", title: "바이오랩 도착" },
+                        { id: "S03.02", scene_id: "S03", title: "잠금 해제 시도" },
+                        { id: "S03.03", scene_id: "S03", title: "발소리" },
+                        { id: "S03.04", scene_id: "S03", title: "거대한 실루엣" }
+                    ]
+                }
+            };
+            showLoadResult(testData);
+        }
+        
+        function showLoadResult(data) {
+            let result = '✅ JSON 데이터 로드 완료\n\n';
+            
+            if (data.breakdown_data) {
+                const bd = data.breakdown_data;
+                result += `📊 데이터 구조:\n`;
+                result += `  - 시퀀스: ${bd.sequences ? bd.sequences.length : 0}개\n`;
+                result += `  - 씬: ${bd.scenes ? bd.scenes.length : 0}개\n`;
+                result += `  - 샷: ${bd.shots ? bd.shots.length : 0}개\n\n`;
+                
+                if (bd.sequences) {
+                    result += `📁 시퀀스 목록:\n`;
+                    bd.sequences.forEach(seq => {
+                        result += `  - ${seq.id}: ${seq.title}\n`;
+                    });
+                }
+            }
+            
+            showResult('loadResult', result, 'success');
+        }
+        
+        // 샷 데이터 분석
+        function analyzeShots() {
+            if (!testData || !testData.breakdown_data) {
+                showResult('shotAnalysis', '⚠️ 먼저 JSON 파일을 로드하세요', 'warning');
+                return;
+            }
+            
+            const bd = testData.breakdown_data;
+            let result = '📊 샷 데이터 분석\n\n';
+            
+            // shots 배열 분석
+            if (bd.shots) {
+                result += `✅ shots 배열 존재 (${bd.shots.length}개)\n\n`;
+                
+                const shotsById = {};
+                bd.shots.forEach(shot => {
+                    shotsById[shot.id] = shot;
+                    result += `  - ${shot.id}: "${shot.title}" (scene_id: ${shot.scene_id})\n`;
+                });
+                result += '\n';
+            } else {
+                result += '❌ shots 배열이 없습니다!\n\n';
+            }
+            
+            // 씬별 shot_ids 분석
+            if (bd.scenes) {
+                result += '📁 씬별 shot_ids 분석:\n';
+                bd.scenes.forEach(scene => {
+                    result += `\n  씬 ${scene.id}: ${scene.title}\n`;
+                    if (scene.shot_ids && scene.shot_ids.length > 0) {
+                        result += `    shot_ids: [${scene.shot_ids.join(', ')}]\n`;
+                        
+                        scene.shot_ids.forEach(shotId => {
+                            const shot = bd.shots?.find(s => s.id === shotId);
+                            if (shot) {
+                                result += `      ✅ ${shotId}: "${shot.title}" - 데이터 있음\n`;
+                            } else {
+                                result += `      ❌ ${shotId}: shots 배열에 없음 - 기본값 사용됨\n`;
+                            }
+                        });
+                    } else {
+                        result += `    ⚠️ shot_ids가 없거나 비어있음\n`;
+                    }
+                });
+            }
+            
+            showResult('shotAnalysis', result, 'info');
+        }
+        
+        // 렌더링 시뮬레이션
+        function simulateRendering() {
+            if (!testData || !testData.breakdown_data) {
+                showResult('renderSimulation', '⚠️ 먼저 JSON 파일을 로드하세요', 'warning');
+                return;
+            }
+            
+            const bd = testData.breakdown_data;
+            let result = '🎨 샷 렌더링 시뮬레이션\n\n';
+            
+            // loadShotsForScene 함수 시뮬레이션
+            if (bd.scenes) {
+                bd.scenes.forEach(scene => {
+                    result += `\n📁 씬 ${scene.id} 렌더링:\n`;
+                    
+                    let shots = [];
+                    
+                    // 방법 1: shots 배열에서 scene_id로 필터링
+                    if (bd.shots) {
+                        shots = bd.shots.filter(shot => shot.scene_id === scene.id);
+                        result += `  방법 1: shots 배열에서 ${shots.length}개 찾음\n`;
+                    }
+                    
+                    // 방법 2: scene.shot_ids 사용
+                    if (shots.length === 0 && scene.shot_ids && scene.shot_ids.length > 0) {
+                        result += `  방법 2: scene.shot_ids 사용 (${scene.shot_ids.length}개)\n`;
+                        
+                        shots = scene.shot_ids.map((shotId, index) => {
+                            const existingShot = bd.shots?.find(s => s.id === shotId);
+                            if (existingShot) {
+                                result += `    ✅ ${shotId}: "${existingShot.title}" 표시\n`;
+                                return existingShot;
+                            }
+                            
+                            // 개선된 기본값 생성
+                            let shotTitle = `샷 ${index + 1}`;
+                            if (shotId && shotId.includes('.')) {
+                                const parts = shotId.split('.');
+                                if (parts.length === 2) {
+                                    shotTitle = `샷 ${parts[1]}`;
+                                }
+                            }
+                            
+                            result += `    ⚠️ ${shotId}: 기본값 "${shotTitle}" 사용\n`;
+                            return { id: shotId, title: shotTitle, scene_id: scene.id };
+                        });
+                    }
+                    
+                    if (shots.length === 0) {
+                        result += `  ❌ 샷이 없습니다\n`;
+                    } else {
+                        result += `  최종: ${shots.length}개 샷 렌더링\n`;
+                    }
+                });
+            }
+            
+            showResult('renderSimulation', result, 'info');
+        }
+        
+        // 문제 진단
+        function diagnoseIssues() {
+            if (!testData || !testData.breakdown_data) {
+                showResult('issuesDiagnosis', '⚠️ 먼저 JSON 파일을 로드하세요', 'warning');
+                return;
+            }
+            
+            const bd = testData.breakdown_data;
+            let issues = [];
+            let fixes = [];
+            
+            // shots 배열 체크
+            if (!bd.shots || bd.shots.length === 0) {
+                issues.push('❌ shots 배열이 없거나 비어있음');
+                fixes.push('📌 백업 파일에 shots 데이터가 포함되어 있는지 확인');
+            }
+            
+            // 씬별 shot_ids와 shots 매칭 체크
+            if (bd.scenes) {
+                bd.scenes.forEach(scene => {
+                    if (scene.shot_ids && scene.shot_ids.length > 0) {
+                        scene.shot_ids.forEach(shotId => {
+                            if (!bd.shots?.find(s => s.id === shotId)) {
+                                issues.push(`⚠️ ${scene.id}의 shot_id "${shotId}"가 shots 배열에 없음`);
+                            }
+                        });
+                    }
+                });
+            }
+            
+            let result = '🔍 문제 진단 결과\n\n';
+            
+            if (issues.length === 0) {
+                result += '✅ 문제가 발견되지 않았습니다!\n';
+                result += '모든 샷 데이터가 정상적으로 매칭되고 있습니다.\n';
+            } else {
+                result += '발견된 문제:\n';
+                issues.forEach(issue => {
+                    result += `  ${issue}\n`;
+                });
+                
+                if (fixes.length > 0) {
+                    result += '\n권장 해결 방법:\n';
+                    fixes.forEach(fix => {
+                        result += `  ${fix}\n`;
+                    });
+                }
+            }
+            
+            result += '\n✅ 적용된 수정사항:\n';
+            result += '1. loadShotsForScene 함수에서 shot_ids 기반 렌더링 개선\n';
+            result += '2. 샷 제목이 없을 때 shotId로부터 의미있는 제목 생성\n';
+            result += '3. 디버깅을 위한 콘솔 로그 추가\n';
+            result += '4. 백업 복원 시 shots 데이터 확인 로직 강화\n';
+            
+            showResult('issuesDiagnosis', result, issues.length === 0 ? 'success' : 'warning');
+        }
+        
+        function showResult(elementId, text, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = text;
+            element.className = `test-result ${type}`;
+            element.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
