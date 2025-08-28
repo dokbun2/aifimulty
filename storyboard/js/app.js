@@ -4862,7 +4862,7 @@ let aiSectionsHtml = '';
 											<div class="ai-image-prompt-full-text">${translatedPrompt}</div>
 										</div>
 									` : ''}
-									<button class="copy-btn" onclick="copyImagePrompt('${escapeHtmlAttribute(mainPrompt)}', '${ai.name}', '${imageId}', event)">
+									<button class="copy-btn" onclick="copyPromptFromDOM('${shot.id}', '${ai.name}', '${imageId}', event)">
 										프롬프트 복사
 									</button>
 									<button class="edit-btn" onclick="editImagePrompt('${shot.id}', '${ai.name}', '${imageId}', '${escapeHtmlAttribute(mainPrompt)}', '${escapeHtmlAttribute(translatedPrompt || '')}', '${escapeHtmlAttribute(parameters || '')}')" style="margin-left: 8px;">
@@ -5834,7 +5834,51 @@ try {
 		}
 	}
 
-	// 이미지 프롬프트 복사 (이미지 ID 포함)
+	// 새로운 DOM 기반 프롬프트 복사 함수
+	function copyPromptFromDOM(shotId, aiName, imageId, evt) {
+		try {
+			// 버튼의 부모 요소에서 .prompt-original .ai-image-prompt-full-text 찾기
+			if (evt && evt.target) {
+				const button = evt.target;
+				const promptContainer = button.closest('.ai-image-prompt-details');
+				if (promptContainer) {
+					const promptElement = promptContainer.querySelector('.prompt-original .ai-image-prompt-full-text');
+					if (promptElement) {
+						const promptText = promptElement.textContent || promptElement.innerText || '';
+						
+						if (!promptText || promptText.trim() === '') {
+							return showMessage(`${aiName} 프롬프트가 비어 있습니다.`, 'warning');
+						}
+						
+						// HTML 엔티티 디코드
+						const decodedPrompt = promptText
+							.replace(/&quot;/g, '"')
+							.replace(/&apos;/g, "'")
+							.replace(/&#39;/g, "'")
+							.replace(/&#x27;/g, "'")
+							.replace(/&lt;/g, '<')
+							.replace(/&gt;/g, '>')
+							.replace(/&amp;/g, '&');
+						
+						copyToClipboard(decodedPrompt).then(ok => {
+							if (ok) showMessage(`${aiName} 프롬프트 (${imageId})가 복사되었습니다.`, 'success');
+						});
+					} else {
+						showMessage('프롬프트를 찾을 수 없습니다.', 'error');
+					}
+				} else {
+					showMessage('프롬프트 컨테이너를 찾을 수 없습니다.', 'error');
+				}
+			} else {
+				showMessage('이벤트 정보가 없습니다.', 'error');
+			}
+		} catch (error) {
+			console.error('프롬프트 복사 오류:', error);
+			showMessage('프롬프트 복사 중 오류가 발생했습니다.', 'error');
+		}
+	}
+
+	// 이미지 프롬프트 복사 (이미지 ID 포함) - 기존 함수 유지 (다른 곳에서 사용할 수 있음)
 	function copyImagePrompt(prompt, aiName, imageId, evt) {
 		try {
 			// 먼저 DOM에서 실제 프롬프트 텍스트를 찾아봄
@@ -8629,6 +8673,7 @@ function aiEditImagePrompt(shotId, aiName, imageId, originalPrompt) {
 }
 
 // 전역 스코프에 함수들 등록
+window.copyPromptFromDOM = copyPromptFromDOM;
 window.copyImagePrompt = copyImagePrompt;
 window.editImagePrompt = editImagePrompt;
 window.aiEditImagePrompt = aiEditImagePrompt;
