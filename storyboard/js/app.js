@@ -1530,6 +1530,29 @@ function createTestData() {
                if (currentData.breakdown_data && currentData.breakdown_data.sequences) {
                    console.log('🔄 백업 복원 완료 - 시퀀스 목록:', 
                        currentData.breakdown_data.sequences.map(s => `${s.id}: ${s.title}`));
+                   
+                   // 시퀀스별 씬과 샷 정보 출력
+                   currentData.breakdown_data.sequences.forEach(seq => {
+                       const seqScenes = currentData.breakdown_data.scenes.filter(scene => scene.sequence_id === seq.id);
+                       console.log(`📁 시퀀스 ${seq.id} (${seq.title}):`);
+                       console.log(`  - 씬 개수: ${seqScenes.length}`);
+                       seqScenes.forEach(scene => {
+                           const shotCount = scene.shot_ids ? scene.shot_ids.length : 0;
+                           console.log(`    - ${scene.id}: ${scene.title} (샷 ${shotCount}개)`);
+                           
+                           // 샷 데이터 확인
+                           if (scene.shot_ids && scene.shot_ids.length > 0) {
+                               scene.shot_ids.forEach(shotId => {
+                                   const shot = currentData.breakdown_data.shots.find(s => s.id === shotId);
+                                   if (shot) {
+                                       const hasImagePrompts = shot.image_prompts && Object.keys(shot.image_prompts).length > 0;
+                                       const hasVideoPrompts = shot.video_prompts && Object.keys(shot.video_prompts).length > 0;
+                                       console.log(`      - 샷 ${shotId}: 이미지프롬프트=${hasImagePrompts}, 비디오프롬프트=${hasVideoPrompts}`);
+                                   }
+                               });
+                           }
+                       });
+                   });
                }
                
                showMessage(
@@ -2138,6 +2161,25 @@ function createTestData() {
                // 시퀀스 데이터 확인
                console.log('📂 Stage 5 데이터 로드 - 시퀀스 개수:', currentData.breakdown_data.sequences.length);
                console.log('📂 시퀀스 목록:', currentData.breakdown_data.sequences.map(s => `${s.id}: ${s.title}`));
+               
+               // 각 시퀀스의 샷 정보 디버깅
+               currentData.breakdown_data.sequences.forEach(seq => {
+                   const seqScenes = currentData.breakdown_data.scenes.filter(scene => scene.sequence_id === seq.id);
+                   console.log(`🎬 시퀀스 ${seq.id}의 씬과 샷 정보:`);
+                   seqScenes.forEach(scene => {
+                       const shots = scene.shot_ids || [];
+                       console.log(`  - ${scene.id}: ${shots.length}개 샷`);
+                       shots.forEach(shotId => {
+                           const shot = currentData.breakdown_data.shots.find(s => s.id === shotId);
+                           if (shot) {
+                               const hasImagePrompts = shot.image_prompts && Object.keys(shot.image_prompts).some(key => 
+                                   shot.image_prompts[key].main_prompt || shot.image_prompts[key].main_prompt_translated
+                               );
+                               console.log(`    - ${shotId}: 이미지프롬프트=${hasImagePrompts}`);
+                           }
+                       });
+                   });
+               });
                
                if (currentData.breakdown_data && currentData.breakdown_data.shots) {
                    currentData.breakdown_data.shots.forEach(shot => {
