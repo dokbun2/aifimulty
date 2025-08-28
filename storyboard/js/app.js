@@ -4869,7 +4869,7 @@ let aiSectionsHtml = '';
 										프롬프트 수정
 									</button>
 									${ai.name !== 'Nanobana' ? `
-										<button class="ai-edit-btn" onclick="aiEditImagePrompt('${shot.id}', '${ai.name}', '${imageId}', '${escapeHtmlAttribute(mainPrompt)}')" style="margin-left: 8px; background-color: #8b5cf6;">
+										<button class="ai-edit-btn" onclick="aiEditPromptFromDOM('${shot.id}', '${ai.name}', '${imageId}', event)" style="margin-left: 8px; background-color: #8b5cf6;">
 											AI 수정
 										</button>
 									` : ''}
@@ -5831,6 +5831,53 @@ try {
 			saveDataToLocalStorage();
 		} catch (e) {
 			showMessage('설명 업데이트 중 오류가 발생했습니다.', 'error');
+		}
+	}
+
+	// 새로운 DOM 기반 AI 수정 함수 - Image Prompt Generator로 프롬프트 전달
+	function aiEditPromptFromDOM(shotId, aiName, imageId, evt) {
+		try {
+			let promptText = '';
+			
+			// 버튼의 부모 요소에서 원본 프롬프트 찾기
+			if (evt && evt.target) {
+				const button = evt.target;
+				const promptContainer = button.closest('.ai-image-prompt-details');
+				if (promptContainer) {
+					const promptElement = promptContainer.querySelector('.prompt-original .ai-image-prompt-full-text');
+					if (promptElement) {
+						promptText = promptElement.textContent || promptElement.innerText || '';
+					}
+				}
+			}
+			
+			if (!promptText || promptText.trim() === '') {
+				return showMessage(`${aiName} 프롬프트가 비어 있습니다.`, 'warning');
+			}
+			
+			// HTML 엔티티 디코드
+			const decodedPrompt = promptText
+				.replace(/&quot;/g, '"')
+				.replace(/&apos;/g, "'")
+				.replace(/&#39;/g, "'")
+				.replace(/&#x27;/g, "'")
+				.replace(/&lt;/g, '<')
+				.replace(/&gt;/g, '>')
+				.replace(/&amp;/g, '&');
+			
+			// localStorage에 프롬프트 저장
+			localStorage.setItem('aiEditPromptText', decodedPrompt);
+			localStorage.setItem('aiEditSourceAI', aiName);
+			localStorage.setItem('aiEditImageId', imageId);
+			
+			// Image Prompt Generator 페이지로 이동 (상대 경로 사용)
+			window.open('../prompt-builder.html', '_blank');
+			
+			showMessage(`${aiName} 프롬프트가 Image Prompt Generator로 전달되었습니다.`, 'success');
+			
+		} catch (error) {
+			console.error('AI 수정 프롬프트 전달 오류:', error);
+			showMessage('프롬프트 전달 중 오류가 발생했습니다.', 'error');
 		}
 	}
 
@@ -8731,6 +8778,7 @@ function aiEditImagePrompt(shotId, aiName, imageId, originalPrompt) {
 }
 
 // 전역 스코프에 함수들 등록
+window.aiEditPromptFromDOM = aiEditPromptFromDOM;
 window.editPromptFromDOM = editPromptFromDOM;
 window.copyPromptFromDOM = copyPromptFromDOM;
 window.copyImagePrompt = copyImagePrompt;

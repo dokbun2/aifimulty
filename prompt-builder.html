@@ -7115,6 +7115,51 @@ Examples:
         
         // 모달 외부 클릭 시 닫기
         document.addEventListener('DOMContentLoaded', function() {
+            // AI 수정 버튼에서 전달된 프롬프트 확인
+            const aiEditPromptText = localStorage.getItem('aiEditPromptText');
+            const aiEditSourceAI = localStorage.getItem('aiEditSourceAI');
+            const aiEditImageId = localStorage.getItem('aiEditImageId');
+            
+            if (aiEditPromptText) {
+                // 프롬프트를 prompt-preview 영역에 입력 (contenteditable div)
+                const promptPreview = document.getElementById('prompt-preview');
+                if (promptPreview) {
+                    promptPreview.innerText = aiEditPromptText;
+                    // has-content 클래스 추가
+                    promptPreview.classList.add('has-content');
+                    // 저장된 데이터 삭제
+                    localStorage.removeItem('aiEditPromptText');
+                    localStorage.removeItem('aiEditSourceAI');
+                    localStorage.removeItem('aiEditImageId');
+                    
+                    // 사용자에게 알림
+                    console.log(`AI 수정 - ${aiEditSourceAI} ${aiEditImageId} 프롬프트가 로드되었습니다.`);
+                    
+                    // 알림 표시
+                    const notification = document.createElement('div');
+                    notification.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: #4CAF50;
+                        color: white;
+                        padding: 15px 20px;
+                        border-radius: 8px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                        z-index: 10000;
+                        font-size: 14px;
+                        animation: slideIn 0.3s ease;
+                    `;
+                    notification.textContent = `${aiEditSourceAI} ${aiEditImageId} 프롬프트가 로드되었습니다.`;
+                    document.body.appendChild(notification);
+                    
+                    setTimeout(() => {
+                        notification.style.animation = 'slideOut 0.3s ease';
+                        setTimeout(() => notification.remove(), 300);
+                    }, 3000);
+                }
+            }
+            
             const sideViewModal = document.getElementById('sideViewModal');
             if (sideViewModal) {
                 sideViewModal.addEventListener('click', function(e) {
