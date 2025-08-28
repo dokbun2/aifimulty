@@ -1525,6 +1525,13 @@ function createTestData() {
                updateUI();
                
                const stats = newData.data.backup_metadata || {};
+               
+               // 시퀀스 데이터 확인 및 디버깅
+               if (currentData.breakdown_data && currentData.breakdown_data.sequences) {
+                   console.log('🔄 백업 복원 완료 - 시퀀스 목록:', 
+                       currentData.breakdown_data.sequences.map(s => `${s.id}: ${s.title}`));
+               }
+               
                showMessage(
                    `전체 프로젝트 백업이 성공적으로 복원되었습니다.\n` +
                    `시퀀스: ${stats.totalSequences || 0}개, ` +
@@ -2127,6 +2134,10 @@ function createTestData() {
            else if (newData.film_metadata && newData.breakdown_data && newData.breakdown_data.sequences) {
                currentData = newData;
                window.currentData = currentData;
+               
+               // 시퀀스 데이터 확인
+               console.log('📂 Stage 5 데이터 로드 - 시퀀스 개수:', currentData.breakdown_data.sequences.length);
+               console.log('📂 시퀀스 목록:', currentData.breakdown_data.sequences.map(s => `${s.id}: ${s.title}`));
                
                if (currentData.breakdown_data && currentData.breakdown_data.shots) {
                    currentData.breakdown_data.shots.forEach(shot => {
@@ -2867,6 +2878,18 @@ function createTestData() {
 					
 					navContent.innerHTML = html;
 					setupSequenceEventListeners();
+					
+					// 백업 파일 로드 후 첫 번째 시퀀스 자동 확장
+					if (currentData.breakdown_data.sequences.length > 0) {
+						const firstSequenceId = currentData.breakdown_data.sequences[0].id;
+						const firstSequenceHeader = document.querySelector(`.sequence-header[data-sequence-id="${firstSequenceId}"]`);
+						if (firstSequenceHeader) {
+							// 첫 번째 시퀀스를 자동으로 확장
+							setTimeout(() => {
+								selectSequence(firstSequenceId, firstSequenceHeader);
+							}, 100);
+						}
+					}
 				}
    } catch (error) {
        showMessage('네비게이션 업데이트 오류: ' + error.message, 'error');
