@@ -375,6 +375,8 @@ const dataManager = {
                     const data = JSON.parse(e.target.result);
                     self.processLoadedJSON(data);
                     resolve();
+                    // 페이지 즉시 새로고침
+                    location.reload();
                 } catch (error) {
                     reject(error);
                 }

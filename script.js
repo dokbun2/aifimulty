@@ -932,6 +932,9 @@ function handleStage4FileSelect(event) {
             // Stage 4 카드 즉시 업데이트
             updateStageUploadCard(4);
             
+            // 페이지 즉시 새로고침
+            location.reload();
+            
             // 순차 업로드 모달에서 호출된 경우
             const modal = document.getElementById('sequential-upload-modal');
             if (modal && modal.classList.contains('show')) {

@@ -2057,14 +2057,9 @@ function createTestData() {
                     // Stage 6 데이터 저장
                      saveDataToLocalStorage();
 						}
-            // 2.5 스테이지 2 (시나리오 구조) 처리
-           else if ((newData.current_stage_name === 'narrative_development' || newData.current_stage_name === 'scenario_development') && (newData.narrative_data || newData.scenario_data)) {
-               handleStage2Data(newData);
-               event.target.value = '';
-               return;
-           }
-            // 3.5 스테이지 5 씬 단위 데이터 처리
-					else if (newData.film_metadata && newData.film_metadata.current_scene !== undefined && newData.breakdown_data) {
+            // 3.5 스테이지 5 씬 단위 데이터 처리 (Stage 2보다 먼저 체크)
+					else if (newData.film_metadata && newData.film_metadata.current_scene !== undefined && newData.breakdown_data && 
+                    newData.breakdown_data.shots) { // shots 배열이 있으면 Stage 5
               // Stage 2 구조 확인 (완화된 체크)
                if (!hasStage2Structure && 
                    (!currentData?.breakdown_data?.sequences || currentData.breakdown_data.sequences.length === 0) &&
@@ -2076,6 +2071,14 @@ function createTestData() {
 						handleStage5SceneData(newData);
 						return;
 					}
+            // 2.5 스테이지 2 (시나리오 구조) 처리 (Stage 5 체크 이후)
+           else if ((newData.current_stage_name === 'narrative_development' || newData.current_stage_name === 'scenario_development') && 
+                    (newData.narrative_data || newData.scenario_data) && 
+                    !newData.breakdown_data?.shots) { // shots가 없을 때만 Stage 2로 처리
+               handleStage2Data(newData);
+               event.target.value = '';
+               return;
+           }
            // 3. 스테이지 7 (영상 관련 데이터) 병합
 					else if (newData.stage === 7 && newData.video_prompts) {
               // Stage 2 구조 확인 (완화된 체크)
@@ -2162,8 +2165,9 @@ function createTestData() {
 							showMessage('스테이지 7 영상 병합을 시도했으나, 변경된 내용이 없거나 대상 데이터를 찾지 못했습니다.', 'info');
 						}
 					}
-           // 4. 스테이지 5 또는 전체 프로젝트 구조 로드 (덮어쓰기)
-           else if (newData.film_metadata && newData.breakdown_data && newData.breakdown_data.sequences) {
+           // 4. 스테이지 5 또는 전체 프로젝트 구조 로드 - 가장 우선 순위 높게 (덮어쓰기)
+           else if (newData.film_metadata && newData.breakdown_data && newData.breakdown_data.sequences && 
+                    newData.breakdown_data.shots) { // shots 배열이 있으면 전체 Stage 5 데이터
                currentData = newData;
                window.currentData = currentData;
                
@@ -2262,9 +2266,27 @@ function createTestData() {
                    });
                }
                
-               updated = true;
-               message = (newData.film_metadata.title_working || '프로젝트') + ' 전체 데이터를 로드했습니다.';
+               // Stage 2 구조 존재 여부 확인  
+               if (currentData.breakdown_data.sequences && currentData.breakdown_data.sequences.length > 0) {
+                   hasStage2Structure = true;
+                   currentData.hasStage2Structure = true;
+               }
+               
+               saveDataToLocalStorage();
+               updateUI();
+               
+               const totalShots = currentData.breakdown_data.shots ? currentData.breakdown_data.shots.length : 0;
+               const totalScenes = currentData.breakdown_data.scenes ? currentData.breakdown_data.scenes.length : 0;
+               const totalSequences = currentData.breakdown_data.sequences.length;
+               
+               // Stage 5 + 6 통합 데이터임을 명확히 표시
+               message = `✅ 스토리보드 데이터가 성공적으로 로드되었습니다!\n` +
+                        `📊 시퀀스: ${totalSequences}개, 씬: ${totalScenes}개, 샷: ${totalShots}개`;
                showMessage(message, 'success');
+               
+               updated = true;
+               event.target.value = '';
+               return;
            }
            // 5. 인식할 수 없는 형식
            else {
@@ -3047,6 +3069,14 @@ function createTestData() {
                    shots = currentData.breakdown_data.shots.filter(shot => shot.scene_id === scene.id);
                    if (shots.length > 0) {
                        console.log(`✅ ${scene.id}: shots 배열에서 ${shots.length}개 샷 찾음`);
+                       shots.forEach(s => {
+                           console.log(`    - ${s.id}: "${s.title}"`);
+                       });
+                   } else {
+                       console.log(`❌ ${scene.id}: shots 배열에서 매칭되는 샷을 찾지 못함`);
+                       // scene_id 체크
+                       console.log(`   scene.id: "${scene.id}"`);
+                       console.log(`   shots의 scene_id 목록:`, [...new Set(currentData.breakdown_data.shots.map(s => s.scene_id))]);
                    }
                }
                
