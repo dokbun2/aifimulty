@@ -954,12 +954,32 @@ function createTestData() {
        // 데이터 로드 함수 - 씬 단위 지원 추가
 		async function loadData() {
 			try {
-				const jsonFileName = getProjectFileName();
-				
 				// 이미지 캐시 로드
 				loadImageCacheFromLocalStorage();
 				
-        const savedData = localStorage.getItem(`breakdownData_${jsonFileName}`);
+				// localStorage에서 데이터 찾기 - 여러 가능한 키를 확인
+				let savedData = null;
+				const possibleKeys = [
+					'breakdownData_storyboard_project',  // v1.1.0 기본값
+					'breakdownData_Film_Production_Manager.json',  // 기본값
+				];
+				
+				// 실제 프로젝트명이 있으면 추가
+				const jsonFileName = getProjectFileName();
+				if (jsonFileName && !possibleKeys.includes(`breakdownData_${jsonFileName}`)) {
+					possibleKeys.unshift(`breakdownData_${jsonFileName}`);
+				}
+				
+				// 가능한 키들을 순서대로 확인
+				for (const key of possibleKeys) {
+					const data = localStorage.getItem(key);
+					if (data) {
+						console.log(`📂 localStorage에서 데이터 발견: ${key}`);
+						savedData = data;
+						break;
+					}
+				}
+				
 				if (!savedData) {
 					// 저장된 데이터가 없는 경우, 임시 데이터를 처리할 수 있도록 처리 플래그 초기화
 					const processedFlags = [
@@ -1579,9 +1599,10 @@ function createTestData() {
                hasStage2Structure = true;
                
                // project_info가 없으면 기본값 설정
+               // Film_Production_Manager.json을 사용하여 기본 키와 일치시킴
                if (!currentData.project_info) {
                    currentData.project_info = {
-                       name: 'storyboard_project',
+                       name: 'Film_Production_Manager.json',
                        created_at: new Date().toISOString()
                    };
                }
@@ -4341,8 +4362,29 @@ const csvMapping = shot.csv_mapping || {};
 console.log('🔍 Stage 5 CSV 데이터 확인:', shot.id, Object.keys(csvMapping).length, 'images');
 
 // Stage 6 데이터에서 이미지별 프롬프트 가져오기
-const stage6Data = window.stage6ImagePrompts || {};
-const shotStage6Data = stage6Data[shot.id] || {};
+// v1.1.0 형식인 경우 shot.image_prompts를 직접 사용
+let shotStage6Data = {};
+if (shot.image_prompts) {
+    // v1.1.0 형식: shot.image_prompts를 직접 사용
+    console.log('📌 v1.1.0 형식 image_prompts 사용');
+    // 모든 플랜 이미지에 대해 동일한 프롬프트를 사용하도록 설정
+    shotStage6Data = {};
+    // Plan별 이미지 ID에 동일한 프롬프트 데이터 매핑
+    if (imageDesignPlans) {
+        Object.keys(imageDesignPlans).forEach(planId => {
+            const plan = imageDesignPlans[planId];
+            if (plan && plan.images) {
+                plan.images.forEach(img => {
+                    shotStage6Data[img.id] = { prompts: shot.image_prompts };
+                });
+            }
+        });
+    }
+} else {
+    // 기존 Stage 6 데이터 방식
+    const stage6Data = window.stage6ImagePrompts || {};
+    shotStage6Data = stage6Data[shot.id] || {};
+}
 console.log('🔍 Stage 6 데이터 확인:', shot.id, Object.keys(shotStage6Data).length, 'images');
 
 let planSelectorHtml = '';
