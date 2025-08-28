@@ -6329,6 +6329,13 @@
             }
         }
         
+        // removeImage 함수 정의 (누락된 것으로 보임)
+        function removeImage(index) {
+            console.log('removeImage called with index:', index);
+            // 이미지 제거 로직 구현
+            // TODO: 실제 이미지 제거 로직 구현 필요
+        }
+        
         // window 전역 함수로 등록 (인라인 onclick용)
         window.removeImage = removeImage;
         window.editCard = editCard;
@@ -7118,6 +7125,24 @@ Examples:
         
         // 페이지 로드와 관계없이 즉시 실행 (배포 환경 대응)
         (function() {
+            console.log('===== AI Edit Prompt Check Start =====');
+            console.log('Current URL:', window.location.href);
+            console.log('Document readyState:', document.readyState);
+            
+            // localStorage 전체 키 확인
+            console.log('All localStorage keys:', Object.keys(localStorage));
+            
+            // AI Edit 관련 키 확인
+            const aiEditKeys = ['aiEditPromptText', 'aiEditSourceAI', 'aiEditImageId'];
+            aiEditKeys.forEach(key => {
+                const value = localStorage.getItem(key);
+                if (value) {
+                    console.log(`✓ ${key}:`, value.substring(0, 50) + (value.length > 50 ? '...' : ''));
+                } else {
+                    console.log(`✗ ${key}: null`);
+                }
+            });
+            
             // URL 파라미터 확인
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('ai_edit') === 'true') {
@@ -7127,13 +7152,23 @@ Examples:
             
             // localStorage 확인
             if (localStorage.getItem('aiEditPromptText')) {
-                console.log('localStorage에서 AI 수정 프롬프트 감지');
+                console.log('>>> AI 수정 프롬프트 감지! 로드 시작...');
                 if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', loadAIEditPrompt);
+                    console.log('Document still loading, adding DOMContentLoaded listener');
+                    document.addEventListener('DOMContentLoaded', function() {
+                        console.log('DOMContentLoaded fired, loading prompt');
+                        loadAIEditPrompt();
+                    });
                 } else {
-                    loadAIEditPrompt();
+                    console.log('Document ready, loading prompt immediately');
+                    // 약간의 지연 후 실행 (DOM 요소가 완전히 준비되도록)
+                    setTimeout(loadAIEditPrompt, 100);
                 }
+            } else {
+                console.log('AI Edit 프롬프트가 없습니다');
             }
+            
+            console.log('===== AI Edit Prompt Check End =====');
         })();
         
         // AI 수정 프롬프트 로드 함수
@@ -7231,11 +7266,24 @@ Examples:
             
             // 만약 DOM이 완전히 로드되지 않았다면 추가 대기
             setTimeout(function() {
-                if (!document.getElementById('prompt-preview')?.innerText) {
+                const promptPreview = document.getElementById('prompt-preview');
+                console.log('500ms 후 재확인 - prompt-preview 요소:', promptPreview);
+                console.log('500ms 후 재확인 - localStorage 키:', localStorage.getItem('aiEditPromptText') ? '있음' : '없음');
+                
+                if (localStorage.getItem('aiEditPromptText') && promptPreview && !promptPreview.innerText) {
                     console.log('재시도: AI 프롬프트 로드');
                     loadAIEditPrompt();
                 }
             }, 500);
+            
+            // 1초 후에도 한번 더 시도
+            setTimeout(function() {
+                const promptPreview = document.getElementById('prompt-preview');
+                if (localStorage.getItem('aiEditPromptText') && promptPreview && !promptPreview.innerText) {
+                    console.log('1초 후 재시도: AI 프롬프트 로드');
+                    loadAIEditPrompt();
+                }
+            }, 1000);
             
             const sideViewModal = document.getElementById('sideViewModal');
             if (sideViewModal) {
