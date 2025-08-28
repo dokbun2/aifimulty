@@ -596,6 +596,65 @@
             margin-bottom: 12px !important;
         }
         
+        /* 프롬프트 복사/편집 버튼 스타일 개선 */
+        .prompt-copy-btn,
+        .prompt-edit-btn,
+        .ai-edit-btn {
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .prompt-copy-btn:hover::after {
+            content: "클릭하여 복사";
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            margin-bottom: 4px;
+            pointer-events: none;
+        }
+        
+        /* 복사 버튼 특별 스타일 */
+        .prompt-copy-btn {
+            background: var(--apple-blue) !important;
+            border-color: var(--apple-blue) !important;
+        }
+        
+        .prompt-copy-btn:hover {
+            background: #0051D5 !important;
+            border-color: #0051D5 !important;
+            transform: scale(1.02);
+        }
+        
+        /* 편집 버튼 스타일 */
+        .prompt-edit-btn {
+            background: rgba(255, 255, 255, 0.1) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        }
+        
+        .prompt-edit-btn:hover {
+            background: rgba(255, 255, 255, 0.15) !important;
+            border-color: rgba(255, 255, 255, 0.3) !important;
+        }
+        
+        /* AI 편집 버튼 스타일 */
+        .ai-edit-btn {
+            background: #8b5cf6 !important;
+            border-color: #8b5cf6 !important;
+        }
+        
+        .ai-edit-btn:hover {
+            background: #7c3aed !important;
+            border-color: #7c3aed !important;
+            transform: scale(1.02);
+        }
+        
         /* Button container spacing */
         .button-group,
         .ai-button-group {
@@ -667,6 +726,18 @@
         }
     </style>
     <!-- Tabler Icons Library -->
+    <script>
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            console.error('Error occurred: ', {
+                message: msg,
+                source: url,
+                lineno: lineNo,
+                colno: columnNo,
+                error: error
+            });
+            return false;
+        };
+    </script>
     <script src="../tabler-icons.js"></script>
 </head>
 <body>
@@ -678,9 +749,6 @@
                     <span class="nav-icon-home" style="display: flex; align-items: center;"></span>
                     홈
                 </a>
-                <script>
-                    document.querySelector('.nav-icon-home').innerHTML = getTablerIcon('home', 18);
-                </script>
             </div>
             <a href="#" class="nav-brand" style="position: absolute; left: 50%; transform: translateX(-50%);">CONCEPT ART</a>
             <ul class="nav-menu">
@@ -783,6 +851,25 @@
 
     <!-- JavaScript Bundle -->
     <script src="js/bundle.js"></script>
+    
+    <script>
+        // DOM이 로드된 후 아이콘 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                // getTablerIcon 함수가 정의되어 있는지 확인
+                if (typeof getTablerIcon === 'function') {
+                    const homeIcon = document.querySelector('.nav-icon-home');
+                    if (homeIcon) {
+                        homeIcon.innerHTML = getTablerIcon('home', 18);
+                    }
+                } else {
+                    console.warn('getTablerIcon 함수가 정의되지 않았습니다.');
+                }
+            } catch(e) {
+                console.error('아이콘 초기화 오류:', e);
+            }
+        });
+    </script>
     
 </body>
 </html>

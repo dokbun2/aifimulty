@@ -4849,7 +4849,7 @@ let aiSectionsHtml = '';
 											<div class="ai-image-prompt-full-text">${translatedPrompt}</div>
 										</div>
 									` : ''}
-									<button class="copy-btn" onclick="copyImagePrompt('${escapeHtmlAttribute(mainPrompt)}', '${ai.name}', '${imageId}')">
+									<button class="copy-btn" onclick="copyImagePrompt('${escapeHtmlAttribute(mainPrompt)}', '${ai.name}', '${imageId}', event)">
 										프롬프트 복사
 									</button>
 									<button class="edit-btn" onclick="editImagePrompt('${shot.id}', '${ai.name}', '${imageId}', '${escapeHtmlAttribute(mainPrompt)}', '${escapeHtmlAttribute(translatedPrompt || '')}', '${escapeHtmlAttribute(parameters || '')}')" style="margin-left: 8px;">
@@ -5822,13 +5822,30 @@ try {
 	}
 
 	// 이미지 프롬프트 복사 (이미지 ID 포함)
-	function copyImagePrompt(prompt, aiName, imageId) {
+	function copyImagePrompt(prompt, aiName, imageId, evt) {
 		try {
-			if (!prompt || prompt.trim() === '') {
+			// 먼저 DOM에서 실제 프롬프트 텍스트를 찾아봄
+			let promptText = prompt;
+			
+			// 버튼의 부모 요소에서 .ai-image-prompt-full-text 찾기
+			if (evt && evt.target) {
+				const button = evt.target;
+				const promptContainer = button.closest('.ai-image-prompt-details');
+				if (promptContainer) {
+					const promptElement = promptContainer.querySelector('.prompt-original .ai-image-prompt-full-text');
+					if (promptElement) {
+						promptText = promptElement.textContent || promptElement.innerText || prompt;
+						console.log('DOM에서 프롬프트 찾음:', promptText);
+					}
+				}
+			}
+			
+			if (!promptText || promptText.trim() === '') {
 				return showMessage(`${aiName} 프롬프트가 비어 있습니다.`, 'warning');
 			}
+			
 			// HTML 엔티티 디코드 (필요한 경우)
-			const decodedPrompt = prompt
+			const decodedPrompt = promptText
 				.replace(/&quot;/g, '"')
 				.replace(/&apos;/g, "'")
 				.replace(/&lt;/g, '<')
@@ -8339,81 +8356,86 @@ function editImagePrompt(shotId, aiName, imageId, originalPrompt, translatedProm
         const decodedOriginal = decodeHtmlEntities(originalPrompt);
         const decodedTranslated = decodeHtmlEntities(translatedPrompt);
         const decodedParameters = decodeHtmlEntities(parameters);
-    
-    // 수정 모달 HTML 생성
-    const modalHtml = `
-        <div id="prompt-edit-modal" class="modal-overlay" onclick="closePromptEditModal(event)">
-            <div class="modal-content" onclick="event.stopPropagation()">
-                <div class="modal-header">
-                    <h3>프롬프트 수정 - ${aiName} ${imageId}</h3>
-                    <button class="modal-close-btn" onclick="closePromptEditModal()">×</button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label>원본 프롬프트:</label>
-                        <textarea id="edit-original-prompt" class="prompt-textarea" rows="4">${decodedOriginal}</textarea>
+        
+        // 수정 모달 HTML 생성
+        const modalHtml = `
+            <div id="prompt-edit-modal" class="modal-overlay" onclick="closePromptEditModal(event)">
+                <div class="modal-content" onclick="event.stopPropagation()">
+                    <div class="modal-header">
+                        <h3>프롬프트 수정 - ${aiName} ${imageId}</h3>
+                        <button class="modal-close-btn" onclick="closePromptEditModal()">×</button>
                     </div>
-                    ${decodedTranslated ? `
-                    <div class="form-group">
-                        <label>번역된 프롬프트:</label>
-                        <textarea id="edit-translated-prompt" class="prompt-textarea" rows="4">${decodedTranslated}</textarea>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>원본 프롬프트:</label>
+                            <textarea id="edit-original-prompt" class="prompt-textarea" rows="4">${decodedOriginal}</textarea>
+                        </div>
+                        ${decodedTranslated ? `
+                        <div class="form-group">
+                            <label>번역된 프롬프트:</label>
+                            <textarea id="edit-translated-prompt" class="prompt-textarea" rows="4">${decodedTranslated}</textarea>
+                        </div>
+                        ` : ''}
+                        ${decodedParameters ? `
+                        <div class="form-group">
+                            <label>파라미터:</label>
+                            <input type="text" id="edit-parameters" class="prompt-input" value="${decodedParameters}">
+                        </div>
+                        ` : ''}
                     </div>
-                    ` : ''}
-                    ${decodedParameters ? `
-                    <div class="form-group">
-                        <label>파라미터:</label>
-                        <input type="text" id="edit-parameters" class="prompt-input" value="${decodedParameters}">
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="closePromptEditModal()">취소</button>
+                        <button class="btn btn-primary" onclick="saveEditedPrompt('${shotId}', '${aiName}', '${imageId}')">저장</button>
                     </div>
-                    ` : ''}
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="closePromptEditModal()">취소</button>
-                    <button class="btn btn-primary" onclick="saveEditedPrompt('${shotId}', '${aiName}', '${imageId}')">저장</button>
                 </div>
             </div>
-        </div>
-    `;
-    
-    // 모달을 body에 추가
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-    
-    // 모달 스타일 추가 (없으면)
-    addPromptEditModalStyles();
+        `;
+        
+        // 모달을 body에 추가
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // 모달 스타일 추가 (없으면)
+        addPromptEditModalStyles();
+    } catch (error) {
+        console.error('프롬프트 수정 모달 생성 오류:', error);
+        showMessage('프롬프트 수정 모달을 열 수 없습니다.', 'error');
+    }
 }
 
 // 수정된 프롬프트 저장
 function saveEditedPrompt(shotId, aiName, imageId) {
-    const originalPrompt = document.getElementById('edit-original-prompt').value;
-    const translatedPromptEl = document.getElementById('edit-translated-prompt');
-    const parametersEl = document.getElementById('edit-parameters');
-    
-    const editKey = `${shotId}_${aiName}_${imageId}`;
-    
-    // 수정된 프롬프트 데이터 구성
-    const editedData = {
-        shotId,
-        aiName,
-        imageId,
-        originalPrompt,
-        translatedPrompt: translatedPromptEl ? translatedPromptEl.value : null,
-        parameters: parametersEl ? parametersEl.value : null,
-        editedAt: new Date().toISOString()
-    };
-    
-    // localStorage에 저장
-    editedPrompts[editKey] = editedData;
-    localStorage.setItem('editedImagePrompts', JSON.stringify(editedPrompts));
-    
-    // 모달 닫기
-    closePromptEditModal();
-    
-    // UI 업데이트
-    updateUI();
-    
-    showMessage('프롬프트가 수정되었습니다.', 'success');
+    try {
+        const originalPrompt = document.getElementById('edit-original-prompt').value;
+        const translatedPromptEl = document.getElementById('edit-translated-prompt');
+        const parametersEl = document.getElementById('edit-parameters');
+        
+        const editKey = `${shotId}_${aiName}_${imageId}`;
+        
+        // 수정된 프롬프트 데이터 구성
+        const editedData = {
+            shotId,
+            aiName,
+            imageId,
+            originalPrompt,
+            translatedPrompt: translatedPromptEl ? translatedPromptEl.value : null,
+            parameters: parametersEl ? parametersEl.value : null,
+            editedAt: new Date().toISOString()
+        };
+        
+        // localStorage에 저장
+        editedPrompts[editKey] = editedData;
+        localStorage.setItem('editedImagePrompts', JSON.stringify(editedPrompts));
+        
+        // 모달 닫기
+        closePromptEditModal();
+        
+        // UI 업데이트
+        updateUI();
+        
+        showMessage('프롬프트가 수정되었습니다.', 'success');
     } catch (error) {
-        console.error('프롬프트 수정 오류:', error);
-        showMessage('프롬프트 수정 중 오류가 발생했습니다.', 'error');
+        console.error('프롬프트 저장 오류:', error);
+        showMessage('프롬프트 저장 중 오류가 발생했습니다.', 'error');
     }
 }
 

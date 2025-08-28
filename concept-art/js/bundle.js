@@ -1027,9 +1027,9 @@ const uiRenderer = {
             ${isEdited ? '<span style="background: #4ade80; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; margin-left: 10px;">수정됨</span>' : ''}
             <div class="prompt-container">
                 <div class="prompt-text" style="white-space: pre-wrap; word-break: break-word;">${displayEnglish}</div>
-                <button class="btn btn-primary" onclick="promptManager.copyUniversalPrompt('english')">프롬프트 복사</button>
-                <button class="btn btn-secondary" onclick="promptManager.editUniversalPrompt('english')" style="margin-left: 8px;">프롬프트 수정</button>
-                ${englishPrompt ? `<button class="btn btn-ai-edit" onclick="promptManager.aiEditUniversalPrompt('english')" style="margin-left: 8px; background-color: #8b5cf6; color: white;">AI 수정</button>` : ''}
+                <button class="btn btn-primary prompt-copy-btn" data-action="copy-prompt" data-lang="english" onclick="promptManager.copyUniversalPrompt('english')">프롬프트 복사</button>
+                <button class="btn btn-secondary prompt-edit-btn" data-action="edit-prompt" data-lang="english" onclick="promptManager.editUniversalPrompt('english')" style="margin-left: 8px;">프롬프트 수정</button>
+                ${englishPrompt ? `<button class="btn btn-ai-edit ai-edit-btn" data-action="ai-edit-prompt" data-lang="english" onclick="promptManager.aiEditUniversalPrompt('english')" style="margin-left: 8px; background-color: #8b5cf6; color: white;">AI 수정</button>` : ''}
             </div>
         `;
         contentArea.appendChild(englishContainer);
@@ -1048,8 +1048,8 @@ const uiRenderer = {
             ${isTranslationEdited ? '<span style="background: #4ade80; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; margin-left: 10px;">수정됨</span>' : ''}
             <div class="prompt-container">
                 <div class="prompt-text" id="korean-translation-universal" style="white-space: pre-wrap; word-break: break-word;">${displayKorean}</div>
-                <button class="btn btn-primary" onclick="promptManager.copyUniversalPrompt('korean')">번역본 복사</button>
-                ${koreanPrompt ? `<button class="btn btn-secondary" onclick="promptManager.editUniversalPrompt('korean')" style="margin-left: 8px;">번역 수정</button>` : ''}
+                <button class="btn btn-primary prompt-copy-btn" data-action="copy-prompt" data-lang="korean" onclick="promptManager.copyUniversalPrompt('korean')">번역본 복사</button>
+                ${koreanPrompt ? `<button class="btn btn-secondary prompt-edit-btn" data-action="edit-prompt" data-lang="korean" onclick="promptManager.editUniversalPrompt('korean')" style="margin-left: 8px;">번역 수정</button>` : ''}
             </div>
         `;
         contentArea.appendChild(koreanContainer);
@@ -1270,7 +1270,7 @@ const uiRenderer = {
                                 ${isEdited ? '<span style="background: #4ade80; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; margin-left: 10px;">수정됨</span>' : ''}
                                 <div class="prompt-container">
                                     <div class="prompt-text">${displayPrompt}</div>
-                                    <button class="btn btn-primary" onclick="promptManager.copyVariantPrompt('${aiTool}', '${typeKey}', ${index})">프롬프트 복사</button>
+                                    <button class="btn btn-primary prompt-copy-btn" data-action="copy-variant" data-tool="${aiTool}" data-type="${typeKey}" data-index="${index}" onclick="promptManager.copyVariantPrompt('${aiTool}', '${typeKey}', ${index})">프롬프트 복사</button>
                                     <button class="btn btn-secondary" onclick="promptManager.editPrompt('${aiTool}', '${typeKey}', ${index})" style="margin-left: 8px;">프롬프트 수정</button>
                                     <button class="btn btn-ai-edit" onclick="promptManager.aiEditPrompt('${aiTool}', '${typeKey}', ${index})" style="margin-left: 8px; background-color: #8b5cf6; color: white;">AI 수정</button>
                                 </div>
@@ -1307,7 +1307,7 @@ const uiRenderer = {
                                 ${isEditedP ? '<span style="background: #4ade80; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; margin-left: 10px;">수정됨</span>' : ''}
                                 <div class="prompt-container">
                                     <div class="prompt-text">${displayPromptP}</div>
-                                    <button class="btn btn-primary" onclick="promptManager.copyVariantPrompt('${aiTool}', '${permutationKey}')">프롬프트 복사</button>
+                                    <button class="btn btn-primary prompt-copy-btn" data-action="copy-variant" data-tool="${aiTool}" data-type="${permutationKey}" onclick="promptManager.copyVariantPrompt('${aiTool}', '${permutationKey}')">프롬프트 복사</button>
                                     <button class="btn btn-secondary" onclick="promptManager.editPrompt('${aiTool}', '${permutationKey}')" style="margin-left: 8px;">프롬프트 수정</button>
                                     <button class="btn btn-ai-edit" onclick="promptManager.aiEditPrompt('${aiTool}', '${permutationKey}')" style="margin-left: 8px; background-color: #8b5cf6; color: white;">AI 수정</button>
                                 </div>
@@ -2857,6 +2857,47 @@ async function loadLocalJsonFile() {
 
 function initialize() {
     console.log('컨셉아트 매니저 초기화 시작...');
+    
+    // 복사 버튼 이벤트 리스너 추가 (더 나은 접근성과 선택자)
+    document.addEventListener('click', function(e) {
+        // 복사 버튼 클릭 처리
+        if (e.target.classList.contains('prompt-copy-btn')) {
+            e.preventDefault(); // 중복 실행 방지
+            const action = e.target.dataset.action;
+            const lang = e.target.dataset.lang;
+            const tool = e.target.dataset.tool;
+            const type = e.target.dataset.type;
+            const index = e.target.dataset.index;
+            
+            if (action === 'copy-prompt') {
+                promptManager.copyUniversalPrompt(lang);
+            } else if (action === 'copy-variant') {
+                promptManager.copyVariantPrompt(tool, type, index ? parseInt(index) : null);
+            }
+        }
+        
+        // 편집 버튼 클릭 처리
+        if (e.target.classList.contains('prompt-edit-btn')) {
+            e.preventDefault();
+            const action = e.target.dataset.action;
+            const lang = e.target.dataset.lang;
+            
+            if (action === 'edit-prompt') {
+                promptManager.editUniversalPrompt(lang);
+            }
+        }
+        
+        // AI 편집 버튼 클릭 처리
+        if (e.target.classList.contains('ai-edit-btn')) {
+            e.preventDefault();
+            const action = e.target.dataset.action;
+            const lang = e.target.dataset.lang;
+            
+            if (action === 'ai-edit-prompt') {
+                promptManager.aiEditUniversalPrompt(lang);
+            }
+        }
+    });
     
     // 먼저 localStorage에서 데이터 로드 시도
     try {
