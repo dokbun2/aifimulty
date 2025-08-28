@@ -5823,20 +5823,25 @@ try {
 
 	// 이미지 프롬프트 복사 (이미지 ID 포함)
 	function copyImagePrompt(prompt, aiName, imageId) {
-		if (!prompt || prompt.trim() === '') {
-			return showMessage(`${aiName} 프롬프트가 비어 있습니다.`, 'warning');
+		try {
+			if (!prompt || prompt.trim() === '') {
+				return showMessage(`${aiName} 프롬프트가 비어 있습니다.`, 'warning');
+			}
+			// HTML 엔티티 디코드 (필요한 경우)
+			const decodedPrompt = prompt
+				.replace(/&quot;/g, '"')
+				.replace(/&apos;/g, "'")
+				.replace(/&lt;/g, '<')
+				.replace(/&gt;/g, '>')
+				.replace(/&amp;/g, '&');
+			
+			copyToClipboard(decodedPrompt).then(ok => {
+				if (ok) showMessage(`${aiName} 프롬프트 (${imageId})가 복사되었습니다.`, 'success');
+			});
+		} catch (error) {
+			console.error('프롬프트 복사 오류:', error);
+			showMessage('프롬프트 복사 중 오류가 발생했습니다.', 'error');
 		}
-		// HTML 엔티티 디코드 (필요한 경우)
-		const decodedPrompt = prompt
-			.replace(/&quot;/g, '"')
-			.replace(/&apos;/g, "'")
-			.replace(/&lt;/g, '<')
-			.replace(/&gt;/g, '>')
-			.replace(/&amp;/g, '&');
-		
-		copyToClipboard(decodedPrompt).then(ok => {
-			if (ok) showMessage(`${aiName} 프롬프트 (${imageId})가 복사되었습니다.`, 'success');
-		});
 	}
 
     // 참조 이미지 업데이트
@@ -8319,20 +8324,21 @@ editedPrompts = JSON.parse(localStorage.getItem('editedImagePrompts') || '{}');
 
 // 프롬프트 수정 버튼 클릭 시 호출되는 함수
 function editImagePrompt(shotId, aiName, imageId, originalPrompt, translatedPrompt, parameters) {
-    // HTML 엔티티 디코드
-    const decodeHtmlEntities = (str) => {
-        if (!str) return '';
-        return str
-            .replace(/&quot;/g, '"')
-            .replace(/&apos;/g, "'")
-            .replace(/&lt;/g, '<')
-            .replace(/&gt;/g, '>')
-            .replace(/&amp;/g, '&');
-    };
-    
-    const decodedOriginal = decodeHtmlEntities(originalPrompt);
-    const decodedTranslated = decodeHtmlEntities(translatedPrompt);
-    const decodedParameters = decodeHtmlEntities(parameters);
+    try {
+        // HTML 엔티티 디코드
+        const decodeHtmlEntities = (str) => {
+            if (!str) return '';
+            return str
+                .replace(/&quot;/g, '"')
+                .replace(/&apos;/g, "'")
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&amp;/g, '&');
+        };
+        
+        const decodedOriginal = decodeHtmlEntities(originalPrompt);
+        const decodedTranslated = decodeHtmlEntities(translatedPrompt);
+        const decodedParameters = decodeHtmlEntities(parameters);
     
     // 수정 모달 HTML 생성
     const modalHtml = `
@@ -8405,6 +8411,10 @@ function saveEditedPrompt(shotId, aiName, imageId) {
     updateUI();
     
     showMessage('프롬프트가 수정되었습니다.', 'success');
+    } catch (error) {
+        console.error('프롬프트 수정 오류:', error);
+        showMessage('프롬프트 수정 중 오류가 발생했습니다.', 'error');
+    }
 }
 
 // 프롬프트 수정 모달 닫기
@@ -8594,3 +8604,10 @@ window.editVideoPrompt = editVideoPrompt;
 window.saveEditedVideoPrompt = saveEditedVideoPrompt;
 window.aiImproveVideoPrompt = aiImproveVideoPrompt;
 window.applyImprovedVideoPrompt = applyImprovedVideoPrompt;
+
+// 디버깅을 위한 로그
+console.log('프롬프트 관련 함수들이 전역 스코프에 등록되었습니다:', {
+    copyImagePrompt: typeof window.copyImagePrompt,
+    editImagePrompt: typeof window.editImagePrompt,
+    aiEditImagePrompt: typeof window.aiEditImagePrompt
+});
