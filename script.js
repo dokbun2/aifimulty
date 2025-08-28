@@ -941,10 +941,13 @@ function handleStage4FileSelect(event) {
                 // 개별 Stage 카드에서 직접 호출된 경우 - 바로 컨셉아트로 이동
                 console.log('🎨 개별 Stage 4 업로드 - 컨셉아트로 바로 이동');
                 
+                // 컨셉아트 페이지에서 새로고침 후 첫 번째 캐릭터 클릭하도록 플래그 설정
+                localStorage.setItem('shouldClickActiveCharacter', 'true');
+                
                 // fade 효과와 함께 페이지 이동
                 document.body.classList.add('fade-out');
                 setTimeout(() => {
-                    const url = 'concept-art/index.html?loadStage4Json=true';
+                    const url = 'concept-art/index.html?loadStage4Json=true&autoRefresh=true';
                     console.log('📍 이동할 URL:', url);
                     window.location.href = url;
                 }, 300);

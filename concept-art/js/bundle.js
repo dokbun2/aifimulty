@@ -2990,6 +2990,16 @@ function initialize() {
             if (success) {
                 console.log('Stage 4 데이터 로드 성공, UI 업데이트는 handleStage4TempData에서 처리됨');
                 
+                // autoRefresh 파라미터가 있으면 새로고침
+                if (urlParams.get('autoRefresh') === 'true') {
+                    console.log('🔄 자동 새로고침 요청 감지');
+                    localStorage.setItem('shouldClickActiveCharacter', 'true');
+                    setTimeout(() => {
+                        window.location.href = window.location.pathname;
+                    }, 500);
+                    return;
+                }
+                
                 // 순차 보기 모드 확인
                 if (urlParams.get('continueToStoryboard') === 'true') {
                     // 3초 후 스토리보드로 자동 이동
