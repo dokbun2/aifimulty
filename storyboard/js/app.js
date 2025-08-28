@@ -115,6 +115,18 @@ async function copyToClipboard(text) {
   // Stage 5 v5.0.0 및 v3.0.0 형식 변환 함수 (Stage 2 호환성 개선)
 function convertStage5V5Format(data) {
     try {
+        // v1.1.0 형식 체크 (이미 올바른 형식)
+        if (data.schema_version === "1.1.0" && data.breakdown_data) {
+            console.log('🔄 v1.1.0 형식 감지');
+            
+            // 이미 올바른 형식이므로 바로 반환
+            if (data.breakdown_data.sequences && data.breakdown_data.scenes && data.breakdown_data.shots) {
+                console.log('✅ v1.1.0 형식은 이미 호환 가능한 상태입니다');
+                data.hasStage2Structure = true;
+                return data;
+            }
+        }
+        
         // v3.0.0 형식 체크 (이미 변환된 형식)
         if (data.schema_version === "3.0.0" && data.breakdown_data) {
             console.log('🔄 Stage 5 v3.0.0 형식 감지');
@@ -1289,10 +1301,23 @@ function createTestData() {
 				// 1차 시도: 그냥 파싱
 				const parsedData = JSON.parse(jsonString);
 				
-				// Stage 5 형식 체크 및 변환 (v5.0.0 및 v3.0.0 지원)
+				// Stage 5 형식 체크 및 변환 (v5.0.0, v3.0.0, v1.1.0 지원)
 				if ((parsedData.stage === 5 && parsedData.schema_version === "5.0.0") || 
-				    (parsedData.schema_version === "3.0.0" && parsedData.breakdown_data)) {
+				    (parsedData.schema_version === "3.0.0" && parsedData.breakdown_data) ||
+				    (parsedData.schema_version === "1.1.0" && parsedData.breakdown_data)) {
 					console.log('🔍 Stage 5 형식 감지됨:', parsedData.schema_version);
+					
+					// v1.1.0 형식은 이미 올바른 형식이므로 바로 반환
+					if (parsedData.schema_version === "1.1.0" && 
+					    parsedData.breakdown_data && 
+					    parsedData.breakdown_data.sequences && 
+					    parsedData.breakdown_data.scenes && 
+					    parsedData.breakdown_data.shots) {
+						console.log('✅ v1.1.0 형식 확인 - 호환 가능');
+						parsedData.hasStage2Structure = true;
+						return { success: true, data: parsedData };
+					}
+					
 					const convertedData = convertStage5V5Format(parsedData);
 					if (convertedData) {
 						if (parsedData.schema_version === "5.0.0") {
@@ -1533,6 +1558,7 @@ function createTestData() {
                    const totalSequences = currentData.breakdown_data.sequences.length;
                    
                    console.log(`✅ 백업 복원 완료: ${totalSequences}개 시퀀스, ${totalScenes}개 씬, ${totalShots}개 샷`);
+                   console.log('📁 전체 데이터 구조:', currentData);
                    
                    // 샷 데이터 상세 확인
                    if (currentData.breakdown_data.shots && currentData.breakdown_data.shots.length > 0) {
@@ -2168,6 +2194,22 @@ function createTestData() {
            // 4. 스테이지 5 또는 전체 프로젝트 구조 로드 - 가장 우선 순위 높게 (덮어쓰기)
            else if (newData.film_metadata && newData.breakdown_data && newData.breakdown_data.sequences && 
                     newData.breakdown_data.shots) { // shots 배열이 있으면 전체 Stage 5 데이터
+               
+               // schema_version 확인 로그
+               console.log('📚 JSON 버전 정보:', {
+                   schema_version: newData.schema_version,
+                   current_stage_name: newData.current_stage_name,
+                   sequences: newData.breakdown_data.sequences?.length || 0,
+                   scenes: newData.breakdown_data.scenes?.length || 0,
+                   shots: newData.breakdown_data.shots?.length || 0
+               });
+               
+               // v1.1.0 형식 명시적 처리
+               if (newData.schema_version === "1.1.0") {
+                   console.log('✅ v1.1.0 형식 JSON 파일 감지 - 직접 로드');
+                   newData.hasStage2Structure = true;
+               }
+               
                currentData = newData;
                window.currentData = currentData;
                

@@ -1,3 +1,144 @@
+// DOM에서 현재 샷 데이터를 수집하는 함수
+window.collectCurrentDataFromDOM = function() {
+    if (!currentData) {
+        console.warn('currentData가 없습니다.');
+        return null;
+    }
+    
+    // currentData 복사본 생성
+    const updatedData = JSON.parse(JSON.stringify(currentData));
+    
+    // 현재 활성화된 샷이 있는지 확인
+    const contentTitle = document.getElementById('content-title');
+    if (contentTitle && contentTitle.textContent.startsWith('샷:')) {
+        // 현재 표시된 샷의 ID 추출
+        const contentSubtitle = document.getElementById('content-subtitle');
+        if (contentSubtitle) {
+            const shotIdText = contentSubtitle.textContent;
+            const shotId = shotIdText.replace('ID: ', '').trim();
+            
+            // 샷 데이터 찾기
+            const shotIndex = updatedData.breakdown_data.shots.findIndex(s => s.id === shotId);
+            if (shotIndex !== -1) {
+                const shot = updatedData.breakdown_data.shots[shotIndex];
+                
+                // 메모 데이터 수집
+                const memoTextarea = document.querySelector('.form-textarea');
+                if (memoTextarea) {
+                    if (!shot.memo) shot.memo = {};
+                    shot.memo.content = memoTextarea.value;
+                    shot.memo.updated_at = new Date().toISOString();
+                }
+                
+                // 로컬 스토리지에서 이미지 데이터 수집
+                const jsonFileName = localStorage.getItem('currentProjectFile') || 'storyboard_data.json';
+                
+                // 샷 메모 데이터
+                const memoKey = `shotMemo_${jsonFileName}_${shotId}`;
+                const savedMemo = localStorage.getItem(memoKey);
+                if (savedMemo) {
+                    if (!shot.memo) shot.memo = {};
+                    shot.memo.content = savedMemo;
+                }
+                
+                // AI 생성 이미지 데이터
+                const imagesKey = `shotImages_${jsonFileName}_${shotId}`;
+                const savedImages = localStorage.getItem(imagesKey);
+                if (savedImages) {
+                    try {
+                        const imagesData = JSON.parse(savedImages);
+                        if (!shot.image_design) shot.image_design = {};
+                        if (!shot.image_design.ai_generated_images) {
+                            shot.image_design.ai_generated_images = {};
+                        }
+                        // 저장된 이미지 데이터 병합
+                        Object.assign(shot.image_design.ai_generated_images, imagesData);
+                    } catch (e) {
+                        console.error('이미지 데이터 파싱 오류:', e);
+                    }
+                }
+                
+                // 편집된 프롬프트 데이터
+                const editedPromptsKey = `editedPrompts_${jsonFileName}`;
+                const savedEditedPrompts = localStorage.getItem(editedPromptsKey);
+                if (savedEditedPrompts) {
+                    try {
+                        const editedPrompts = JSON.parse(savedEditedPrompts);
+                        if (!shot.edited_prompts) shot.edited_prompts = {};
+                        Object.assign(shot.edited_prompts, editedPrompts);
+                    } catch (e) {
+                        console.error('편집된 프롬프트 데이터 파싱 오류:', e);
+                    }
+                }
+                
+                // 오디오 데이터
+                const audioKey = `audioUrls_${jsonFileName}_${shotId}`;
+                const savedAudio = localStorage.getItem(audioKey);
+                if (savedAudio) {
+                    try {
+                        const audioData = JSON.parse(savedAudio);
+                        if (!shot.content) shot.content = {};
+                        if (!shot.content.audio_urls) shot.content.audio_urls = {};
+                        Object.assign(shot.content.audio_urls, audioData);
+                    } catch (e) {
+                        console.error('오디오 데이터 파싱 오류:', e);
+                    }
+                }
+                
+                // 업데이트된 샷 데이터를 배열에 다시 저장
+                updatedData.breakdown_data.shots[shotIndex] = shot;
+            }
+        }
+    }
+    
+    // 모든 샷의 localStorage 데이터 수집 (현재 표시되지 않은 샷들도 포함)
+    if (updatedData.breakdown_data && updatedData.breakdown_data.shots) {
+        const jsonFileName = localStorage.getItem('currentProjectFile') || 'storyboard_data.json';
+        
+        updatedData.breakdown_data.shots.forEach((shot, index) => {
+            // 샷 메모
+            const memoKey = `shotMemo_${jsonFileName}_${shot.id}`;
+            const savedMemo = localStorage.getItem(memoKey);
+            if (savedMemo) {
+                if (!shot.memo) shot.memo = {};
+                shot.memo.content = savedMemo;
+            }
+            
+            // AI 생성 이미지
+            const imagesKey = `shotImages_${jsonFileName}_${shot.id}`;
+            const savedImages = localStorage.getItem(imagesKey);
+            if (savedImages) {
+                try {
+                    const imagesData = JSON.parse(savedImages);
+                    if (!shot.image_design) shot.image_design = {};
+                    if (!shot.image_design.ai_generated_images) {
+                        shot.image_design.ai_generated_images = {};
+                    }
+                    Object.assign(shot.image_design.ai_generated_images, imagesData);
+                } catch (e) {
+                    console.error(`샷 ${shot.id} 이미지 데이터 파싱 오류:`, e);
+                }
+            }
+            
+            // 오디오 URL
+            const audioKey = `audioUrls_${jsonFileName}_${shot.id}`;
+            const savedAudio = localStorage.getItem(audioKey);
+            if (savedAudio) {
+                try {
+                    const audioData = JSON.parse(savedAudio);
+                    if (!shot.content) shot.content = {};
+                    if (!shot.content.audio_urls) shot.content.audio_urls = {};
+                    Object.assign(shot.content.audio_urls, audioData);
+                } catch (e) {
+                    console.error(`샷 ${shot.id} 오디오 데이터 파싱 오류:`, e);
+                }
+            }
+        });
+    }
+    
+    return updatedData;
+};
+
 // 스토리보드 전역 함수들
 window.exportJSON = function() {
     if (!currentData) {
@@ -6,11 +147,21 @@ window.exportJSON = function() {
     }
     
     try {
-        const dataStr = JSON.stringify(currentData, null, 2);
+        // DOM과 localStorage에서 최신 데이터 수집
+        console.log('📥 JSON Export 시작 - 최신 데이터 수집 중...');
+        const dataToExport = window.collectCurrentDataFromDOM() || currentData;
+        console.log('✅ 수집된 데이터:', {
+            shots: dataToExport?.breakdown_data?.shots?.length || 0,
+            hasImageData: dataToExport?.breakdown_data?.shots?.some(s => s.image_design?.ai_generated_images),
+            hasMemoData: dataToExport?.breakdown_data?.shots?.some(s => s.memo?.content),
+            hasAudioData: dataToExport?.breakdown_data?.shots?.some(s => s.content?.audio_urls)
+        });
+        
+        const dataStr = JSON.stringify(dataToExport, null, 2);
         const blob = new Blob([dataStr], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         
-        const exportFileDefaultName = currentData.project_info?.name || 'storyboard_data.json';
+        const exportFileDefaultName = dataToExport.project_info?.name || 'storyboard_data.json';
         
         const linkElement = document.createElement('a');
         linkElement.setAttribute('href', url);
@@ -184,6 +335,7 @@ if (typeof window !== 'undefined') {
         resetToDefaults: window.resetToDefaults,
         expandAll: window.expandAll,
         collapseAll: window.collapseAll,
-        showMessage: window.showMessage
+        showMessage: window.showMessage,
+        collectCurrentDataFromDOM: window.collectCurrentDataFromDOM
     };
 }
