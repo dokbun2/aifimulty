@@ -119,9 +119,37 @@ function convertStage5V5Format(data) {
         if (data.schema_version === "1.1.0" && data.breakdown_data) {
             console.log('🔄 v1.1.0 형식 감지');
             
-            // 이미 올바른 형식이므로 바로 반환
+            // 이미 올바른 형식이지만 scene_id 매핑 확인 필요
             if (data.breakdown_data.sequences && data.breakdown_data.scenes && data.breakdown_data.shots) {
                 console.log('✅ v1.1.0 형식은 이미 호환 가능한 상태입니다');
+                
+                // 샷의 scene_id 확인 및 정규화
+                data.breakdown_data.shots.forEach(shot => {
+                    if (!shot.scene_id && shot.id) {
+                        // 샷 ID에서 씬 ID 추출 (예: "S01.01" -> "S01")
+                        const parts = shot.id.split('.');
+                        if (parts.length >= 1) {
+                            shot.scene_id = parts[0];
+                            console.log(`  샷 ${shot.id}에 scene_id 설정: ${shot.scene_id}`);
+                        }
+                    }
+                });
+                
+                // 씬의 shot_ids 배열 확인 및 생성
+                data.breakdown_data.scenes.forEach(scene => {
+                    if (!scene.shot_ids) {
+                        scene.shot_ids = [];
+                    }
+                    // 해당 씬에 속하는 샷들의 ID 수집
+                    const sceneShots = data.breakdown_data.shots.filter(shot => shot.scene_id === scene.id);
+                    sceneShots.forEach(shot => {
+                        if (!scene.shot_ids.includes(shot.id)) {
+                            scene.shot_ids.push(shot.id);
+                        }
+                    });
+                    console.log(`  씬 ${scene.id}의 shot_ids: ${scene.shot_ids.join(', ')}`);
+                });
+                
                 data.hasStage2Structure = true;
                 return data;
             }
@@ -1307,13 +1335,41 @@ function createTestData() {
 				    (parsedData.schema_version === "1.1.0" && parsedData.breakdown_data)) {
 					console.log('🔍 Stage 5 형식 감지됨:', parsedData.schema_version);
 					
-					// v1.1.0 형식은 이미 올바른 형식이므로 바로 반환
+					// v1.1.0 형식은 이미 올바른 형식이므로 scene_id 매핑 확인 후 반환
 					if (parsedData.schema_version === "1.1.0" && 
 					    parsedData.breakdown_data && 
 					    parsedData.breakdown_data.sequences && 
 					    parsedData.breakdown_data.scenes && 
 					    parsedData.breakdown_data.shots) {
 						console.log('✅ v1.1.0 형식 확인 - 호환 가능');
+						
+						// 샷의 scene_id 확인 및 정규화
+						parsedData.breakdown_data.shots.forEach(shot => {
+							if (!shot.scene_id && shot.id) {
+								// 샷 ID에서 씬 ID 추출 (예: "S01.01" -> "S01")
+								const parts = shot.id.split('.');
+								if (parts.length >= 1) {
+									shot.scene_id = parts[0];
+									console.log(`  샷 ${shot.id}에 scene_id 설정: ${shot.scene_id}`);
+								}
+							}
+						});
+						
+						// 씬의 shot_ids 배열 확인 및 생성
+						parsedData.breakdown_data.scenes.forEach(scene => {
+							if (!scene.shot_ids) {
+								scene.shot_ids = [];
+							}
+							// 해당 씬에 속하는 샷들의 ID 수집
+							const sceneShots = parsedData.breakdown_data.shots.filter(shot => shot.scene_id === scene.id);
+							sceneShots.forEach(shot => {
+								if (!scene.shot_ids.includes(shot.id)) {
+									scene.shot_ids.push(shot.id);
+								}
+							});
+							console.log(`  씬 ${scene.id}의 shot_ids: ${scene.shot_ids.join(', ')}`);
+						});
+						
 						parsedData.hasStage2Structure = true;
 						return { success: true, data: parsedData };
 					}
@@ -3333,6 +3389,14 @@ function createTestData() {
        // 샷 선택
        function selectShot(shotId, element = null) {
    try {
+       console.log('🎯 selectShot 호출됨 - shotId:', shotId);
+       
+       if (!currentData || !currentData.breakdown_data || !currentData.breakdown_data.shots) {
+           console.error('❌ selectShot: currentData 또는 shots 데이터 없음');
+           showMessage('샷 데이터를 찾을 수 없습니다.', 'error');
+           return;
+       }
+       
        selectedType = 'shot';
        selectedId = shotId;
        
@@ -3340,11 +3404,14 @@ function createTestData() {
        
        const shot = currentData.breakdown_data.shots.find(s => s.id === shotId);
        if (shot) {
+           console.log('✅ selectShot: 샷 찾음:', shot);
            const scene = currentData.breakdown_data.scenes.find(sc => sc.id === shot.scene_id);
            if (scene) {
                document.querySelector(`.scene-header[data-scene-id="${scene.id}"]`)?.classList.add('active');
                document.querySelector(`.sequence-header[data-sequence-id="${scene.sequence_id}"]`)?.classList.add('active');
            }
+       } else {
+           console.warn('⚠️ selectShot: 샷을 찾을 수 없음 - shotId:', shotId);
        }
        
        const currentElement = element || document.querySelector(`.shot-item[data-shot-id="${shotId}"]`);
@@ -3352,6 +3419,7 @@ function createTestData() {
        
        showShotContent(shotId);
    } catch (error) {
+       console.error('❌ selectShot 오류:', error);
        showMessage('샷 선택 오류: ' + error.message, 'error');
    }
        }
@@ -3864,8 +3932,22 @@ function createTestData() {
        // 샷 내용 표시 (모듈화된 탭 시스템 사용)
        function showShotContent(shotId) {
    try {
+       console.log('🎬 showShotContent 호출됨 - shotId:', shotId);
+       
+       if (!currentData || !currentData.breakdown_data || !currentData.breakdown_data.shots) {
+           console.error('❌ currentData가 없거나 shots 데이터가 없습니다:', currentData);
+           showMessage('샷 데이터를 찾을 수 없습니다. JSON 파일을 먼저 업로드해주세요.', 'error');
+           return;
+       }
+       
        const shot = currentData.breakdown_data.shots.find(s => s.id === shotId);
-       if (!shot) return;
+       if (!shot) {
+           console.error('❌ 샷을 찾을 수 없음 - shotId:', shotId);
+           console.log('사용 가능한 샷 ID:', currentData.breakdown_data.shots.map(s => s.id));
+           return;
+       }
+       
+       console.log('✅ 샷 데이터 찾음:', shot);
        
        const contentTitle = document.getElementById('content-title');
        const contentSubtitle = document.getElementById('content-subtitle');
@@ -3897,6 +3979,7 @@ function createTestData() {
        // 항상 폴백 시스템 사용
        showShotContentFallback(shotId);
    } catch (error) {
+       console.error('❌ 샷 내용 표시 오류:', error);
        showMessage('샷 내용 표시 오류: ' + error.message, 'error');
    }
        }
