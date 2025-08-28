@@ -7113,6 +7113,29 @@ Examples:
         window.showSideViewWarning = showSideViewWarning;
         window.closeSideViewModal = closeSideViewModal;
         
+        // AI 프롬프트 로드 함수를 전역으로 등록
+        window.loadAIEditPrompt = loadAIEditPrompt;
+        
+        // 페이지 로드와 관계없이 즉시 실행 (배포 환경 대응)
+        (function() {
+            // URL 파라미터 확인
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('ai_edit') === 'true') {
+                console.log('URL 파라미터로 AI 수정 감지');
+                setTimeout(loadAIEditPrompt, 100);
+            }
+            
+            // localStorage 확인
+            if (localStorage.getItem('aiEditPromptText')) {
+                console.log('localStorage에서 AI 수정 프롬프트 감지');
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', loadAIEditPrompt);
+                } else {
+                    loadAIEditPrompt();
+                }
+            }
+        })();
+        
         // AI 수정 프롬프트 로드 함수
         function loadAIEditPrompt() {
             console.log('loadAIEditPrompt 함수 실행됨');
