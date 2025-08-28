@@ -5837,21 +5837,36 @@ try {
 	// 새로운 DOM 기반 AI 수정 함수 - Image Prompt Generator로 프롬프트 전달
 	function aiEditPromptFromDOM(shotId, aiName, imageId, evt) {
 		try {
+			console.log('aiEditPromptFromDOM 시작:', { shotId, aiName, imageId });
 			let promptText = '';
 			
 			// 버튼의 부모 요소에서 원본 프롬프트 찾기
 			if (evt && evt.target) {
 				const button = evt.target;
+				console.log('버튼 찾음:', button);
+				
 				const promptContainer = button.closest('.ai-image-prompt-details');
+				console.log('프롬프트 컨테이너:', promptContainer);
+				
 				if (promptContainer) {
 					const promptElement = promptContainer.querySelector('.prompt-original .ai-image-prompt-full-text');
+					console.log('프롬프트 요소:', promptElement);
+					
 					if (promptElement) {
 						promptText = promptElement.textContent || promptElement.innerText || '';
+						console.log('추출한 프롬프트 텍스트:', promptText.substring(0, 100) + '...');
+					} else {
+						console.error('프롬프트 요소를 찾을 수 없음');
 					}
+				} else {
+					console.error('프롬프트 컨테이너를 찾을 수 없음');
 				}
+			} else {
+				console.error('이벤트 또는 타겟이 없음');
 			}
 			
 			if (!promptText || promptText.trim() === '') {
+				console.error('프롬프트가 비어있음');
 				return showMessage(`${aiName} 프롬프트가 비어 있습니다.`, 'warning');
 			}
 			
@@ -5866,12 +5881,31 @@ try {
 				.replace(/&amp;/g, '&');
 			
 			// localStorage에 프롬프트 저장
+			console.log('localStorage에 저장 중:', {
+				text: decodedPrompt.substring(0, 100) + '...',
+				source: aiName,
+				imageId: imageId
+			});
+			
 			localStorage.setItem('aiEditPromptText', decodedPrompt);
 			localStorage.setItem('aiEditSourceAI', aiName);
 			localStorage.setItem('aiEditImageId', imageId);
 			
-			// Image Prompt Generator 페이지로 이동 (상대 경로 사용)
-			window.open('../prompt-builder.html', '_blank');
+			// 저장 확인
+			console.log('localStorage 저장 확인:', {
+				saved: localStorage.getItem('aiEditPromptText') !== null,
+				length: localStorage.getItem('aiEditPromptText')?.length
+			});
+			
+			// Image Prompt Generator 페이지로 이동 (루트 경로 사용)
+			const currentPath = window.location.pathname;
+			const isStoryboardPath = currentPath.includes('/storyboard/');
+			const promptBuilderPath = isStoryboardPath ? '../prompt-builder.html' : 'prompt-builder.html';
+			
+			console.log('Current path:', currentPath);
+			console.log('Opening prompt builder at:', promptBuilderPath);
+			
+			window.open(promptBuilderPath, '_blank');
 			
 			showMessage(`${aiName} 프롬프트가 Image Prompt Generator로 전달되었습니다.`, 'success');
 			
