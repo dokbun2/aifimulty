@@ -4505,39 +4505,41 @@ for (let i = 0; i < 3; i++) {
         </div>`;
 }
 
-// 복제용 참조 이미지 섹션 (2개만)
+// 메인 이미지 섹션 (2개)
 let referenceSlotsHtmlDuplicate = '';
+// 메인 이미지 데이터 가져오기 (없으면 빈 데이터로 초기화)
+const mainImagesData = shot.main_images || [];
 for (let i = 0; i < 2; i++) {
-    const refData = referenceImagesData[i] || { url: '', description: '', type: 'composition' };
+    const mainData = mainImagesData[i] || { url: '', description: '', type: 'composition' };
     const uniqueRefId = `${shot.id}-ref-dup${i}`;
     referenceSlotsHtmlDuplicate += `
         <div class="reference-image-slot">
             <div class="reference-preview" id="ref-preview-${uniqueRefId}">
-                ${refData.url ? 
-                    `<img src="${refData.url}" alt="참조 ${i+1}" style="cursor: pointer;" onclick="openImageModal('${refData.url}')">` : 
-                    `<div style="color:#ccc;font-size:0.8rem;">참조 ${i+1} URL</div>`
+                ${mainData.url ? 
+                    `<img src="${mainData.url}" alt="메인 ${i+1}" style="cursor: pointer;" onclick="openImageModal('${mainData.url}')">` : 
+                    `<div style="color:#ccc;font-size:0.8rem;">메인 ${i+1} URL</div>`
                 }
             </div>
             <div class="form-group">
                 <label class="form-label">URL:</label>
                 <input type="text" class="form-input" 
-                       value="${refData.url || ''}" 
-                       placeholder="참조 ${i+1} URL" 
-                       onchange="updateReferenceImage('${shot.id}', ${i}, 'url', this.value)">
+                       value="${mainData.url || ''}" 
+                       placeholder="메인 ${i+1} URL" 
+                       onchange="updateMainImage('${shot.id}', ${i}, 'url', this.value)">
             </div>
             <div class="form-group">
                 <label class="form-label">설명:</label>
                 <textarea class="form-textarea" 
-                          onchange="updateReferenceImage('${shot.id}', ${i}, 'description', this.value)">${refData.description || ''}</textarea>
+                          onchange="updateMainImage('${shot.id}', ${i}, 'description', this.value)">${mainData.description || ''}</textarea>
             </div>
             <div class="form-group">
                 <label class="form-label">유형:</label>
                 <select class="form-select" 
-                        onchange="updateReferenceImage('${shot.id}', ${i}, 'type', this.value)">
-                    <option value="composition" ${refData.type === 'composition' ? 'selected' : ''}>구도</option>
-                    <option value="style" ${refData.type === 'style' ? 'selected' : ''}>스타일</option>
-                    <option value="lighting" ${refData.type === 'lighting' ? 'selected' : ''}>조명</option>
-                    <option value="mood" ${refData.type === 'mood' ? 'selected' : ''}>분위기</option>
+                        onchange="updateMainImage('${shot.id}', ${i}, 'type', this.value)">
+                    <option value="composition" ${mainData.type === 'composition' ? 'selected' : ''}>구도</option>
+                    <option value="style" ${mainData.type === 'style' ? 'selected' : ''}>스타일</option>
+                    <option value="lighting" ${mainData.type === 'lighting' ? 'selected' : ''}>조명</option>
+                    <option value="mood" ${mainData.type === 'mood' ? 'selected' : ''}>분위기</option>
                 </select>
             </div>
         </div>`;
@@ -4631,8 +4633,8 @@ const universalData = aiGeneratedImages['universal'][universalIndex] || { url: '
 const universalId = `${shot.id}-universal-${universalImageId}`;
 
 universalNanobanaHtml += `
-    <div class="reference-image-slot">
-        <div class="reference-preview" id="preview-${universalId}">
+    <div class="ai-image-slot">
+        <div class="ai-image-preview" id="preview-${universalId}">
             ${universalData.url ? 
                 `<img src="${universalData.url}" alt="Universal" 
                      style="cursor: pointer;" 
@@ -4673,8 +4675,8 @@ const nanobanaData = aiGeneratedImages['nanobana'][nanobanaIndex] || { url: '', 
 const nanobanaId = `${shot.id}-nanobana-${nanobanaImageId}`;
 
 universalNanobanaHtml += `
-    <div class="reference-image-slot">
-        <div class="reference-preview" id="preview-${nanobanaId}">
+    <div class="ai-image-slot">
+        <div class="ai-image-preview" id="preview-${nanobanaId}">
             ${nanobanaData.url ? 
                 `<img src="${nanobanaData.url}" alt="Nanobana" 
                      style="cursor: pointer;" 
@@ -5402,19 +5404,78 @@ try {
     saveDataToLocalStorage();
     
     if (field === 'url') {
+        // 참조 이미지 preview 업데이트 (ref 접미사만 사용)
         const uid = `${shotId}-ref${refIndex}`;
         const preview = document.getElementById(`ref-preview-${uid}`);
+        
         if (preview) {
             if (value) {
              preview.innerHTML = `<img src="${value}" alt="참조 ${refIndex+1}" style="cursor: pointer;" onclick="openImageModal('${value}')" onerror="(function(event){this.style.display='none';this.parentElement.innerHTML='<div style=&quot;color:#999;font-size:0.8rem;&quot;>로드 실패</div>';}).call(this, event)">`;
             } else {
                 preview.innerHTML = `<div style="color:#ccc;font-size:0.8rem;">참조 ${refIndex+1} URL</div>`;
             }
+        } else {
+            console.warn(`참조 이미지 미리보기 요소를 찾을 수 없습니다: ${uid}`);
         }
     }
 } catch (e) {
     showMessage('참조 이미지 업데이트 중 오류가 발생했습니다.', 'error');
 }
+    }
+
+    // 메인 이미지 업데이트
+    function updateMainImage(shotId, refIndex, field, value) {
+        try {
+            const shot = currentData.breakdown_data.shots.find(s => s.id === shotId);
+            if (!shot) {
+                console.error(`샷을 찾을 수 없습니다: ${shotId}`);
+                return;
+            }
+            
+            // 메인 이미지 데이터 구조가 없으면 초기화
+            if (!shot.main_images) {
+                shot.main_images = [];
+            }
+            
+            // 메인 이미지 슬롯 초기화
+            while (shot.main_images.length <= refIndex) {
+                shot.main_images.push({
+                    id: `main_img_${shot.main_images.length + 1}_${shotId}`,
+                    url: '',
+                    description: '',
+                    type: 'composition'
+                });
+            }
+            
+            // 값 업데이트
+            if (field === 'url') {
+                shot.main_images[refIndex].url = value;
+            } else if (field === 'description') {
+                shot.main_images[refIndex].description = value;
+            } else if (field === 'type') {
+                shot.main_images[refIndex].type = value;
+            }
+            
+            saveDataToLocalStorage();
+            
+            if (field === 'url') {
+                // 메인 이미지는 항상 -dup 접미사 사용
+                const uid = `${shotId}-ref-dup${refIndex}`;
+                const preview = document.getElementById(`ref-preview-${uid}`);
+                
+                if (preview) {
+                    if (value) {
+                        preview.innerHTML = `<img src="${value}" alt="메인 ${refIndex+1}" style="cursor: pointer;" onclick="openImageModal('${value}')" onerror="(function(event){this.style.display='none';this.parentElement.innerHTML='<div style=&quot;color:#999;font-size:0.8rem;&quot;>로드 실패</div>';}).call(this, event)">`;
+                    } else {
+                        preview.innerHTML = `<div style="color:#ccc;font-size:0.8rem;">메인 ${refIndex+1} URL</div>`;
+                    }
+                } else {
+                    console.warn(`메인 이미지 미리보기 요소를 찾을 수 없습니다: ${uid}`);
+                }
+            }
+        } catch (e) {
+            showMessage('메인 이미지 업데이트 중 오류가 발생했습니다.', 'error');
+        }
     }
 
     // 참조 이미지 슬롯 비우기
