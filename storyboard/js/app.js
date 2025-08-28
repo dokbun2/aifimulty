@@ -3053,9 +3053,10 @@ function createTestData() {
        
        let html = '';
        scenes.forEach(scene => {
-           const hasShots = scene.shot_ids && scene.shot_ids.length > 0;
+           const hasShots = scene.shot_ids && Array.isArray(scene.shot_ids) && scene.shot_ids.length > 0;
+           const shotCount = hasShots ? scene.shot_ids.length : 0;
            const statusIndicator = hasShots ? 
-               '<span class="status-indicator" style="color: #4caf50; font-size: 0.8rem; margin-left: 5px; vertical-align: middle; display: inline-block; line-height: 1;" data-tooltip="Stage 5 완료 (샷 ' + scene.shot_ids.length + '개)">●</span>' : 
+               '<span class="status-indicator" style="color: #4caf50; font-size: 0.8rem; margin-left: 5px; vertical-align: middle; display: inline-block; line-height: 1;" data-tooltip="Stage 5 완료 (샷 ' + shotCount + '개)">●</span>' : 
                '<span class="status-indicator" style="color: #ff9800; font-size: 0.8rem; margin-left: 5px; vertical-align: middle; display: inline-block; line-height: 1;" data-tooltip="Stage 5 대기">○</span>';
            
            // 샷 HTML을 미리 생성
@@ -3066,7 +3067,13 @@ function createTestData() {
                
                // 방법 1: shots 배열에서 scene_id로 필터링
                if (currentData.breakdown_data.shots && currentData.breakdown_data.shots.length > 0) {
-                   shots = currentData.breakdown_data.shots.filter(shot => shot.scene_id === scene.id);
+                   // trim()을 사용하여 공백 제거하고 비교
+                   shots = currentData.breakdown_data.shots.filter(shot => {
+                       const shotSceneId = (shot.scene_id || '').toString().trim();
+                       const currentSceneId = (scene.id || '').toString().trim();
+                       return shotSceneId === currentSceneId;
+                   });
+                   
                    if (shots.length > 0) {
                        console.log(`✅ ${scene.id}: shots 배열에서 ${shots.length}개 샷 찾음`);
                        shots.forEach(s => {
@@ -3074,14 +3081,16 @@ function createTestData() {
                        });
                    } else {
                        console.log(`❌ ${scene.id}: shots 배열에서 매칭되는 샷을 찾지 못함`);
-                       // scene_id 체크
-                       console.log(`   scene.id: "${scene.id}"`);
-                       console.log(`   shots의 scene_id 목록:`, [...new Set(currentData.breakdown_data.shots.map(s => s.scene_id))]);
+                       // 디버깅을 위한 상세 정보
+                       console.log(`   scene.id: "${scene.id}" (type: ${typeof scene.id}, length: ${scene.id.length})`);
+                       const sceneIds = currentData.breakdown_data.shots.map(s => s.scene_id);
+                       console.log(`   첫 번째 shot의 scene_id: "${sceneIds[0]}" (type: ${typeof sceneIds[0]}, length: ${sceneIds[0] ? sceneIds[0].length : 0})`);
+                       console.log(`   shots의 scene_id 목록:`, [...new Set(sceneIds)]);
                    }
                }
                
                // 방법 2: scene.shot_ids 사용
-               if (shots.length === 0 && scene.shot_ids && scene.shot_ids.length > 0) {
+               if (shots.length === 0 && scene.shot_ids && Array.isArray(scene.shot_ids) && scene.shot_ids.length > 0) {
                    console.log(`⚠️ ${scene.id}: shot_ids로 샷 생성 중 (${scene.shot_ids.join(', ')})`);
                    shots = scene.shot_ids.map((shotId, index) => {
                        const existingShot = currentData.breakdown_data.shots?.find(s => s.id === shotId);
