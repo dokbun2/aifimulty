@@ -1058,10 +1058,16 @@ const uiRenderer = {
         const imageSection = document.createElement('div');
         imageSection.className = 'image-display-section';
         imageSection.style.marginTop = '2rem';
+        // 메인 이미지 URL 처리
+        let mainImageUrl = concept.main_image_url;
+        if (mainImageUrl && mainImageUrl.includes('dropbox.com')) {
+            mainImageUrl = this.convertDropboxUrl(mainImageUrl);
+        }
+        
         imageSection.innerHTML = `
             <div class="image-container">
-                ${concept.main_image_url ? 
-                    `<img src="${concept.main_image_url}" alt="${concept.name}" onclick="ConceptArtManager.openImageModal('${concept.main_image_url}')" />` : 
+                ${mainImageUrl ? 
+                    `<img src="${mainImageUrl}" alt="${concept.name}" onclick="ConceptArtManager.openImageModal('${mainImageUrl}')" />` : 
                     '<div class="no-image-message">이미지를 추가하려면 아래 URL을 입력하세요</div>'}
             </div>
         `;
@@ -2340,7 +2346,16 @@ const imageManager = {
             
             // Dropbox URL 처리
             if (url.includes('dropbox.com')) {
-                const processedUrl = url.replace('?dl=0', '?raw=1');
+                let processedUrl = url;
+                // dl=0을 raw=1로 변경
+                if (url.includes('dl=0')) {
+                    processedUrl = url.replace('dl=0', 'raw=1');
+                }
+                // dl 파라미터가 없으면 raw=1 추가
+                else if (!url.includes('dl=') && !url.includes('raw=')) {
+                    const separator = url.includes('?') ? '&' : '?';
+                    processedUrl = url + separator + 'raw=1';
+                }
                 console.log('Dropbox URL processed:', processedUrl);
                 return processedUrl;
             }

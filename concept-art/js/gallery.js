@@ -32,6 +32,26 @@
         playground: { name: 'Playground AI', color: '#F59E0B' }
     };
 
+    // 드롭박스 URL 변환 함수
+    function convertDropboxUrl(url) {
+        if (!url) return url;
+        
+        // 드롭박스 URL인지 확인
+        if (url.includes('dropbox.com')) {
+            // dl=0을 raw=1로 변경
+            if (url.includes('dl=0')) {
+                return url.replace('dl=0', 'raw=1');
+            }
+            // dl 파라미터가 없으면 raw=1 추가
+            else if (!url.includes('dl=') && !url.includes('raw=')) {
+                const separator = url.includes('?') ? '&' : '?';
+                return url + separator + 'raw=1';
+            }
+        }
+        
+        return url;
+    }
+
     // 유틸리티 함수들
     const utils = {
         extractGoogleDriveFileId: function(url) {
@@ -224,7 +244,13 @@
         card.className = 'gallery-item';
         
         let displayUrl = imageData.url;
-        if (imageData.url.includes('drive.google.com')) {
+        
+        // 드롭박스 URL 처리
+        if (imageData.url.includes('dropbox.com')) {
+            displayUrl = convertDropboxUrl(imageData.url);
+        }
+        // 구글 드라이브 URL 처리
+        else if (imageData.url.includes('drive.google.com')) {
             const fileId = utils.extractGoogleDriveFileId(imageData.url);
             if (fileId) {
                 displayUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`;

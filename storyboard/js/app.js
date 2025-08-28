@@ -13,6 +13,7 @@ function escapeHtmlAttribute(str) {
     return str
         .replace(/&/g, '&amp;')   // & 를 먼저 이스케이프
         .replace(/"/g, '&quot;')  // 큰따옴표를 HTML 엔티티로 변경
+        .replace(/'/g, '&apos;')  // 작은따옴표를 HTML 엔티티로 변경 (중요!)
         .replace(/</g, '&lt;')    // < 를 HTML 엔티티로 변경
         .replace(/>/g, '&gt;')    // > 를 HTML 엔티티로 변경
         .replace(/\n/g, '\\n')    // 줄바꿈 이스케이프
@@ -4188,6 +4189,18 @@ function createTestData() {
                    });
                }
                
+               // 이미지 탭인 경우 버튼 재바인딩
+               if (tabName === 'image') {
+                   setTimeout(() => {
+                       if (typeof rebindPromptButtons === 'function') {
+                           rebindPromptButtons();
+                           console.log('✅ 이미지 탭 버튼 재바인딩 호출');
+                       } else {
+                           console.error('❌ rebindPromptButtons 함수를 찾을 수 없습니다');
+                       }
+                   }, 800);  // 타이밍을 더 늦춤 (100ms -> 800ms)
+               }
+               
                // 디버깅: 활성 탭의 오디오 섹션 확인
                const audioSections = activeContent.querySelectorAll('.audio-section');
                console.log(`✅ ${tabName} 탭 활성화 완료. 오디오 섹션 수: ${audioSections.length}`);
@@ -5848,6 +5861,8 @@ try {
 			const decodedPrompt = promptText
 				.replace(/&quot;/g, '"')
 				.replace(/&apos;/g, "'")
+				.replace(/&#39;/g, "'")  // 추가: &#39; 형식도 처리
+				.replace(/&#x27;/g, "'") // 추가: &#x27; 형식도 처리
 				.replace(/&lt;/g, '<')
 				.replace(/&gt;/g, '>')
 				.replace(/&amp;/g, '&');
@@ -8632,4 +8647,113 @@ console.log('프롬프트 관련 함수들이 전역 스코프에 등록되었�
     copyImagePrompt: typeof window.copyImagePrompt,
     editImagePrompt: typeof window.editImagePrompt,
     aiEditImagePrompt: typeof window.aiEditImagePrompt
+});
+
+// DOM이 완전히 로드된 후 동적 버튼 이벤트 재바인딩
+function rebindPromptButtons() {
+    // ai-image-prompt-details 내부의 모든 버튼에 이벤트 리스너 재설정
+    setTimeout(() => {
+        const promptContainers = document.querySelectorAll('.ai-image-prompt-details');
+        let fixedCount = 0;
+        
+        promptContainers.forEach(container => {
+            // 모든 버튼의 onclick 속성 수정
+            const allButtons = container.querySelectorAll('button[onclick]');
+            allButtons.forEach(btn => {
+                const onclickStr = btn.getAttribute('onclick');
+                if (onclickStr) {
+                    // onclick 문자열에서 HTML 엔티티 문제 해결
+                    const fixedOnclick = onclickStr
+                        .replace(/&apos;/g, "\\'")  // &apos;를 이스케이프된 작은따옴표로 변환
+                        .replace(/&#39;/g, "\\'")   // &#39;도 처리
+                        .replace(/&#x27;/g, "\\'"); // &#x27;도 처리
+                    
+                    // onclick 속성 재설정
+                    btn.removeAttribute('onclick');
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        try {
+                            // Function constructor를 사용하여 더 안전하게 실행
+                            const func = new Function('event', fixedOnclick);
+                            func.call(this, e);
+                        } catch (error) {
+                            console.error('버튼 클릭 실행 오류:', error, fixedOnclick);
+                            // 에러 발생 시 원본 onclick 시도
+                            try {
+                                eval(fixedOnclick);
+                            } catch (error2) {
+                                console.error('대체 실행도 실패:', error2);
+                            }
+                        }
+                    });
+                    fixedCount++;
+                }
+            });
+        });
+        
+        console.log(`✅ 프롬프트 버튼 ${fixedCount}개 재바인딩 완료`);
+    }, 500); // DOM 렌더링 완료 대기
+}
+
+// 전역 함수로 등록
+window.rebindPromptButtons = rebindPromptButtons;
+
+// 디버그 함수 - 현재 프롬프트 버튼 상태 확인
+window.debugPromptButtons = function() {
+    const containers = document.querySelectorAll('.ai-image-prompt-details');
+    let buttonInfo = [];
+    
+    containers.forEach((container, index) => {
+        const buttons = container.querySelectorAll('button[onclick]');
+        buttons.forEach(btn => {
+            const onclick = btn.getAttribute('onclick');
+            buttonInfo.push({
+                containerIndex: index,
+                buttonText: btn.textContent,
+                onclick: onclick,
+                hasApos: onclick && onclick.includes('&apos;'),
+                hasQuote: onclick && onclick.includes('&quot;')
+            });
+        });
+    });
+    
+    console.table(buttonInfo);
+    console.log('총 버튼 수:', buttonInfo.length);
+    console.log('&apos; 포함 버튼:', buttonInfo.filter(b => b.hasApos).length);
+    console.log('&quot; 포함 버튼:', buttonInfo.filter(b => b.hasQuote).length);
+    
+    return buttonInfo;
+};
+
+// updateUI 함수가 호출될 때마다 버튼 재바인딩 (MutationObserver 사용)
+const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+        if (mutation.addedNodes.length > 0) {
+            mutation.addedNodes.forEach(node => {
+                if (node.nodeType === 1 && node.querySelector && node.querySelector('.ai-image-prompt-details')) {
+                    rebindPromptButtons();
+                }
+            });
+        }
+    });
+});
+
+// content 영역 감시 시작
+document.addEventListener('DOMContentLoaded', function() {
+    const contentArea = document.getElementById('content');
+    if (contentArea) {
+        observer.observe(contentArea, { childList: true, subtree: true });
+    }
+    
+    // 페이지 로드 후 버튼 재바인딩 시도
+    setTimeout(() => {
+        if (typeof rebindPromptButtons === 'function') {
+            rebindPromptButtons();
+            console.log('✅ 초기 로드 시 프롬프트 버튼 재바인딩 완료');
+        }
+    }, 1000);
+    
+    // 초기 바인딩
+    rebindPromptButtons();
 });

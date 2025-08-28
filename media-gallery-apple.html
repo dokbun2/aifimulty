@@ -1322,9 +1322,22 @@
                                 console.log(`  📌 ${category} 아이템 ${itemId}:`, item);
                                 
                                 // 메인 이미지 URL - v1.3 (main_image_url) 또는 구버전 (image_url) 체크
-                                const mainImageUrl = item.main_image_url || item.image_url;
+                                let mainImageUrl = item.main_image_url || item.image_url;
                                 if (mainImageUrl) {
                                     console.log(`    🖼️ 메인 이미지 URL:`, mainImageUrl);
+                                    
+                                    // 드롭박스 URL 변환
+                                    if (mainImageUrl.includes('dropbox.com')) {
+                                        if (mainImageUrl.includes('dl=0')) {
+                                            mainImageUrl = mainImageUrl.replace('dl=0', 'raw=1');
+                                            console.log('    🔄 드롭박스 URL 변환 (dl=0 → raw=1):', mainImageUrl);
+                                        } else if (!mainImageUrl.includes('dl=') && !mainImageUrl.includes('raw=')) {
+                                            const separator = mainImageUrl.includes('?') ? '&' : '?';
+                                            mainImageUrl = mainImageUrl + separator + 'raw=1';
+                                            console.log('    🔄 드롭박스 URL에 raw=1 추가:', mainImageUrl);
+                                        }
+                                    }
+                                    
                                     const itemName = item.name || item.name_kr || '이름 없음';
                                     categoryGroups[category].items.push({
                                         url: mainImageUrl,
@@ -1353,9 +1366,23 @@
                                         const imageData = item.additional_images[imageKey];
                                         if (imageData && imageData.url) {
                                             console.log(`      📸 추가 이미지 ${imageKey}:`, imageData.url);
+                                            
+                                            let additionalUrl = imageData.url;
+                                            // 드롭박스 URL 변환
+                                            if (additionalUrl.includes('dropbox.com')) {
+                                                if (additionalUrl.includes('dl=0')) {
+                                                    additionalUrl = additionalUrl.replace('dl=0', 'raw=1');
+                                                    console.log('      🔄 드롭박스 URL 변환 (dl=0 → raw=1):', additionalUrl);
+                                                } else if (!additionalUrl.includes('dl=') && !additionalUrl.includes('raw=')) {
+                                                    const separator = additionalUrl.includes('?') ? '&' : '?';
+                                                    additionalUrl = additionalUrl + separator + 'raw=1';
+                                                    console.log('      🔄 드롭박스 URL에 raw=1 추가:', additionalUrl);
+                                                }
+                                            }
+                                            
                                             const conceptName = item.name || item.name_kr || '이름 없음';
                                             categoryGroups[category].items.push({
-                                                url: imageData.url,
+                                                url: additionalUrl,
                                                 title: imageData.title || conceptName,
                                                 description: imageData.description || `${conceptName} - 참조 ${i}`,
                                                 type: 'image',
