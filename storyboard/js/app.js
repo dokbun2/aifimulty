@@ -4865,7 +4865,7 @@ let aiSectionsHtml = '';
 									<button class="copy-btn" onclick="copyPromptFromDOM('${shot.id}', '${ai.name}', '${imageId}', event)">
 										프롬프트 복사
 									</button>
-									<button class="edit-btn" onclick="editImagePrompt('${shot.id}', '${ai.name}', '${imageId}', '${escapeHtmlAttribute(mainPrompt)}', '${escapeHtmlAttribute(translatedPrompt || '')}', '${escapeHtmlAttribute(parameters || '')}')" style="margin-left: 8px;">
+									<button class="edit-btn" onclick="editPromptFromDOM('${shot.id}', '${ai.name}', '${imageId}', event)" style="margin-left: 8px;">
 										프롬프트 수정
 									</button>
 									${ai.name !== 'Nanobana' ? `
@@ -5831,6 +5831,64 @@ try {
 			saveDataToLocalStorage();
 		} catch (e) {
 			showMessage('설명 업데이트 중 오류가 발생했습니다.', 'error');
+		}
+	}
+
+	// 새로운 DOM 기반 프롬프트 수정 함수
+	function editPromptFromDOM(shotId, aiName, imageId, evt) {
+		try {
+			let originalPrompt = '';
+			let translatedPrompt = '';
+			let parameters = '';
+			
+			// 버튼의 부모 요소에서 프롬프트 찾기
+			if (evt && evt.target) {
+				const button = evt.target;
+				const promptContainer = button.closest('.ai-image-prompt-details');
+				if (promptContainer) {
+					// 원본 프롬프트
+					const originalElement = promptContainer.querySelector('.prompt-original .ai-image-prompt-full-text');
+					if (originalElement) {
+						originalPrompt = originalElement.textContent || originalElement.innerText || '';
+					}
+					
+					// 번역된 프롬프트 (있는 경우)
+					const translatedElement = promptContainer.querySelector('.prompt-translated .ai-image-prompt-full-text');
+					if (translatedElement) {
+						translatedPrompt = translatedElement.textContent || translatedElement.innerText || '';
+					}
+				}
+			}
+			
+			// 데이터에서 parameters 가져오기
+			const shot = currentData.breakdown_data.shots.find(s => s.id === shotId);
+			if (shot && shot.image_design && shot.image_design.ai_generated_images) {
+				// AI 타입 결정
+				let aiType;
+				if (aiName === 'Universal') aiType = 'universal';
+				else if (aiName === 'Nanobana') aiType = 'nanobana';
+				else if (aiName === 'Midjourney') aiType = 'midjourney';
+				else if (aiName === 'DALL-E') aiType = 'dalle';
+				else if (aiName === 'Stable Diffusion') aiType = 'stable_diffusion';
+				else if (aiName === 'Leonardo.ai') aiType = 'leonardo';
+				else if (aiName === 'Bing Creator') aiType = 'bing';
+				else if (aiName === 'Ideogram') aiType = 'ideogram';
+				else if (aiName === 'Playground AI') aiType = 'playground';
+				else aiType = aiName.toLowerCase().replace(/[\s.-]/g, '_');
+				
+				const imageIndex = parseInt(imageId.replace('Image ', '')) - 1;
+				if (shot.image_design.ai_generated_images[aiType] && 
+					shot.image_design.ai_generated_images[aiType][imageIndex]) {
+					parameters = shot.image_design.ai_generated_images[aiType][imageIndex].parameters || '';
+				}
+			}
+			
+			// 기존 editImagePrompt 함수 호출
+			editImagePrompt(shotId, aiName, imageId, originalPrompt, translatedPrompt, parameters);
+			
+		} catch (error) {
+			console.error('프롬프트 수정 오류:', error);
+			showMessage('프롬프트 수정 중 오류가 발생했습니다.', 'error');
 		}
 	}
 
@@ -8673,6 +8731,7 @@ function aiEditImagePrompt(shotId, aiName, imageId, originalPrompt) {
 }
 
 // 전역 스코프에 함수들 등록
+window.editPromptFromDOM = editPromptFromDOM;
 window.copyPromptFromDOM = copyPromptFromDOM;
 window.copyImagePrompt = copyImagePrompt;
 window.editImagePrompt = editImagePrompt;
