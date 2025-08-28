@@ -2923,61 +2923,12 @@ function initialize() {
             console.log('JSON 파일 가져오기 시작:', file.name);
             dataManager.importFromJSON(file)
                 .then(() => {
-                    uiRenderer.updateProjectInfo();
-                    uiRenderer.renderSidebar();
-                    
-                    // 이미지 갤러리 업데이트를 위해 첫 번째 컨셉 자동 선택
-                    const categories = ['characters', 'locations', 'props'];
-                    let conceptSelected = false;
-                    
-                    for (const category of categories) {
-                        const concepts = state.conceptArtData[category];
-                        if (concepts && Object.keys(concepts).length > 0) {
-                            const firstConceptId = Object.keys(concepts)[0];
-                            const concept = state.conceptArtData[category][firstConceptId];
-                            
-                            console.log(`첫 번째 컨셉 자동 선택: ${category}/${firstConceptId}`);
-                            console.log('선택된 컨셉 데이터:', concept);
-                            
-                            dataManager.selectConcept(category, firstConceptId);
-                            conceptSelected = true;
-                            
-                            // 이미지 갤러리를 무조건 업데이트 (탭 상태와 관계없이)
-                            setTimeout(() => {
-                                console.log('이미지 갤러리 업데이트 시작...');
-                                imageManager.updateImageGallery(concept);
-                                
-                                // 갤러리 탭 활성화
-                                const galleryTab = document.getElementById('image-gallery-tab');
-                                const galleryButton = document.querySelector('[onclick*="image-gallery-tab"]');
-                                if (galleryTab && galleryButton) {
-                                    // 모든 탭 숨기기
-                                    document.querySelectorAll('.tab-content').forEach(tab => {
-                                        tab.style.display = 'none';
-                                        tab.classList.remove('active');
-                                    });
-                                    document.querySelectorAll('.tab-button').forEach(btn => {
-                                        btn.classList.remove('active');
-                                    });
-                                    
-                                    // 갤러리 탭 활성화
-                                    galleryTab.style.display = 'block';
-                                    galleryTab.classList.add('active');
-                                    galleryButton.classList.add('active');
-                                    
-                                    console.log('이미지 갤러리 탭 활성화됨');
-                                }
-                            }, 100);
-                            
-                            break;
-                        }
-                    }
-                    
-                    if (!conceptSelected) {
-                        console.log('선택할 수 있는 컨셉아트가 없습니다.');
-                    }
-                    
-                    utils.showToast('JSON 파일을 성공적으로 가져왔습니다.');
+                    // 페이지 새로고침 후 active 캐릭터 클릭
+                    localStorage.setItem('shouldClickActiveCharacter', 'true');
+                    utils.showToast('JSON 파일을 성공적으로 가져왔습니다. 페이지를 새로고침합니다...');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
                 })
                 .catch(error => {
                     console.error('JSON 가져오기 오류:', error);
@@ -3007,6 +2958,26 @@ function initialize() {
     
     // AI 탭 빌드
     uiRenderer.buildAITabs();
+    
+    // 페이지 로드 시 active 캐릭터 자동 클릭 체크
+    if (localStorage.getItem('shouldClickActiveCharacter') === 'true') {
+        localStorage.removeItem('shouldClickActiveCharacter');
+        setTimeout(() => {
+            // 먼저 캐릭터 리스트에서 active 항목을 찾습니다
+            const activeCharacter = document.querySelector('#character-list .concept-item.active');
+            if (activeCharacter) {
+                console.log('Active 캐릭터 자동 클릭:', activeCharacter.textContent);
+                activeCharacter.click();
+            } else {
+                // active가 없으면 첫 번째 캐릭터를 클릭
+                const firstCharacter = document.querySelector('#character-list .concept-item');
+                if (firstCharacter) {
+                    console.log('첫 번째 캐릭터 자동 클릭:', firstCharacter.textContent);
+                    firstCharacter.click();
+                }
+            }
+        }, 500); // 타이밍을 500ms로 증가
+    }
     
     // URL 파라미터 체크 및 자동 JSON 처리
     const urlParams = new URLSearchParams(window.location.search);
