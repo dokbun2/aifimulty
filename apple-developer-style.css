@@ -2405,3 +2405,8 @@ body {
     font-size: 16px;
   }
 }
+
+/* Hide specific tool item - 프롬프트 빌더 숨기기 */
+#tools > div > div.tools-grid > div:nth-child(3) > div > a:nth-child(1) {
+  display: none !important;
+}

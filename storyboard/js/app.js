@@ -1526,43 +1526,42 @@ function createTestData() {
                
                const stats = newData.data.backup_metadata || {};
                
-               // 시퀀스 데이터 확인 및 디버깅
+               // 시퀀스 데이터 확인 및 디버깅 (상세)
                if (currentData.breakdown_data && currentData.breakdown_data.sequences) {
-                   console.log('🔄 백업 복원 완료 - 시퀀스 목록:', 
-                       currentData.breakdown_data.sequences.map(s => `${s.id}: ${s.title}`));
+                   const totalShots = currentData.breakdown_data.shots ? currentData.breakdown_data.shots.length : 0;
+                   const totalScenes = currentData.breakdown_data.scenes ? currentData.breakdown_data.scenes.length : 0;
+                   const totalSequences = currentData.breakdown_data.sequences.length;
                    
-                   // shots 배열 존재 여부 및 개수 확인
-                   if (currentData.breakdown_data.shots) {
-                       console.log(`📊 전체 shots 배열 데이터: ${currentData.breakdown_data.shots.length}개`);
-                       currentData.breakdown_data.shots.forEach(shot => {
+                   console.log(`✅ 백업 복원 완료: ${totalSequences}개 시퀀스, ${totalScenes}개 씬, ${totalShots}개 샷`);
+                   
+                   // 샷 데이터 상세 확인
+                   if (currentData.breakdown_data.shots && currentData.breakdown_data.shots.length > 0) {
+                       console.log('📊 Shots 데이터 확인:');
+                       currentData.breakdown_data.shots.slice(0, 5).forEach(shot => {
                            console.log(`  - ${shot.id}: "${shot.title}" (scene_id: ${shot.scene_id})`);
                        });
+                       if (currentData.breakdown_data.shots.length > 5) {
+                           console.log(`  ... 외 ${currentData.breakdown_data.shots.length - 5}개`);
+                       }
                    } else {
-                       console.log('⚠️ shots 배열이 없습니다!');
-                   }
-                   
-                   // 시퀀스별 씬과 샷 정보 출력
-                   currentData.breakdown_data.sequences.forEach(seq => {
-                       const seqScenes = currentData.breakdown_data.scenes.filter(scene => scene.sequence_id === seq.id);
-                       console.log(`📁 시퀀스 ${seq.id} (${seq.title}):`);
-                       console.log(`  - 씬 개수: ${seqScenes.length}`);
-                       seqScenes.forEach(scene => {
-                           const shotCount = scene.shot_ids ? scene.shot_ids.length : 0;
-                           console.log(`    - ${scene.id}: ${scene.title} (shot_ids: ${shotCount}개)`);
+                       console.warn('⚠️ shots 배열이 비어있거나 없습니다!');
+                       
+                       // shot_ids 확인
+                       if (currentData.breakdown_data.scenes) {
+                           const totalShotIds = currentData.breakdown_data.scenes.reduce((acc, scene) => {
+                               return acc + (scene.shot_ids ? scene.shot_ids.length : 0);
+                           }, 0);
                            
-                           // 샷 데이터 확인
-                           if (scene.shot_ids && scene.shot_ids.length > 0) {
-                               scene.shot_ids.forEach(shotId => {
-                                   const shot = currentData.breakdown_data.shots?.find(s => s.id === shotId);
-                                   if (shot) {
-                                       console.log(`      ✅ ${shotId}: "${shot.title}" 데이터 있음`);
-                                   } else {
-                                       console.log(`      ❌ ${shotId}: shots 배열에 데이터 없음`);
+                           if (totalShotIds > 0) {
+                               console.warn(`⚠️ ${totalShotIds}개의 shot_id가 있지만 shots 데이터가 없습니다.`);
+                               currentData.breakdown_data.scenes.forEach(scene => {
+                                   if (scene.shot_ids && scene.shot_ids.length > 0) {
+                                       console.log(`  ${scene.id}: shot_ids = [${scene.shot_ids.join(', ')}]`);
                                    }
                                });
                            }
-                       });
-                   });
+                       }
+                   }
                }
                
                showMessage(
@@ -2171,6 +2170,17 @@ function createTestData() {
                // 시퀀스 데이터 확인
                console.log('📂 Stage 5 데이터 로드 - 시퀀스 개수:', currentData.breakdown_data.sequences.length);
                console.log('📂 시퀀스 목록:', currentData.breakdown_data.sequences.map(s => `${s.id}: ${s.title}`));
+               
+               // shots 배열 확인 및 디버깅
+               if (currentData.breakdown_data.shots && currentData.breakdown_data.shots.length > 0) {
+                   console.log('✅ shots 배열 발견:', currentData.breakdown_data.shots.length + '개');
+                   console.log('📊 샷 샘플 (처음 5개):');
+                   currentData.breakdown_data.shots.slice(0, 5).forEach(shot => {
+                       console.log(`  - ${shot.id}: "${shot.title}" (scene_id: ${shot.scene_id})`);
+                   });
+               } else {
+                   console.warn('⚠️ shots 배열이 없습니다!');
+               }
                
                // 각 시퀀스의 샷 정보 디버깅
                currentData.breakdown_data.sequences.forEach(seq => {
@@ -3010,6 +3020,9 @@ function createTestData() {
    try {
        if (!currentData || !currentData.breakdown_data) return;
        
+       console.log(`\n🔍 loadScenesForSequence 호출 - 시퀀스: ${sequenceId}`);
+       console.log('현재 shots 배열 상태:', currentData.breakdown_data.shots ? currentData.breakdown_data.shots.length + '개' : '없음');
+       
        const scenes = currentData.breakdown_data.scenes.filter(scene => scene.sequence_id === sequenceId);
        if (scenes.length === 0) {
            container.innerHTML = '<div style="padding: 15px 40px; color: #ccc; font-size: 0.9rem;">씬이 없습니다</div>';
@@ -3023,13 +3036,66 @@ function createTestData() {
                '<span class="status-indicator" style="color: #4caf50; font-size: 0.8rem; margin-left: 5px; vertical-align: middle; display: inline-block; line-height: 1;" data-tooltip="Stage 5 완료 (샷 ' + scene.shot_ids.length + '개)">●</span>' : 
                '<span class="status-indicator" style="color: #ff9800; font-size: 0.8rem; margin-left: 5px; vertical-align: middle; display: inline-block; line-height: 1;" data-tooltip="Stage 5 대기">○</span>';
            
+           // 샷 HTML을 미리 생성
+           let shotsHtml = '';
+           if (hasShots) {
+               // 샷 데이터 가져오기
+               let shots = [];
+               
+               // 방법 1: shots 배열에서 scene_id로 필터링
+               if (currentData.breakdown_data.shots && currentData.breakdown_data.shots.length > 0) {
+                   shots = currentData.breakdown_data.shots.filter(shot => shot.scene_id === scene.id);
+                   if (shots.length > 0) {
+                       console.log(`✅ ${scene.id}: shots 배열에서 ${shots.length}개 샷 찾음`);
+                   }
+               }
+               
+               // 방법 2: scene.shot_ids 사용
+               if (shots.length === 0 && scene.shot_ids && scene.shot_ids.length > 0) {
+                   console.log(`⚠️ ${scene.id}: shot_ids로 샷 생성 중 (${scene.shot_ids.join(', ')})`);
+                   shots = scene.shot_ids.map((shotId, index) => {
+                       const existingShot = currentData.breakdown_data.shots?.find(s => s.id === shotId);
+                       if (existingShot) {
+                           console.log(`  ✅ ${shotId}: "${existingShot.title}" 찾음`);
+                           return existingShot;
+                       }
+                       
+                       // 샷 데이터가 없으면 shotId로부터 의미있는 제목 생성
+                       let shotTitle = `샷 ${index + 1}`;
+                       if (shotId && shotId.includes('.')) {
+                           const parts = shotId.split('.');
+                           if (parts.length === 2) {
+                               shotTitle = `샷 ${parts[1]}`;
+                           }
+                       }
+                       
+                       console.log(`  ❌ ${shotId}: 기본 제목 "${shotTitle}" 사용`);
+                       return {
+                           id: shotId,
+                           title: shotTitle,
+                           scene_id: scene.id
+                       };
+                   });
+               }
+               
+               // 샷 HTML 생성
+               if (shots.length > 0) {
+                   shots.forEach(shot => {
+                       shotsHtml += `
+                           <div class="shot-item" data-shot-id="${shot.id}">
+                               <span>${shot.id}: ${shot.title || '샷'}</span>
+                           </div>`;
+                   });
+               }
+           }
+           
            html += `
                <div class="scene-item">
                    <div class="scene-header" data-scene-id="${scene.id}">
                        <span class="toggle-icon">▷</span>
                        <span>${scene.id}: ${scene.title}${statusIndicator}</span>
                    </div>
-                   <div class="shots-container collapsed" id="shots-${scene.id}"></div>
+                   <div class="shots-container collapsed" id="shots-${scene.id}">${shotsHtml}</div>
                </div>`;
        });
        
@@ -3043,7 +3109,18 @@ function createTestData() {
                selectScene(this.dataset.sceneId, this);
            });
        });
+       
+       // 샷 아이템에 클릭 이벤트 리스너 추가
+       container.querySelectorAll('.shot-item').forEach(item => {
+           const newItem = item.cloneNode(true);
+           item.parentNode.replaceChild(newItem, item);
+           newItem.addEventListener('click', function(e) {
+               e.stopPropagation();
+               selectShot(this.dataset.shotId, this);
+           });
+       });
    } catch (error) {
+       console.error('loadScenesForSequence 오류:', error);
    }
        }
 
@@ -3085,13 +3162,19 @@ function createTestData() {
            shotsContainer.classList.remove('collapsed');
            toggleIcon.classList.add('expanded');
            toggleIcon.textContent = '▽';
-           loadShotsForScene(sceneId, shotsContainer);
+           
+           // 샷들이 이미 로드되어 있는지 확인
+           if (!shotsContainer.innerHTML.trim() || shotsContainer.innerHTML.includes('샷이 없습니다')) {
+               // 샷이 없으면 loadShotsForScene 호출
+               loadShotsForScene(sceneId, shotsContainer);
+           }
        } else {
            shotsContainer.classList.add('collapsed');
            toggleIcon.classList.remove('expanded');
            toggleIcon.textContent = '▷';
        }
    } catch (error) {
+       console.error('toggleSceneShots 오류:', error);
    }
        }
 
@@ -3100,29 +3183,23 @@ function createTestData() {
    try {
        if (!currentData || !currentData.breakdown_data) return;
        
-       console.log(`🔍 Loading shots for scene: ${sceneId}`);
-       
        // 두 가지 데이터 구조 모두 지원
        let shots = [];
        
        // 방법 1: shots 배열에서 scene_id로 필터링
        if (currentData.breakdown_data.shots) {
            shots = currentData.breakdown_data.shots.filter(shot => shot.scene_id === sceneId);
-           console.log(`  방법 1: shots 배열에서 ${shots.length}개 찾음`);
        }
        
        // 방법 2: 씬의 shot_ids를 사용하여 샷 찾기
        if (shots.length === 0) {
            const scene = currentData.breakdown_data.scenes.find(s => s.id === sceneId);
            if (scene && scene.shot_ids && scene.shot_ids.length > 0) {
-               console.log(`  방법 2: scene.shot_ids 사용 (${scene.shot_ids.length}개)`);
-               
                // shot_ids 배열을 사용하여 샷 생성
                shots = scene.shot_ids.map((shotId, index) => {
                    // 실제 샷 데이터가 있으면 사용
                    const existingShot = currentData.breakdown_data.shots?.find(s => s.id === shotId);
                    if (existingShot) {
-                       console.log(`    ✅ ${shotId}: "${existingShot.title}" 찾음`);
                        return existingShot;
                    }
                    
@@ -3136,7 +3213,6 @@ function createTestData() {
                        }
                    }
                    
-                   console.log(`    ⚠️ ${shotId}: 기본 제목 사용 "${shotTitle}"`);
                    return {
                        id: shotId,
                        title: shotTitle,
