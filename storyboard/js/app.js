@@ -1967,6 +1967,7 @@ function createTestData() {
 							// generation_settings 저장 (선택된 AI 도구 정보 포함)
 							if (newData.generation_settings) {
 								window.stage6ImagePrompts.generation_settings = newData.generation_settings;
+								console.log('📌 Stage 6 generation_settings:', newData.generation_settings);
 							}
 
 							newData.shots.forEach(shotData => {
@@ -1977,7 +1978,19 @@ function createTestData() {
 								shotData.images.forEach(imageData => {
 									const imageId = imageData.image_id;
 									window.stage6ImagePrompts[shotId][imageId] = imageData;
+									
+									// 디버깅: Universal과 Nanobana 프롬프트 확인
+									if (imageData.prompts) {
+										if (imageData.prompts.universal) {
+											console.log(`✅ Stage 6 Universal 프롬프트 발견: ${shotId} - ${imageId}`);
+										}
+										if (imageData.prompts.nanobana) {
+											console.log(`✅ Stage 6 Nanobana 프롬프트 발견: ${shotId} - ${imageId}`);
+										}
+									}
 								});
+								
+								console.log(`📌 Stage 6 샷 ${shotId} 저장 완료:`, Object.keys(window.stage6ImagePrompts[shotId]).length, '개 이미지');
 							});
 
                     // Stage 6 데이터 localStorage에 저장
@@ -2046,7 +2059,16 @@ function createTestData() {
 															main_prompt_translated: universalTranslated,
 															parameters: ''
 														};
-													} else if (aiTool !== 'universal_translated') {
+													} else if (aiTool === 'nanobana') {
+														const nanobanaPrompt = typeof promptData === 'string' ? promptData : (promptData.prompt || promptData);
+														const nanobanaTranslated = firstImageData.prompts.nanobana_translated || '';
+														
+														shot.image_prompts.nanobana = {
+															main_prompt: nanobanaPrompt,
+															main_prompt_translated: nanobanaTranslated,
+															parameters: ''
+														};
+													} else if (aiTool !== 'universal_translated' && aiTool !== 'nanobana_translated') {
 														// 기존 형식 처리
 														let parameters = '';
 														if (promptData && typeof promptData === 'object') {
@@ -4529,8 +4551,24 @@ if (shot.image_prompts) {
     // 기존 Stage 6 데이터 방식
     const stage6Data = window.stage6ImagePrompts || {};
     shotStage6Data = stage6Data[shot.id] || {};
+    
+    // Stage 6 데이터 디버깅
+    if (Object.keys(shotStage6Data).length > 0) {
+        console.log('📌 Stage 6 데이터 로드됨:', shot.id);
+        Object.keys(shotStage6Data).forEach(imageId => {
+            const imageData = shotStage6Data[imageId];
+            if (imageData.prompts) {
+                if (imageData.prompts.universal) {
+                    console.log(`  ✅ Universal 프롬프트: ${imageId}`);
+                }
+                if (imageData.prompts.nanobana) {
+                    console.log(`  ✅ Nanobana 프롬프트: ${imageId}`);
+                }
+            }
+        });
+    }
 }
-console.log('🔍 Stage 6 데이터 확인:', shot.id, Object.keys(shotStage6Data).length, 'images');
+console.log('🔍 Stage 6 데이터 확인:', shot.id, Object.keys(shotStage6Data).length, 'images', shotStage6Data);
 
 let planSelectorHtml = '';
 let selectedPlanData = null;
@@ -4761,6 +4799,7 @@ let aiSectionsHtml = '';
 								} else {
 									imagePrompts = universalData;
 								}
+								console.log(`    📌 Universal 프롬프트 로드: ${imageId}`, imagePrompts.prompt?.substring(0, 100) + '...');
 							}
 						} 
 						// nanobana 프롬프트 특별 처리
@@ -4776,6 +4815,7 @@ let aiSectionsHtml = '';
 								} else {
 									imagePrompts = nanobanaData;
 								}
+								console.log(`    📌 Nanobana 프롬프트 로드: ${imageId}`, imagePrompts.prompt?.substring(0, 100) + '...');
 							}
 							// Stage 6 데이터가 없고 Stage 5 CSV 데이터가 있으면 CSV 데이터를 프롬프트로 사용
 							else if (imageCsvData && Object.keys(imageCsvData).length > 0) {
@@ -5218,55 +5258,7 @@ if (selectedPlanData && selectedPlanData.images && selectedPlanData.images.lengt
     }
 }
 
-// NanoBanana 콘텐츠 HTML 변수 초기화 및 구성
-let nanobanaContentHtml = '';
-
-// window.stage6ImagePrompts에서 데이터 가져오기
-console.log('NanoBanana 디버깅 - shot.id:', shot.id);
-console.log('NanoBanana 디버깅 - window.stage6ImagePrompts:', window.stage6ImagePrompts);
-
-if (window.stage6ImagePrompts && window.stage6ImagePrompts[shot.id]) {
-    const shotStage6Data = window.stage6ImagePrompts[shot.id];
-    console.log('NanoBanana 디버깅 - shotStage6Data:', shotStage6Data);
-    
-    // 각 이미지 데이터 처리
-    Object.entries(shotStage6Data).forEach(([imageId, imageData], idx) => {
-        console.log(`NanoBanana 디버깅 - 이미지 ${imageId} 데이터:`, imageData);
-        
-        // nanobana 프롬프트 데이터 추출
-        if (imageData.prompts && (imageData.prompts.nanobana || imageData.prompts.nanobana_translated)) {
-            const nanobanaPrompt = imageData.prompts.nanobana || '';
-            const nanobanaTranslated = imageData.prompts.nanobana_translated || '';
-            
-            console.log(`NanoBanana 디버깅 - 추출된 프롬프트 ${imageId}:`, { nanobanaPrompt, nanobanaTranslated });
-            
-            if (nanobanaPrompt || nanobanaTranslated) {
-                nanobanaContentHtml += `
-                    <div class="ai-image-prompt-details" style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;">
-                        <h5 style="color: #ec4899; margin-bottom: 10px;">이미지 ${imageId}</h5>
-                        ${imageData.image_title ? `<p style="color: #ccc; margin-bottom: 10px; font-size: 0.9em;">${imageData.image_title}</p>` : ''}
-                        <div class="prompt-original" style="margin-bottom: 15px;">
-                            <span class="prompt-text-label" style="color: #888; font-size: 0.85em; display: block; margin-bottom: 5px;">원문 프롬프트</span>
-                            <div class="ai-image-prompt-full-text" style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; margin-bottom: 10px; line-height: 1.6;">${nanobanaPrompt}</div>
-                            <button class="copy-btn btn-small" onclick="copyToClipboard('${nanobanaPrompt.replace(/'/g, "\\'")}')">복사</button>
-                            <button class="edit-btn btn-small" onclick="openPromptEditModal('nanobana', '${shot.id}', ${idx}, '${nanobanaPrompt.replace(/'/g, "\\'")}')">수정</button>
-                        </div>
-                        ${nanobanaTranslated ? `
-                            <div class="prompt-translated">
-                                <span class="prompt-text-label" style="color: #888; font-size: 0.85em; display: block; margin-bottom: 5px;">번역된 프롬프트</span>
-                                <div class="ai-image-prompt-full-text" style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; margin-bottom: 10px; line-height: 1.6;">${nanobanaTranslated}</div>
-                                <button class="copy-btn btn-small" onclick="copyToClipboard('${nanobanaTranslated.replace(/'/g, "\\'")}')">복사</button>
-                                <button class="edit-btn btn-small" onclick="openPromptEditModal('nanobana_translated', '${shot.id}', ${idx}, '${nanobanaTranslated.replace(/'/g, "\\'")}')">수정</button>
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-            }
-        }
-    });
-}
-
-console.log('NanoBanana 디버깅 - 최종 nanobanaContentHtml:', nanobanaContentHtml);
+// NanoBanana 중복 섹션 제거 - aiSectionsHtml에 이미 포함됨
 
 // Universal과 Nanobana 이미지 슬롯 생성 (참조이미지와 동일한 구조)
 let universalNanobanaHtml = '';
@@ -5362,25 +5354,16 @@ otherAIsHtml = aiSectionsHtml;
 const tabHtml = `
     ${planSelectorHtml}
     
-    <!-- 기타 AI 도구 섹션 -->
+    <!-- AI 도구 섹션 (Universal, Nanobana 포함) -->
     <div class="info-section">
-        <h3>🔧 기타 AI 이미지 생성 도구</h3>
+        <h3>🔧 AI 이미지 생성 도구 (Universal, Nanobana 포함)</h3>
         <p style="font-size:0.9em;color:#ccc;margin-bottom:20px;">
             각 이미지별로 AI 도구의 프롬프트를 확인하고 생성된 이미지를 관리하세요.
         </p>
         ${otherAIsHtml || '<p style="color:#ccc;">프롬프트 데이터가 없습니다.</p>'}
     </div>
     
-    <!-- NanoBanana 섹션 -->
-    <div class="info-section">
-        <h3>🔧 NanoBanana AI 이미지 생성 도구</h3>
-        <p style="font-size:0.9em;color:#ccc;margin-bottom:20px;">
-            NanoBanana AI 도구의 프롬프트를 확인하고 생성된 이미지를 관리하세요.
-        </p>
-        <div class="ai-prompts-grid">
-            ${nanobanaContentHtml || '<p style="color:#ccc;">NanoBanana 프롬프트 데이터가 없습니다.</p>'}
-        </div>
-    </div>
+    <!-- NanoBanana 섹션 제거 - 기타 AI 도구 섹션에 이미 포함됨 -->
     
     <!-- 메인 이미지 섹션 (2개) -->
     <div class="info-section reference-image-slots-container">
