@@ -1064,6 +1064,9 @@ function createTestData() {
 				const savedStage7 = localStorage.getItem(`stage7VideoPrompts_${jsonFileName}`);
 				if (savedStage7) {
 					window.stage7VideoPrompts = JSON.parse(savedStage7);
+					console.log('✅ localStorage에서 stage7VideoPrompts 복원:', Object.keys(window.stage7VideoPrompts).length, '개 샷');
+				} else {
+					console.log('⚠️ localStorage에 stage7VideoPrompts 데이터 없음');
 				}
 				
 				// 오디오 파일 데이터 복원
@@ -1584,10 +1587,42 @@ function createTestData() {
            console.log('📌 업로드된 파일 분석 중...');
            console.log('  - schema_version:', newData.schema_version);
            console.log('  - breakdown_data 존재:', !!newData.breakdown_data);
+           console.log('  - video_prompts 존재:', !!newData.video_prompts, typeof newData.video_prompts);
+           if (newData.video_prompts) {
+               if (Array.isArray(newData.video_prompts)) {
+                   console.log('  - video_prompts 배열:', newData.video_prompts.length, '개');
+               } else if (typeof newData.video_prompts === 'object') {
+                   console.log('  - video_prompts 객체:', Object.keys(newData.video_prompts).length, '개');
+                   console.log('  - video_prompts 키들:', Object.keys(newData.video_prompts).slice(0, 5));
+               }
+           }
            if (newData.breakdown_data) {
                console.log('  - sequences 존재:', !!newData.breakdown_data.sequences, newData.breakdown_data.sequences?.length || 0, '개');
                console.log('  - scenes 존재:', !!newData.breakdown_data.scenes, newData.breakdown_data.scenes?.length || 0, '개');
                console.log('  - shots 존재:', !!newData.breakdown_data.shots, newData.breakdown_data.shots?.length || 0, '개');
+               
+               // shots 배열이 없으면 빈 배열로 초기화
+               if (!newData.breakdown_data.shots) {
+                   console.log('⚠️ shots 배열이 없어서 빈 배열로 초기화');
+                   newData.breakdown_data.shots = [];
+               }
+               // shots가 null이거나 배열이 아닌 경우도 처리
+               if (!Array.isArray(newData.breakdown_data.shots)) {
+                   console.log('⚠️ shots가 배열이 아니어서 빈 배열로 초기화');
+                   newData.breakdown_data.shots = [];
+               }
+               
+               // 각 shot의 video_prompts 존재 여부 확인
+               if (newData.breakdown_data.shots && newData.breakdown_data.shots.length > 0) {
+                   let videoPromptsCount = 0;
+                   newData.breakdown_data.shots.forEach(shot => {
+                       if (shot.video_prompts && Object.keys(shot.video_prompts).length > 0) {
+                           videoPromptsCount++;
+                           console.log(`  🎬 Shot ${shot.id}에 video_prompts 발견:`, Object.keys(shot.video_prompts).slice(0, 3));
+                       }
+                   });
+                   console.log(`  - video_prompts가 있는 shots: ${videoPromptsCount}개`);
+               }
            }
            
            if (newData.schema_version === "1.1.0" && newData.breakdown_data && 
@@ -1598,6 +1633,45 @@ function createTestData() {
                currentData = newData;
                window.currentData = currentData;
                hasStage2Structure = true;
+               
+               // 각 shot의 video_prompts 확인 및 처리
+               if (currentData.breakdown_data.shots && currentData.breakdown_data.shots.length > 0) {
+                   console.log('🎬 각 shot의 video_prompts 확인 중...');
+                   let processedCount = 0;
+                   
+                   currentData.breakdown_data.shots.forEach(shot => {
+                       // video_prompts가 있는 경우 그대로 사용
+                       if (shot.video_prompts && Object.keys(shot.video_prompts).length > 0) {
+                           processedCount++;
+                           console.log(`  ✅ Shot ${shot.id}: ${Object.keys(shot.video_prompts).length}개의 video_prompts 보존`);
+                       }
+                   });
+                   
+                   console.log(`🎬 총 ${processedCount}개의 shot에서 video_prompts 확인됨`);
+               }
+               
+               // breakdown_data에 별도의 video_prompts 객체가 있는 경우 (레거시 지원)
+               if (currentData.breakdown_data.video_prompts && typeof currentData.breakdown_data.video_prompts === 'object') {
+                   console.log('🎬 breakdown_data.video_prompts 발견 (레거시 형식)');
+                   const videoPromptsData = currentData.breakdown_data.video_prompts;
+                   
+                   // 각 shot에 대해 매칭되는 video_prompts 찾기
+                   currentData.breakdown_data.shots.forEach(shot => {
+                       if (!shot.video_prompts) {
+                           shot.video_prompts = {};
+                       }
+                       
+                       // shot.id와 관련된 모든 video_prompts 찾기
+                       Object.keys(videoPromptsData).forEach(key => {
+                           if (key.startsWith(shot.id)) {
+                               // 이미지 ID 추출 (예: S01.01-A-01 -> A-01)
+                               const imageId = key.replace(shot.id + '-', '');
+                               shot.video_prompts[imageId] = videoPromptsData[key];
+                               console.log(`  ✅ ${shot.id}에 ${imageId} 영상 프롬프트 병합 (레거시)`);
+                           }
+                       });
+                   });
+               }
                
                // project_info가 없으면 기본값 설정
                // Film_Production_Manager.json을 사용하여 기본 키와 일치시킴
@@ -3289,7 +3363,7 @@ function createTestData() {
                let shots = [];
                
                // 방법 1: shots 배열에서 scene_id로 필터링
-               if (currentData.breakdown_data.shots && currentData.breakdown_data.shots.length > 0) {
+               if (currentData.breakdown_data.shots && Array.isArray(currentData.breakdown_data.shots) && currentData.breakdown_data.shots.length > 0) {
                    // trim()을 사용하여 공백 제거하고 비교
                    shots = currentData.breakdown_data.shots.filter(shot => {
                        const shotSceneId = (shot.scene_id || '').toString().trim();
@@ -3306,10 +3380,17 @@ function createTestData() {
                        console.log(`❌ ${scene.id}: shots 배열에서 매칭되는 샷을 찾지 못함`);
                        // 디버깅을 위한 상세 정보
                        console.log(`   scene.id: "${scene.id}" (type: ${typeof scene.id}, length: ${scene.id.length})`);
-                       const sceneIds = currentData.breakdown_data.shots.map(s => s.scene_id);
-                       console.log(`   첫 번째 shot의 scene_id: "${sceneIds[0]}" (type: ${typeof sceneIds[0]}, length: ${sceneIds[0] ? sceneIds[0].length : 0})`);
-                       console.log(`   shots의 scene_id 목록:`, [...new Set(sceneIds)]);
+                       // shots 배열이 있을 때만 map 수행
+                       if (currentData.breakdown_data.shots && Array.isArray(currentData.breakdown_data.shots) && currentData.breakdown_data.shots.length > 0) {
+                           const sceneIds = currentData.breakdown_data.shots.map(s => s.scene_id);
+                           console.log(`   첫 번째 shot의 scene_id: "${sceneIds[0]}" (type: ${typeof sceneIds[0]}, length: ${sceneIds[0] ? sceneIds[0].length : 0})`);
+                           console.log(`   shots의 scene_id 목록:`, [...new Set(sceneIds)]);
+                       } else {
+                           console.log(`   shots 배열이 비어있거나 null입니다.`);
+                       }
                    }
+               } else {
+                   console.log(`⚠️ ${scene.id}: shots 배열이 없거나 비어있음`);
                }
                
                // 방법 2: scene.shot_ids 사용
@@ -6340,7 +6421,10 @@ const imageDesign = shot.image_design || {};
 		const selectedPlan = videoSelectedPlan || imageDesign.selected_plan || 'A';
 
 		const complexity = imageDesign.complexity || 'complex';
-		const videoPrompts = shot.video_prompts || {};
+		// video_prompts는 shot 내부 또는 breakdown_data에 있을 수 있음
+		const videoPrompts = shot.video_prompts || 
+							(currentData?.breakdown_data?.video_prompts) || 
+							{};
 		const videoUrls = shot.video_urls || {};
 
 let planSelectorHtml = '';
@@ -6741,28 +6825,76 @@ try {
 
     // 특정 이미지에 대한 영상 프롬프트 찾기
 		function findVideoPromptsForImage(shotId, imageId, videoPrompts) {
+		console.log('🎬 findVideoPromptsForImage 호출:', { shotId, imageId });
+		console.log('🎬 전달받은 videoPrompts:', videoPrompts ? Object.keys(videoPrompts).slice(0, 5) : 'null');
+		
 		// 1. Stage 7 형식의 영상 프롬프트 데이터가 있는 경우 우선 확인
 		if (window.stage7VideoPrompts && window.stage7VideoPrompts[shotId]) {
+			console.log('🎬 window.stage7VideoPrompts에서 찾기 시도...');
 			const imagePromptData = window.stage7VideoPrompts[shotId][imageId];
 			if (imagePromptData && imagePromptData.prompts) {
+				console.log('🎬 stage7VideoPrompts에서 prompts 반환');
 				return imagePromptData.prompts;
 			}
 		}
 
-		// 2. shot.video_prompts에서 데이터 확인
+		// 2. 전달받은 videoPrompts에서 데이터 확인
 		if (videoPrompts && typeof videoPrompts === 'object') {
-			// videoPrompts가 이미지별로 구조화된 경우: videoPrompts[imageId]
+			console.log('🎬 전달받은 videoPrompts에서 검색...');
+			
+			// imageId로 직접 검색
 			if (videoPrompts[imageId]) {
-				return videoPrompts[imageId];
+				console.log(`🎬 videoPrompts[${imageId}] 찾음`);
+				// prompts 속성이 있는 경우 (새 형식)
+				if (videoPrompts[imageId].prompts) {
+					console.log(`🎬 ${imageId}.prompts 반환`);
+					return videoPrompts[imageId].prompts;
+				}
+				// 바로 AI 도구별 프롬프트가 있는 경우 (기존 형식)
+				if (Object.keys(videoPrompts[imageId]).some(key => ['luma', 'kling', 'veo2', 'runway'].includes(key))) {
+					console.log(`🎬 ${imageId} AI 도구 프롬프트 반환`);
+					return videoPrompts[imageId];
+				}
 			}
 			
-			// videoPrompts가 직접 AI 도구별로 구조화된 경우 (전체 샷에 공통 적용)
+			// videoPrompts가 직접 AI 도구별로 구조화된 경우 (전체 샷 공통)
 			if (Object.keys(videoPrompts).some(key => ['luma', 'kling', 'veo2', 'runway'].includes(key))) {
+				console.log('🎬 전체 샷 공통 AI 프롬프트 반환');
 				return videoPrompts;
 			}
 		}
 
-		// 3. 현재 샷 데이터에서 video_prompts 확인 (추가 폴백)
+		// 3. breakdown_data.video_prompts에서 데이터 확인 (JSON 파일 구조 대응)
+		if (currentData && currentData.breakdown_data && currentData.breakdown_data.video_prompts) {
+			console.log('🎬 breakdown_data.video_prompts에서 검색 시작');
+			
+			// 이미지 ID로 직접 검색
+			if (currentData.breakdown_data.video_prompts[imageId]) {
+				console.log(`🎬 ${imageId} 찾음 (직접)`);
+				return currentData.breakdown_data.video_prompts[imageId];
+			}
+			
+			// shotId-imageId 형식으로 검색
+			const fullImageId = `${shotId}-${imageId}`;
+			if (currentData.breakdown_data.video_prompts[fullImageId]) {
+				console.log(`🎬 ${fullImageId} 찾음`);
+				return currentData.breakdown_data.video_prompts[fullImageId];
+			}
+			
+			// 패턴 매칭으로 검색 (S01.01-A-01 형식)
+			const matchingKeys = Object.keys(currentData.breakdown_data.video_prompts).filter(key => {
+				return key.startsWith(`${shotId}-`) && key.includes(imageId);
+			});
+			
+			if (matchingKeys.length > 0) {
+				console.log(`🎬 패턴 매칭으로 ${matchingKeys[0]} 찾음`);
+				return currentData.breakdown_data.video_prompts[matchingKeys[0]];
+			}
+			
+			console.log(`🎬 ${shotId}, ${imageId}에 대한 video_prompts를 찾지 못함`);
+		}
+
+		// 4. 현재 샷 데이터에서 video_prompts 확인 (추가 폴백)
 		if (currentData && currentData.breakdown_data && currentData.breakdown_data.shots) {
 			const shot = currentData.breakdown_data.shots.find(s => s.id === shotId);
 			if (shot && shot.video_prompts) {
@@ -6778,6 +6910,7 @@ try {
 		}
 
 		// 모든 검색이 실패하면 빈 객체 반환
+		console.log('🎬 영상 프롬프트를 찾지 못함, 빈 객체 반환');
 		return {};
 	 }
 
