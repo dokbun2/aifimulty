@@ -5091,6 +5091,55 @@ if (selectedPlanData && selectedPlanData.images && selectedPlanData.images.lengt
     }
 }
 
+// NanoBanana 콘텐츠 HTML 변수 초기화 및 구성
+let nanobanaContentHtml = '';
+
+// Stage 6 JSON 데이터를 직접 사용하여 nanobana 프롬프트 추출
+console.log('NanoBanana 디버깅 - shot.id:', shot.id);
+console.log('NanoBanana 디버깅 - stage6_data.shots:', shot.stage6_data?.shots);
+
+if (shot.stage6_data && shot.stage6_data.shots) {
+    const matchingShot = shot.stage6_data.shots.find(s => s.shot_id === shot.id);
+    console.log('NanoBanana 디버깅 - matchingShot:', matchingShot);
+    
+    if (matchingShot && matchingShot.images) {
+        matchingShot.images.forEach((image, idx) => {
+            console.log(`NanoBanana 디버깅 - 이미지 ${idx} 프롬프트:`, image.prompts);
+            
+            // nanobana 프롬프트 데이터 추출
+            if (image.prompts && (image.prompts.nanobana || image.prompts.nanobana_translated)) {
+                const nanobanaPrompt = image.prompts.nanobana || '';
+                const nanobanaTranslated = image.prompts.nanobana_translated || '';
+                
+                console.log(`NanoBanana 디버깅 - 추출된 프롬프트 ${idx}:`, { nanobanaPrompt, nanobanaTranslated });
+                
+                if (nanobanaPrompt || nanobanaTranslated) {
+                    nanobanaContentHtml += `
+                        <div class="ai-image-prompt-details">
+                            <div class="prompt-original">
+                                <span class="prompt-text-label">원문 프롬프트</span>
+                                <div class="ai-image-prompt-full-text">${nanobanaPrompt}</div>
+                                <button class="copy-btn btn-small" onclick="copyToClipboard('${nanobanaPrompt.replace(/'/g, "\\'")}')">복사</button>
+                                <button class="edit-btn btn-small" onclick="openPromptEditModal('nanobana', '${shot.id}', ${idx}, '${nanobanaPrompt.replace(/'/g, "\\'")}')">수정</button>
+                            </div>
+                            ${nanobanaTranslated ? `
+                                <div class="prompt-translated">
+                                    <span class="prompt-text-label">번역된 프롬프트</span>
+                                    <div class="ai-image-prompt-full-text">${nanobanaTranslated}</div>
+                                    <button class="copy-btn btn-small" onclick="copyToClipboard('${nanobanaTranslated.replace(/'/g, "\\'")}')">복사</button>
+                                    <button class="edit-btn btn-small" onclick="openPromptEditModal('nanobana_translated', '${shot.id}', ${idx}, '${nanobanaTranslated.replace(/'/g, "\\'")}')">수정</button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }
+            }
+        });
+    }
+}
+
+console.log('NanoBanana 디버깅 - 최종 nanobanaContentHtml:', nanobanaContentHtml);
+
 // Universal과 Nanobana 이미지 슬롯 생성 (참조이미지와 동일한 구조)
 let universalNanobanaHtml = '';
 
@@ -5192,6 +5241,17 @@ const tabHtml = `
             각 이미지별로 AI 도구의 프롬프트를 확인하고 생성된 이미지를 관리하세요.
         </p>
         ${otherAIsHtml || '<p style="color:#ccc;">프롬프트 데이터가 없습니다.</p>'}
+    </div>
+    
+    <!-- NanoBanana 섹션 -->
+    <div class="info-section">
+        <h3>🔧 NanoBanana AI 이미지 생성 도구</h3>
+        <p style="font-size:0.9em;color:#ccc;margin-bottom:20px;">
+            NanoBanana AI 도구의 프롬프트를 확인하고 생성된 이미지를 관리하세요.
+        </p>
+        <div class="ai-prompts-grid">
+            ${nanobanaContentHtml || '<p style="color:#ccc;">NanoBanana 프롬프트 데이터가 없습니다.</p>'}
+        </div>
     </div>
     
     <!-- 메인 이미지 섹션 (2개) -->
@@ -6635,7 +6695,7 @@ try {
 
     // 특정 이미지에 대한 영상 프롬프트 찾기
 		function findVideoPromptsForImage(shotId, imageId, videoPrompts) {
-		// Stage 7 형식의 영상 프롬프트 데이터가 있는 경우
+		// 1. Stage 7 형식의 영상 프롬프트 데이터가 있는 경우 우선 확인
 		if (window.stage7VideoPrompts && window.stage7VideoPrompts[shotId]) {
 			const imagePromptData = window.stage7VideoPrompts[shotId][imageId];
 			if (imagePromptData && imagePromptData.prompts) {
@@ -6643,7 +6703,35 @@ try {
 			}
 		}
 
-		// Stage 7 데이터가 없으면 빈 객체 반환
+		// 2. shot.video_prompts에서 데이터 확인
+		if (videoPrompts && typeof videoPrompts === 'object') {
+			// videoPrompts가 이미지별로 구조화된 경우: videoPrompts[imageId]
+			if (videoPrompts[imageId]) {
+				return videoPrompts[imageId];
+			}
+			
+			// videoPrompts가 직접 AI 도구별로 구조화된 경우 (전체 샷에 공통 적용)
+			if (Object.keys(videoPrompts).some(key => ['luma', 'kling', 'veo2', 'runway'].includes(key))) {
+				return videoPrompts;
+			}
+		}
+
+		// 3. 현재 샷 데이터에서 video_prompts 확인 (추가 폴백)
+		if (currentData && currentData.breakdown_data && currentData.breakdown_data.shots) {
+			const shot = currentData.breakdown_data.shots.find(s => s.id === shotId);
+			if (shot && shot.video_prompts) {
+				// 이미지별 프롬프트 확인
+				if (shot.video_prompts[imageId]) {
+					return shot.video_prompts[imageId];
+				}
+				// 전체 샷 공통 프롬프트 확인
+				if (Object.keys(shot.video_prompts).some(key => ['luma', 'kling', 'veo2', 'runway'].includes(key))) {
+					return shot.video_prompts;
+				}
+			}
+		}
+
+		// 모든 검색이 실패하면 빈 객체 반환
 		return {};
 	 }
 

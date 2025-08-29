@@ -85,6 +85,25 @@ window.collectCurrentDataFromDOM = function() {
                     }
                 }
                 
+                // 영상 프롬프트 데이터 수집 (Stage 7 데이터 포함)
+                if (window.stage7VideoPrompts && window.stage7VideoPrompts[shotId]) {
+                    if (!shot.video_prompts) shot.video_prompts = {};
+                    Object.assign(shot.video_prompts, window.stage7VideoPrompts[shotId]);
+                }
+                
+                // 영상 URL 데이터 수집
+                const videoKey = `videoUrls_${jsonFileName}_${shotId}`;
+                const savedVideo = localStorage.getItem(videoKey);
+                if (savedVideo) {
+                    try {
+                        const videoData = JSON.parse(savedVideo);
+                        if (!shot.video_urls) shot.video_urls = {};
+                        Object.assign(shot.video_urls, videoData);
+                    } catch (e) {
+                        console.error('영상 데이터 파싱 오류:', e);
+                    }
+                }
+                
                 // 업데이트된 샷 데이터를 배열에 다시 저장
                 updatedData.breakdown_data.shots[shotIndex] = shot;
             }
@@ -120,6 +139,25 @@ window.collectCurrentDataFromDOM = function() {
                 }
             }
             
+            // 영상 프롬프트 데이터 수집 (Stage 7 데이터 포함)
+            if (window.stage7VideoPrompts && window.stage7VideoPrompts[shot.id]) {
+                if (!shot.video_prompts) shot.video_prompts = {};
+                Object.assign(shot.video_prompts, window.stage7VideoPrompts[shot.id]);
+            }
+            
+            // 영상 URL 데이터 수집
+            const videoKey = `videoUrls_${jsonFileName}_${shot.id}`;
+            const savedVideo = localStorage.getItem(videoKey);
+            if (savedVideo) {
+                try {
+                    const videoData = JSON.parse(savedVideo);
+                    if (!shot.video_urls) shot.video_urls = {};
+                    Object.assign(shot.video_urls, videoData);
+                } catch (e) {
+                    console.error(`샷 ${shot.id} 영상 데이터 파싱 오류:`, e);
+                }
+            }
+            
             // 오디오 URL
             const audioKey = `audioUrls_${jsonFileName}_${shot.id}`;
             const savedAudio = localStorage.getItem(audioKey);
@@ -133,6 +171,8 @@ window.collectCurrentDataFromDOM = function() {
                     console.error(`샷 ${shot.id} 오디오 데이터 파싱 오류:`, e);
                 }
             }
+            
+            // 샷 데이터 수집 완료
         });
     }
     
@@ -150,11 +190,21 @@ window.exportJSON = function() {
         // DOM과 localStorage에서 최신 데이터 수집
         console.log('📥 JSON Export 시작 - 최신 데이터 수집 중...');
         const dataToExport = window.collectCurrentDataFromDOM() || currentData;
+        // 상세한 미디어 데이터 확인
+        const videoShotsCount = dataToExport?.breakdown_data?.shots?.filter(s => s.video_urls && Object.keys(s.video_urls).length > 0).length || 0;
+        const audioShotsCount = dataToExport?.breakdown_data?.shots?.filter(s => s.content?.audio_urls && Object.keys(s.content.audio_urls).length > 0).length || 0;
+        const musicUrlsCount = dataToExport?.film_metadata?.project_music_urls ? Object.keys(dataToExport.film_metadata.project_music_urls).filter(key => dataToExport.film_metadata.project_music_urls[key]).length : 0;
+        
         console.log('✅ 수집된 데이터:', {
             shots: dataToExport?.breakdown_data?.shots?.length || 0,
             hasImageData: dataToExport?.breakdown_data?.shots?.some(s => s.image_design?.ai_generated_images),
             hasMemoData: dataToExport?.breakdown_data?.shots?.some(s => s.memo?.content),
-            hasAudioData: dataToExport?.breakdown_data?.shots?.some(s => s.content?.audio_urls)
+            hasVideoData: videoShotsCount > 0,
+            videoShotsCount: videoShotsCount,
+            hasAudioData: audioShotsCount > 0,
+            audioShotsCount: audioShotsCount,
+            hasMusicData: musicUrlsCount > 0,
+            musicUrlsCount: musicUrlsCount
         });
         
         const dataStr = JSON.stringify(dataToExport, null, 2);
@@ -173,7 +223,15 @@ window.exportJSON = function() {
         linkElement.addEventListener('click', function() {
             // 약간의 지연 후 메시지 표시 (브라우저가 다운로드를 시작할 시간을 줌)
             setTimeout(() => {
-                showMessage('JSON 파일이 다운로드되었습니다', 'success');
+                // 포함된 미디어 데이터 정보를 포함한 메시지
+                const mediaInfo = [];
+                if (videoShotsCount > 0) mediaInfo.push(`영상 ${videoShotsCount}개`);
+                if (audioShotsCount > 0) mediaInfo.push(`오디오 ${audioShotsCount}개`);
+                if (musicUrlsCount > 0) mediaInfo.push(`음악 ${musicUrlsCount}개`);
+                
+                const mediaText = mediaInfo.length > 0 ? ` (${mediaInfo.join(', ')} 포함)` : '';
+                showMessage(`JSON 파일이 다운로드되었습니다${mediaText}`, 'success');
+                
                 // Clean up
                 URL.revokeObjectURL(url);
                 document.body.removeChild(linkElement);
