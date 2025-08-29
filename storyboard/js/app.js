@@ -5221,48 +5221,49 @@ if (selectedPlanData && selectedPlanData.images && selectedPlanData.images.lengt
 // NanoBanana 콘텐츠 HTML 변수 초기화 및 구성
 let nanobanaContentHtml = '';
 
-// Stage 6 JSON 데이터를 직접 사용하여 nanobana 프롬프트 추출
+// window.stage6ImagePrompts에서 데이터 가져오기
 console.log('NanoBanana 디버깅 - shot.id:', shot.id);
-console.log('NanoBanana 디버깅 - stage6_data.shots:', shot.stage6_data?.shots);
+console.log('NanoBanana 디버깅 - window.stage6ImagePrompts:', window.stage6ImagePrompts);
 
-if (shot.stage6_data && shot.stage6_data.shots) {
-    const matchingShot = shot.stage6_data.shots.find(s => s.shot_id === shot.id);
-    console.log('NanoBanana 디버깅 - matchingShot:', matchingShot);
+if (window.stage6ImagePrompts && window.stage6ImagePrompts[shot.id]) {
+    const shotStage6Data = window.stage6ImagePrompts[shot.id];
+    console.log('NanoBanana 디버깅 - shotStage6Data:', shotStage6Data);
     
-    if (matchingShot && matchingShot.images) {
-        matchingShot.images.forEach((image, idx) => {
-            console.log(`NanoBanana 디버깅 - 이미지 ${idx} 프롬프트:`, image.prompts);
+    // 각 이미지 데이터 처리
+    Object.entries(shotStage6Data).forEach(([imageId, imageData], idx) => {
+        console.log(`NanoBanana 디버깅 - 이미지 ${imageId} 데이터:`, imageData);
+        
+        // nanobana 프롬프트 데이터 추출
+        if (imageData.prompts && (imageData.prompts.nanobana || imageData.prompts.nanobana_translated)) {
+            const nanobanaPrompt = imageData.prompts.nanobana || '';
+            const nanobanaTranslated = imageData.prompts.nanobana_translated || '';
             
-            // nanobana 프롬프트 데이터 추출
-            if (image.prompts && (image.prompts.nanobana || image.prompts.nanobana_translated)) {
-                const nanobanaPrompt = image.prompts.nanobana || '';
-                const nanobanaTranslated = image.prompts.nanobana_translated || '';
-                
-                console.log(`NanoBanana 디버깅 - 추출된 프롬프트 ${idx}:`, { nanobanaPrompt, nanobanaTranslated });
-                
-                if (nanobanaPrompt || nanobanaTranslated) {
-                    nanobanaContentHtml += `
-                        <div class="ai-image-prompt-details">
-                            <div class="prompt-original">
-                                <span class="prompt-text-label">원문 프롬프트</span>
-                                <div class="ai-image-prompt-full-text">${nanobanaPrompt}</div>
-                                <button class="copy-btn btn-small" onclick="copyToClipboard('${nanobanaPrompt.replace(/'/g, "\\'")}')">복사</button>
-                                <button class="edit-btn btn-small" onclick="openPromptEditModal('nanobana', '${shot.id}', ${idx}, '${nanobanaPrompt.replace(/'/g, "\\'")}')">수정</button>
-                            </div>
-                            ${nanobanaTranslated ? `
-                                <div class="prompt-translated">
-                                    <span class="prompt-text-label">번역된 프롬프트</span>
-                                    <div class="ai-image-prompt-full-text">${nanobanaTranslated}</div>
-                                    <button class="copy-btn btn-small" onclick="copyToClipboard('${nanobanaTranslated.replace(/'/g, "\\'")}')">복사</button>
-                                    <button class="edit-btn btn-small" onclick="openPromptEditModal('nanobana_translated', '${shot.id}', ${idx}, '${nanobanaTranslated.replace(/'/g, "\\'")}')">수정</button>
-                                </div>
-                            ` : ''}
+            console.log(`NanoBanana 디버깅 - 추출된 프롬프트 ${imageId}:`, { nanobanaPrompt, nanobanaTranslated });
+            
+            if (nanobanaPrompt || nanobanaTranslated) {
+                nanobanaContentHtml += `
+                    <div class="ai-image-prompt-details" style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                        <h5 style="color: #ec4899; margin-bottom: 10px;">이미지 ${imageId}</h5>
+                        ${imageData.image_title ? `<p style="color: #ccc; margin-bottom: 10px; font-size: 0.9em;">${imageData.image_title}</p>` : ''}
+                        <div class="prompt-original" style="margin-bottom: 15px;">
+                            <span class="prompt-text-label" style="color: #888; font-size: 0.85em; display: block; margin-bottom: 5px;">원문 프롬프트</span>
+                            <div class="ai-image-prompt-full-text" style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; margin-bottom: 10px; line-height: 1.6;">${nanobanaPrompt}</div>
+                            <button class="copy-btn btn-small" onclick="copyToClipboard('${nanobanaPrompt.replace(/'/g, "\\'")}')">복사</button>
+                            <button class="edit-btn btn-small" onclick="openPromptEditModal('nanobana', '${shot.id}', ${idx}, '${nanobanaPrompt.replace(/'/g, "\\'")}')">수정</button>
                         </div>
-                    `;
-                }
+                        ${nanobanaTranslated ? `
+                            <div class="prompt-translated">
+                                <span class="prompt-text-label" style="color: #888; font-size: 0.85em; display: block; margin-bottom: 5px;">번역된 프롬프트</span>
+                                <div class="ai-image-prompt-full-text" style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; margin-bottom: 10px; line-height: 1.6;">${nanobanaTranslated}</div>
+                                <button class="copy-btn btn-small" onclick="copyToClipboard('${nanobanaTranslated.replace(/'/g, "\\'")}')">복사</button>
+                                <button class="edit-btn btn-small" onclick="openPromptEditModal('nanobana_translated', '${shot.id}', ${idx}, '${nanobanaTranslated.replace(/'/g, "\\'")}')">수정</button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
             }
-        });
-    }
+        }
+    });
 }
 
 console.log('NanoBanana 디버깅 - 최종 nanobanaContentHtml:', nanobanaContentHtml);
