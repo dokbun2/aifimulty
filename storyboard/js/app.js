@@ -2255,6 +2255,7 @@ function createTestData() {
 							window.stage7VideoPrompts = {};
 						}
 
+						// video_prompts가 배열이거나 객체인 경우 처리
 						if (Array.isArray(newData.video_prompts)) {
 							newData.video_prompts.forEach(promptData => {
 								const shotId = promptData.shot_id;
@@ -2266,7 +2267,18 @@ function createTestData() {
 
 								window.stage7VideoPrompts[shotId][imageId] = promptData;
 							});
+						} else if (typeof newData.video_prompts === 'object' && newData.video_prompts !== null) {
+							// video_prompts가 객체 형태인 경우
+							Object.values(newData.video_prompts).forEach(promptData => {
+								const shotId = promptData.shot_id;
+								const imageId = promptData.image_id;
 
+								if (!window.stage7VideoPrompts[shotId]) {
+									window.stage7VideoPrompts[shotId] = {};
+								}
+
+								window.stage7VideoPrompts[shotId][imageId] = promptData;
+							});
 						}
                 
 						if (!currentData || !currentData.breakdown_data || !currentData.breakdown_data.shots || currentData.breakdown_data.shots.length === 0) {
@@ -2277,8 +2289,17 @@ function createTestData() {
 
 						let videoDataUpdated = false;
 
-						if (newData.video_prompts && Array.isArray(newData.video_prompts)) {
-							newData.video_prompts.forEach(promptData => {
+						// video_prompts가 배열이거나 객체인 경우 처리
+						if (newData.video_prompts) {
+							let videoPromptsToProcess = [];
+							
+							if (Array.isArray(newData.video_prompts)) {
+								videoPromptsToProcess = newData.video_prompts;
+							} else if (typeof newData.video_prompts === 'object' && newData.video_prompts !== null) {
+								videoPromptsToProcess = Object.values(newData.video_prompts);
+							}
+							
+							videoPromptsToProcess.forEach(promptData => {
 								const shotIdToFind = promptData.shot_id;
 								const existingShot = currentData.breakdown_data.shots.find(shot => shot.id === shotIdToFind);
 
@@ -2347,6 +2368,31 @@ function createTestData() {
                
                currentData = newData;
                window.currentData = currentData;
+               
+               // video_prompts 데이터가 있으면 stage7VideoPrompts에 저장
+               if (newData.video_prompts) {
+                   if (!window.stage7VideoPrompts) {
+                       window.stage7VideoPrompts = {};
+                   }
+                   
+                   let videoPromptsToProcess = [];
+                   if (Array.isArray(newData.video_prompts)) {
+                       videoPromptsToProcess = newData.video_prompts;
+                   } else if (typeof newData.video_prompts === 'object' && newData.video_prompts !== null) {
+                       videoPromptsToProcess = Object.values(newData.video_prompts);
+                   }
+                   
+                   videoPromptsToProcess.forEach(promptData => {
+                       const shotId = promptData.shot_id;
+                       const imageId = promptData.image_id;
+                       if (!window.stage7VideoPrompts[shotId]) {
+                           window.stage7VideoPrompts[shotId] = {};
+                       }
+                       window.stage7VideoPrompts[shotId][imageId] = promptData;
+                   });
+                   
+                   console.log('✅ video_prompts 데이터를 stage7VideoPrompts에 저장:', Object.keys(window.stage7VideoPrompts).length, '개 샷');
+               }
                
                // 시퀀스 데이터 확인
                console.log('📂 Stage 5 데이터 로드 - 시퀀스 개수:', currentData.breakdown_data.sequences.length);
@@ -8360,8 +8406,16 @@ try {
                                 if (newData.stage === 7 && newData.video_prompts) {
                                     console.log(`📚 Stage 7 영상 프롬프트 데이터 감지: ${fileNames[index]}`);
                                     
+                                    // video_prompts가 배열이거나 객체인 경우 처리
+                                    let videoPromptsToProcess = [];
                                     if (Array.isArray(newData.video_prompts)) {
-                                        newData.video_prompts.forEach(promptData => {
+                                        videoPromptsToProcess = newData.video_prompts;
+                                    } else if (typeof newData.video_prompts === 'object' && newData.video_prompts !== null) {
+                                        videoPromptsToProcess = Object.values(newData.video_prompts);
+                                    }
+                                    
+                                    if (videoPromptsToProcess.length > 0) {
+                                        videoPromptsToProcess.forEach(promptData => {
                                             const shotId = promptData.shot_id;
                                             const imageId = promptData.image_id;
                                             if (!window.stage7VideoPrompts[shotId]) {
