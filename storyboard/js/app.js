@@ -6412,6 +6412,27 @@ if (modal && (
     // 샷 영상 탭 생성 (추출된 이미지 정보 포함)
     function createShotVideoTab(shot) {
     console.log('🎥 createShotVideoTab 시작 (이미지별 영상 프롬프트 표시)');
+    console.log('🔍 Stage 7 데이터 확인:');
+    if (window.stage7VideoPrompts) {
+        console.log('  - window.stage7VideoPrompts 존재:', Object.keys(window.stage7VideoPrompts));
+        const shotKeys = Object.keys(window.stage7VideoPrompts);
+        if (shotKeys.includes(shot.id)) {
+            console.log(`  - 현재 샷 (${shot.id})의 데이터:`, window.stage7VideoPrompts[shot.id]);
+            const imageIds = Object.keys(window.stage7VideoPrompts[shot.id]);
+            if (imageIds.length > 0) {
+                const firstImageData = window.stage7VideoPrompts[shot.id][imageIds[0]];
+                console.log(`  - 첫 번째 이미지 (${imageIds[0]})의 prompts:`, firstImageData.prompts);
+                if (firstImageData.prompts && firstImageData.prompts.kling) {
+                    console.log('  - Kling 데이터:', firstImageData.prompts.kling);
+                    console.log('  - kling_structured_prompt:', firstImageData.prompts.kling.kling_structured_prompt);
+                }
+            }
+        } else {
+            console.log(`  - 현재 샷 ${shot.id}의 데이터가 없음`);
+        }
+    } else {
+        console.log('  - window.stage7VideoPrompts가 없음!');
+    }
     try {
 const imageDesign = shot.image_design || {};
 		const imageDesignPlans = imageDesign.plans || {};
@@ -6516,6 +6537,10 @@ if (selectedPlanData && selectedPlanData.images) {
 						}
 					}
 					
+					console.log(`🎯 AI: ${ai.id}, Image: ${imageId}`);
+					console.log(`  - videoPromptsForImage 키들:`, Object.keys(videoPromptsForImage));
+					console.log(`  - videoPromptsForImage 전체:`, videoPromptsForImage);
+					
 					const promptData = videoPromptsForImage[ai.id];
 
 					// promptData가 있거나 없어도 표시 (없으면 기본 메시지)
@@ -6523,11 +6548,25 @@ if (selectedPlanData && selectedPlanData.images) {
 					
 					let prompt = '';
 					let promptTranslated = '';
+					let klingStructuredPrompt = '';  // Kling 구조화 프롬프트 추가
 					let settings = {};
 					
 					if (promptData) {
+						console.log(`🔍 ${ai.id} promptData 구조:`, promptData);
+						console.log(`  - kling_structured_prompt 존재:`, !!promptData.kling_structured_prompt);
+						console.log(`  - prompt_en 존재:`, !!promptData.prompt_en);
+						console.log(`  - main_prompt 존재:`, !!promptData.main_prompt);
+						
+						// 기본 프롬프트 설정
 						prompt = (promptData.prompt_en || promptData.main_prompt || '').trim();
 						promptTranslated = (promptData.prompt_translated || promptData.main_prompt_translated || '').trim();
+						
+						// Kling AI의 경우 구조화 프롬프트도 저장
+						if (ai.id === 'kling' && promptData.kling_structured_prompt) {
+							klingStructuredPrompt = (promptData.kling_structured_prompt || '').trim();
+							console.log(`✅ Kling AI - kling_structured_prompt 저장:`, klingStructuredPrompt);
+						}
+						
 						settings = promptData.settings || {};
 					} else {
 						// 데이터가 없을 때 기본 메시지
@@ -6550,12 +6589,22 @@ if (selectedPlanData && selectedPlanData.images) {
 									</div>
 									
 									<!-- 번역본 -->
-									<div>
+									<div style="margin-bottom: 12px;">
 										<div style="color: #2196F3; font-weight: bold; margin-bottom: 6px; font-size: 0.9rem;">🌏 번역본</div>
 										<div class="prompt-text" style="background: #242424; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 4px; padding: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 0.9rem; max-height: 150px; overflow-y: auto; white-space: normal; word-wrap: break-word; word-break: keep-all; line-height: 1.6; color: #e0e0e0; text-align: left !important; text-indent: 0; direction: ltr; display: block;">
 											${(promptTranslated || '번역된 프롬프트가 없습니다.').trim()}
 										</div>
 									</div>
+									
+									${ai.id === 'kling' && klingStructuredPrompt ? `
+									<!-- Kling 구조화 버전 -->
+									<div>
+										<div style="color: #FF6B6B; font-weight: bold; margin-bottom: 6px; font-size: 0.9rem;">🎬 구조화 버전 (Kling)</div>
+										<div class="prompt-text" style="background: #1a1a2e; border: 1px solid rgba(255, 107, 107, 0.2); border-radius: 4px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.85rem; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; word-break: keep-all; line-height: 1.5; color: #ffcccc; text-align: left !important; text-indent: 0; direction: ltr; display: block;">
+											${klingStructuredPrompt}
+										</div>
+									</div>
+									` : ''}
 									${Object.keys(settings).length > 0 ? `
 										<div style="margin-top: 5px; font-size: 0.8rem; color: #999;">
 											${Object.entries(settings).map(([key, value]) => `${key}: ${value}`).join(', ')}
@@ -6570,6 +6619,12 @@ if (selectedPlanData && selectedPlanData.images) {
 											<button class="copy-btn btn-small" style="background-color: #2196F3;"
 													onclick="copyVideoPrompt('${promptTranslated.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, "\\n")}', '${ai.name}', '${imageId}')">
 												한국어 복사
+											</button>
+										` : ''}
+										${ai.id === 'kling' && klingStructuredPrompt ? `
+											<button class="copy-btn btn-small" style="background-color: #FF6B6B;"
+													onclick="copyVideoPrompt('${klingStructuredPrompt.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, "\\n")}', '${ai.name}', '${imageId} (구조화)')">
+												구조화 복사
 											</button>
 										` : ''}
 										<!-- 영상탭에서는 프롬프트 수정과 AI수정 버튼을 숨김
@@ -6893,6 +6948,8 @@ try {
 			const imagePromptData = window.stage7VideoPrompts[shotId][imageId];
 			if (imagePromptData && imagePromptData.prompts) {
 				console.log('🎬 stage7VideoPrompts에서 prompts 반환');
+				console.log('  - Kling 데이터:', imagePromptData.prompts.kling);
+				console.log('  - kling_structured_prompt 존재:', !!(imagePromptData.prompts.kling && imagePromptData.prompts.kling.kling_structured_prompt));
 				return imagePromptData.prompts;
 			}
 		}
@@ -6984,8 +7041,13 @@ try {
 
 		return aiTools.map(ai => {
 			const promptData = videoPromptsForImage[ai.id] || {};
+			// 기본 프롬프트 설정
 			const prompt = (promptData.prompt_en || promptData.main_prompt || '').trim();
 			const promptTranslated = (promptData.prompt_translated || promptData.main_prompt_translated || '').trim();
+			// Kling AI의 경우 구조화 프롬프트도 저장
+			const klingStructuredPrompt = (ai.id === 'kling' && promptData.kling_structured_prompt) 
+				? (promptData.kling_structured_prompt || '').trim() 
+				: '';
 			const settings = promptData.settings || {};
 			const url = videoUrls[`${ai.id}_${imageId}`] || videoUrls[ai.id] || '';
 
@@ -7017,12 +7079,22 @@ try {
 						</div>
 						
 						<!-- 번역본 -->
-						<div style="margin-bottom: 10px;">
+						<div style="margin-bottom: 12px;">
 							<div style="color: #2196F3; font-weight: bold; margin-bottom: 6px; font-size: 0.9rem;">🌏 번역본</div>
 							<div class="prompt-text" style="background: #242424; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 4px; padding: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 0.9rem; max-height: 150px; overflow-y: auto; white-space: normal; word-wrap: break-word; word-break: keep-all; line-height: 1.6; color: #e0e0e0; text-align: left !important; text-indent: 0; direction: ltr; display: block;">
 								${(promptTranslated || '번역된 프롬프트가 없습니다.').trim()}
 							</div>
 						</div>
+						
+						${ai.id === 'kling' && klingStructuredPrompt ? `
+						<!-- Kling 구조화 버전 -->
+						<div style="margin-bottom: 10px;">
+							<div style="color: #FF6B6B; font-weight: bold; margin-bottom: 6px; font-size: 0.9rem;">🎬 구조화 버전 (Kling)</div>
+							<div class="prompt-text" style="background: #1a1a2e; border: 1px solid rgba(255, 107, 107, 0.2); border-radius: 4px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.85rem; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; word-break: keep-all; line-height: 1.5; color: #ffcccc; text-align: left !important; text-indent: 0; direction: ltr; display: block;">
+								${klingStructuredPrompt}
+							</div>
+						</div>
+						` : ''}
 						${settingsHtml}
 						<div style="display: flex; gap: 8px; margin-top: 8px;">
 							<button class="copy-btn" onclick="copyVideoPrompt('${promptForCopy}', '${ai.name}', '${imageId}')">
@@ -7032,6 +7104,12 @@ try {
 								<button class="copy-btn" style="background-color: #2196F3;"
 										onclick="copyVideoPrompt('${promptTranslated.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, "\\n")}', '${ai.name}', '${imageId}')">
 									한국어 복사
+								</button>
+							` : ''}
+							${ai.id === 'kling' && klingStructuredPrompt ? `
+								<button class="copy-btn" style="background-color: #FF6B6B;"
+										onclick="copyVideoPrompt('${klingStructuredPrompt.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, "\\n")}', '${ai.name}', '${imageId} (구조화)')">
+									구조화 복사
 								</button>
 							` : ''}
 							<!-- 영상탭에서는 프롬프트 수정과 AI수정 버튼을 숨김
