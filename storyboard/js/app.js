@@ -1409,6 +1409,12 @@ function createTestData() {
 					}
 				}
 				
+				// Stage 7 형식 체크 (video_prompts가 있는 경우)
+				if (parsedData.stage === 7 && parsedData.video_prompts) {
+					console.log('✅ Stage 7 형식 확인 - 직접 반환');
+					return { success: true, data: parsedData };
+				}
+				
 				return { success: true, data: parsedData };
 			} catch (error) {
 
@@ -2353,9 +2359,14 @@ function createTestData() {
 
 						// video_prompts가 배열이거나 객체인 경우 처리
 						if (Array.isArray(newData.video_prompts)) {
+							console.log('📝 Stage 7 직접 업로드 - 배열 형식 처리');
 							newData.video_prompts.forEach(promptData => {
 								const shotId = promptData.shot_id;
 								const imageId = promptData.image_id;
+								
+								console.log(`  저장 중: Shot ${shotId}, Image ${imageId}`);
+								console.log('  plan_a 존재:', !!promptData.plan_a);
+								console.log('  plan_b 존재:', !!promptData.plan_b);
 
 								if (!window.stage7VideoPrompts[shotId]) {
 									window.stage7VideoPrompts[shotId] = {};
@@ -2365,9 +2376,14 @@ function createTestData() {
 							});
 						} else if (typeof newData.video_prompts === 'object' && newData.video_prompts !== null) {
 							// video_prompts가 객체 형태인 경우
+							console.log('📝 Stage 7 직접 업로드 - 객체 형식 처리');
 							Object.values(newData.video_prompts).forEach(promptData => {
 								const shotId = promptData.shot_id;
 								const imageId = promptData.image_id;
+								
+								console.log(`  저장 중: Shot ${shotId}, Image ${imageId}`);
+								console.log('  plan_a 존재:', !!promptData.plan_a);
+								console.log('  plan_b 존재:', !!promptData.plan_b);
 
 								if (!window.stage7VideoPrompts[shotId]) {
 									window.stage7VideoPrompts[shotId] = {};
@@ -6470,23 +6486,76 @@ if (selectedPlanData && selectedPlanData.images) {
 				let aiImagesHtml = '';
 
 				selectedPlanData.images.forEach((image, index) => {
-					const imageId = image.id || `IMG_${index + 1}`;
-					const videoPromptsForImage = findVideoPromptsForImage(shot.id, imageId, videoPrompts);
+					// Stage 7 형식과 매칭되도록 imageId 생성 수정
+					// Stage 7에서는 "S01.01-C-01" 같은 형식 사용
+					const imageIdFromPlan = image.id || `IMG_${index + 1}`;
+					
+					// Stage 7의 image_id 형식에 맞춰서 생성
+					// 복잡한 샷: S01.01-C-01 형식
+					// 단순한 샷: S01.01-01 형식 또는 S01.01 형식
+					let imageId;
+					if (shot.complexity === 'Complex') {
+						imageId = `${shot.id}-C-${String(index + 1).padStart(2, '0')}`;
+					} else {
+						// 단순한 샷도 Stage 7 형식으로 시도
+						imageId = `${shot.id}-${String(index + 1).padStart(2, '0')}`;
+					}
+					
+					console.log(`🔍 이미지 ID 매칭 시도: ${imageId} (Plan ID: ${imageIdFromPlan}, Shot: ${shot.id})`);
+					let videoPromptsForImage = findVideoPromptsForImage(shot.id, imageId, videoPrompts) || {};
+					
+					// 데이터를 못 찾았으면 다른 형식으로도 시도
+					if (Object.keys(videoPromptsForImage).length === 0) {
+						console.log(`⚠️ ${imageId}로 데이터 못 찾음, 대체 형식 시도...`);
+						// 원본 Plan ID로 시도
+						videoPromptsForImage = findVideoPromptsForImage(shot.id, imageIdFromPlan, videoPrompts) || {};
+						
+						// 그래도 못 찾으면 shot.id만으로 시도
+						if (Object.keys(videoPromptsForImage).length === 0) {
+							videoPromptsForImage = findVideoPromptsForImage(shot.id, shot.id, videoPrompts) || {};
+						}
+					}
+					
 					const promptData = videoPromptsForImage[ai.id];
 
+					// promptData가 있거나 없어도 표시 (없으면 기본 메시지)
+					aiHasContent = true; // 항상 true로 설정하여 UI 표시
+					
+					let prompt = '';
+					let promptTranslated = '';
+					let settings = {};
+					
 					if (promptData) {
-						aiHasContent = true;
-						const prompt = promptData.prompt_en || promptData.main_prompt || '';
-						const promptTranslated = promptData.prompt_translated || promptData.main_prompt_translated || '';
-						const settings = promptData.settings || {};
-						const url = videoUrls[`${ai.id}_${imageId}`] || '';
+						prompt = promptData.prompt_en || promptData.main_prompt || '';
+						promptTranslated = promptData.prompt_translated || promptData.main_prompt_translated || '';
+						settings = promptData.settings || {};
+					} else {
+						// 데이터가 없을 때 기본 메시지
+						prompt = '';
+						console.log(`⚠️ ${ai.id}에 대한 프롬프트 데이터 없음 - 기본 텍스트 표시`);
+					}
+					
+					const url = videoUrls[`${ai.id}_${imageId}`] || '';
 
 						aiImagesHtml += `
 							<div class="ai-video-image-item" style="background: #1a1a1a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
 								<h6 style="color: #ccc; margin-bottom: 10px;">📸 ${imageId}: ${image.description || '설명 없음'}</h6>
 								<div class="prompt-section" style="margin-bottom: 10px;">
-									<div class="prompt-text" style="background: #242424; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 4px; padding: 10px; font-family: 'Courier New', monospace; font-size: 0.85rem; max-height: 120px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; line-height: 1.4; color: #e0e0e0;">${prompt || '프롬프트가 없습니다.'}</div>
-									${promptTranslated ? `<div style="margin-top: 5px; font-size: 0.85rem; color: #999;">번역: ${promptTranslated}</div>` : ''}
+									<!-- 영문 버전 -->
+									<div style="margin-bottom: 12px;">
+										<div style="color: #4CAF50; font-weight: bold; margin-bottom: 6px; font-size: 0.9rem;">📝 영문 버전</div>
+										<div class="prompt-text" style="background: #242424; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 4px; padding: 12px; font-family: 'Paperlogy-4Regular', 'Courier New', monospace; font-size: 0.9rem; max-height: 150px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; word-break: keep-all; line-height: 1.6; color: #e0e0e0; text-align: left !important; text-indent: 0; direction: ltr; display: block;">
+											${prompt || '프롬프트가 없습니다.'}
+										</div>
+									</div>
+									
+									<!-- 번역본 -->
+									<div>
+										<div style="color: #2196F3; font-weight: bold; margin-bottom: 6px; font-size: 0.9rem;">🌏 번역본</div>
+										<div class="prompt-text" style="background: #242424; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 4px; padding: 12px; font-family: 'Paperlogy-4Regular', 'Courier New', monospace; font-size: 0.9rem; max-height: 150px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; word-break: keep-all; line-height: 1.6; color: #e0e0e0; text-align: left !important; text-indent: 0; direction: ltr; display: block;">
+											${promptTranslated || '번역된 프롬프트가 없습니다.'}
+										</div>
+									</div>
 									${Object.keys(settings).length > 0 ? `
 										<div style="margin-top: 5px; font-size: 0.8rem; color: #999;">
 											${Object.entries(settings).map(([key, value]) => `${key}: ${value}`).join(', ')}
@@ -6495,8 +6564,14 @@ if (selectedPlanData && selectedPlanData.images) {
 									<div style="display: flex; gap: 8px; margin-top: 8px;">
 										<button class="copy-btn btn-small" 
 												onclick="copyVideoPrompt('${prompt.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, "\\n")}', '${ai.name}', '${imageId}')">
-											프롬프트 복사
+											영어 복사
 										</button>
+										${promptTranslated ? `
+											<button class="copy-btn btn-small" style="background-color: #2196F3;"
+													onclick="copyVideoPrompt('${promptTranslated.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, "\\n")}', '${ai.name}', '${imageId}')">
+												한국어 복사
+											</button>
+										` : ''}
 										<!-- 영상탭에서는 프롬프트 수정과 AI수정 버튼을 숨김
 										<button class="edit-btn btn-small" 
 												onclick="editVideoPrompt('${shot.id}', '${ai.id}', '${imageId}', '${prompt.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, "\\n")}')">
@@ -6531,7 +6606,7 @@ if (selectedPlanData && selectedPlanData.images) {
 								</div>
 							</div>
 						`;
-					}
+					// } // if (promptData) 블록 제거 - 항상 표시하도록 변경
 				});
 
 				if (aiHasContent) {
@@ -6933,13 +7008,32 @@ try {
 						<h5>${ai.name}</h5>
 					</div>
 					<div class="prompt-section">
-						<div class="prompt-text">${prompt || '프롬프트가 없습니다.'}</div>
-						${promptTranslated ? `<div class="prompt-translated">${promptTranslated}</div>` : ''}
+						<!-- 영문 버전 -->
+						<div style="margin-bottom: 12px;">
+							<div style="color: #4CAF50; font-weight: bold; margin-bottom: 6px; font-size: 0.9rem;">📝 영문 버전</div>
+							<div class="prompt-text" style="background: #242424; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 4px; padding: 12px; font-family: 'Paperlogy-4Regular', 'Courier New', monospace; font-size: 0.9rem; max-height: 150px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; word-break: keep-all; line-height: 1.6; color: #e0e0e0; text-align: left !important; text-indent: 0; direction: ltr; display: block;">
+								${prompt || '프롬프트가 없습니다.'}
+							</div>
+						</div>
+						
+						<!-- 번역본 -->
+						<div style="margin-bottom: 10px;">
+							<div style="color: #2196F3; font-weight: bold; margin-bottom: 6px; font-size: 0.9rem;">🌏 번역본</div>
+							<div class="prompt-text" style="background: #242424; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 4px; padding: 12px; font-family: 'Paperlogy-4Regular', 'Courier New', monospace; font-size: 0.9rem; max-height: 150px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; word-break: keep-all; line-height: 1.6; color: #e0e0e0; text-align: left !important; text-indent: 0; direction: ltr; display: block;">
+								${promptTranslated || '번역된 프롬프트가 없습니다.'}
+							</div>
+						</div>
 						${settingsHtml}
 						<div style="display: flex; gap: 8px; margin-top: 8px;">
 							<button class="copy-btn" onclick="copyVideoPrompt('${promptForCopy}', '${ai.name}', '${imageId}')">
-								프롬프트 복사
+								영어 복사
 							</button>
+							${promptTranslated ? `
+								<button class="copy-btn" style="background-color: #2196F3;"
+										onclick="copyVideoPrompt('${promptTranslated.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, "\\n")}', '${ai.name}', '${imageId}')">
+									한국어 복사
+								</button>
+							` : ''}
 							<!-- 영상탭에서는 프롬프트 수정과 AI수정 버튼을 숨김
 							<button class="edit-btn" onclick="editVideoPrompt('${shotId}', '${ai.id}', '${imageId}', '${promptForCopy}')">
 								프롬프트 수정
@@ -8535,9 +8629,21 @@ try {
                                         videoPromptsToProcess.forEach(promptData => {
                                             const shotId = promptData.shot_id;
                                             const imageId = promptData.image_id;
+                                            
+                                            // 디버깅: promptData 구조 확인
+                                            console.log(`  📌 메인페이지 경유 - 처리 중: Shot ${shotId}, Image ${imageId}`);
+                                            console.log('  plan_a 존재:', !!promptData.plan_a);
+                                            console.log('  plan_b 존재:', !!promptData.plan_b);
+                                            console.log('  prompts 존재:', !!promptData.prompts);
+                                            if (!promptData.plan_a && !promptData.plan_b) {
+                                                console.warn('  ⚠️ plan_a와 plan_b가 모두 없습니다!');
+                                                console.log('  promptData 전체 구조:', JSON.stringify(promptData, null, 2));
+                                            }
+                                            
                                             if (!window.stage7VideoPrompts[shotId]) {
                                                 window.stage7VideoPrompts[shotId] = {};
                                             }
+                                            // 전체 promptData 객체를 저장 (plan_a, plan_b 포함)
                                             window.stage7VideoPrompts[shotId][imageId] = promptData;
                                         });
                                         successCount++;
