@@ -6526,8 +6526,8 @@ if (selectedPlanData && selectedPlanData.images) {
 					let settings = {};
 					
 					if (promptData) {
-						prompt = promptData.prompt_en || promptData.main_prompt || '';
-						promptTranslated = promptData.prompt_translated || promptData.main_prompt_translated || '';
+						prompt = (promptData.prompt_en || promptData.main_prompt || '').trim();
+						promptTranslated = (promptData.prompt_translated || promptData.main_prompt_translated || '').trim();
 						settings = promptData.settings || {};
 					} else {
 						// 데이터가 없을 때 기본 메시지
@@ -6544,16 +6544,16 @@ if (selectedPlanData && selectedPlanData.images) {
 									<!-- 영문 버전 -->
 									<div style="margin-bottom: 12px;">
 										<div style="color: #4CAF50; font-weight: bold; margin-bottom: 6px; font-size: 0.9rem;">📝 영문 버전</div>
-										<div class="prompt-text" style="background: #242424; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 4px; padding: 12px; font-family: 'Paperlogy-4Regular', 'Courier New', monospace; font-size: 0.9rem; max-height: 150px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; word-break: keep-all; line-height: 1.6; color: #e0e0e0; text-align: left !important; text-indent: 0; direction: ltr; display: block;">
-											${prompt || '프롬프트가 없습니다.'}
+										<div class="prompt-text" style="background: #242424; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 4px; padding: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 0.9rem; max-height: 150px; overflow-y: auto; white-space: normal; word-wrap: break-word; word-break: keep-all; line-height: 1.6; color: #e0e0e0; text-align: left !important; text-indent: 0; direction: ltr; display: block;">
+											${(prompt || '프롬프트가 없습니다.').trim()}
 										</div>
 									</div>
 									
 									<!-- 번역본 -->
 									<div>
 										<div style="color: #2196F3; font-weight: bold; margin-bottom: 6px; font-size: 0.9rem;">🌏 번역본</div>
-										<div class="prompt-text" style="background: #242424; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 4px; padding: 12px; font-family: 'Paperlogy-4Regular', 'Courier New', monospace; font-size: 0.9rem; max-height: 150px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; word-break: keep-all; line-height: 1.6; color: #e0e0e0; text-align: left !important; text-indent: 0; direction: ltr; display: block;">
-											${promptTranslated || '번역된 프롬프트가 없습니다.'}
+										<div class="prompt-text" style="background: #242424; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 4px; padding: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 0.9rem; max-height: 150px; overflow-y: auto; white-space: normal; word-wrap: break-word; word-break: keep-all; line-height: 1.6; color: #e0e0e0; text-align: left !important; text-indent: 0; direction: ltr; display: block;">
+											${(promptTranslated || '번역된 프롬프트가 없습니다.').trim()}
 										</div>
 									</div>
 									${Object.keys(settings).length > 0 ? `
@@ -6984,8 +6984,8 @@ try {
 
 		return aiTools.map(ai => {
 			const promptData = videoPromptsForImage[ai.id] || {};
-			const prompt = promptData.prompt_en || promptData.main_prompt || '';
-			const promptTranslated = promptData.prompt_translated || promptData.main_prompt_translated || '';
+			const prompt = (promptData.prompt_en || promptData.main_prompt || '').trim();
+			const promptTranslated = (promptData.prompt_translated || promptData.main_prompt_translated || '').trim();
 			const settings = promptData.settings || {};
 			const url = videoUrls[`${ai.id}_${imageId}`] || videoUrls[ai.id] || '';
 
@@ -7011,16 +7011,16 @@ try {
 						<!-- 영문 버전 -->
 						<div style="margin-bottom: 12px;">
 							<div style="color: #4CAF50; font-weight: bold; margin-bottom: 6px; font-size: 0.9rem;">📝 영문 버전</div>
-							<div class="prompt-text" style="background: #242424; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 4px; padding: 12px; font-family: 'Paperlogy-4Regular', 'Courier New', monospace; font-size: 0.9rem; max-height: 150px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; word-break: keep-all; line-height: 1.6; color: #e0e0e0; text-align: left !important; text-indent: 0; direction: ltr; display: block;">
-								${prompt || '프롬프트가 없습니다.'}
+							<div class="prompt-text" style="background: #242424; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 4px; padding: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 0.9rem; max-height: 150px; overflow-y: auto; white-space: normal; word-wrap: break-word; word-break: keep-all; line-height: 1.6; color: #e0e0e0; text-align: left !important; text-indent: 0; direction: ltr; display: block;">
+								${(prompt || '프롬프트가 없습니다.').trim()}
 							</div>
 						</div>
 						
 						<!-- 번역본 -->
 						<div style="margin-bottom: 10px;">
 							<div style="color: #2196F3; font-weight: bold; margin-bottom: 6px; font-size: 0.9rem;">🌏 번역본</div>
-							<div class="prompt-text" style="background: #242424; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 4px; padding: 12px; font-family: 'Paperlogy-4Regular', 'Courier New', monospace; font-size: 0.9rem; max-height: 150px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; word-break: keep-all; line-height: 1.6; color: #e0e0e0; text-align: left !important; text-indent: 0; direction: ltr; display: block;">
-								${promptTranslated || '번역된 프롬프트가 없습니다.'}
+							<div class="prompt-text" style="background: #242424; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 4px; padding: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 0.9rem; max-height: 150px; overflow-y: auto; white-space: normal; word-wrap: break-word; word-break: keep-all; line-height: 1.6; color: #e0e0e0; text-align: left !important; text-indent: 0; direction: ltr; display: block;">
+								${(promptTranslated || '번역된 프롬프트가 없습니다.').trim()}
 							</div>
 						</div>
 						${settingsHtml}
