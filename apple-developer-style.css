@@ -698,6 +698,39 @@ body {
 }
 
 @media (max-width: 480px) {
+  /* 작은 모바일에서 추가 조정 */
+  .stage-cards-grid {
+    gap: 10px;
+  }
+  
+  .stage-upload-card {
+    padding: 14px 16px;
+    gap: 10px;
+  }
+  
+  .stage-icon-wrapper {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .stage-emoji {
+    font-size: 20px;
+  }
+  
+  .stage-upload-card h4 {
+    font-size: 12px;
+  }
+  
+  .stage-upload-card p {
+    font-size: 10px;
+  }
+  
+  /* 메인 버튼 조정 */
+  .stage-upload-main-btn {
+    font-size: 12px;
+    padding: 8px 16px;
+  }
+  
   .btn-primary,
   .btn-secondary {
     padding: 9px 18px;
@@ -1776,7 +1809,6 @@ body {
   max-width: 600px;
 }
 
-
 .stage-upload-card {
   background: rgba(30, 30, 35, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -1788,7 +1820,7 @@ body {
   display: flex;
   align-items: center;
   gap: 16px;
-  min-width: 250px;
+  min-width: 0; /* 모바일 반응형을 위해 min-width 제거 */
 }
 
 .stage-upload-card:hover {
@@ -1992,6 +2024,40 @@ body {
   /* 모바일에서 모달 스테이지 업로드 1열로 변경 */
   .stage-upload-list {
     grid-template-columns: 1fr;
+  }
+  
+  /* 모바일에서 워크플로우 스테이지 카드 그리드 1열로 변경 */
+  .stage-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    max-width: 100%;
+  }
+  
+  /* 모바일에서 스테이지 카드 내부 레이아웃 조정 */
+  .stage-upload-card {
+    padding: 16px 20px;
+    gap: 12px;
+    flex-wrap: nowrap;
+  }
+  
+  /* 아이콘 크기 조정 */
+  .stage-icon-wrapper {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+  }
+  
+  .stage-emoji {
+    font-size: 24px;
+  }
+  
+  /* 텍스트 크기 조정 */
+  .stage-upload-card h4 {
+    font-size: 13px;
+  }
+  
+  .stage-upload-card p {
+    font-size: 11px;
   }
   
   .features-section {
