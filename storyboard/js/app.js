@@ -5170,8 +5170,9 @@ for (let i = 0; i < 2; i++) {
                 <label class="form-label">URL:</label>
                 <input type="text" class="form-input" 
                        value="${mainData.url || ''}" 
-                       placeholder="메인 ${i+1} URL" 
-                       onchange="updateMainImage('${shot.id}', ${i}, 'url', this.value)">
+                       placeholder="메인 ${i+1} URL (Dropbox 링크 자동 변환)" 
+                       onchange="updateMainImage('${shot.id}', ${i}, 'url', this.value)"
+                       title="Dropbox 링크(dl=0)를 입력하면 자동으로 이미지 표시용(raw=1)으로 변환됩니다">
             </div>
             <div class="form-group">
                 <label class="form-label">설명:</label>
@@ -6340,19 +6341,34 @@ try {
                 });
             }
             
-            // 값 업데이트
+            // URL 필드인 경우 드롭박스 URL 변환
             if (field === 'url') {
-                shot.main_images[refIndex].url = value;
-            } else if (field === 'description') {
-                shot.main_images[refIndex].description = value;
-            } else if (field === 'type') {
-                shot.main_images[refIndex].type = value;
+                value = convertDropboxUrl(value);
+                
+                // Dropbox URL이 변환된 경우 알림 및 input 업데이트
+                const originalValue = document.querySelector(`input[onchange*="updateMainImage('${shotId}', ${refIndex}, 'url'"]`)?.value;
+                if (value !== originalValue && originalValue && originalValue.includes('dropbox.com')) {
+                    console.log('🔄 메인 이미지 Dropbox URL 변환:', originalValue, '→', value);
+                    showMessage('Dropbox URL이 자동으로 이미지 표시 형식으로 변환되었습니다.', 'success');
+                    
+                    // input 필드도 변환된 URL로 업데이트
+                    const inputElement = document.querySelector(`input[onchange*="updateMainImage('${shotId}', ${refIndex}, 'url'"]`);
+                    if (inputElement && inputElement.value !== value) {
+                        inputElement.value = value;
+                    }
+                }
+            }
+            
+            // 값 업데이트
+            shot.main_images[refIndex][field] = value;
+            if (!shot.main_images[refIndex].id) {
+                shot.main_images[refIndex].id = `main_img_${refIndex + 1}_${shotId}`;
             }
             
             saveDataToLocalStorage();
             
             if (field === 'url') {
-                // 메인 이미지는 항상 -dup 접미사 사용
+                // 메인 이미지는 ref-preview- 접두사와 -dup 접미사 사용
                 const uid = `${shotId}-ref-dup${refIndex}`;
                 const preview = document.getElementById(`ref-preview-${uid}`);
                 
@@ -6363,7 +6379,7 @@ try {
                         preview.innerHTML = `<div style="color:#ccc;font-size:0.8rem;">메인 ${refIndex+1} URL</div>`;
                     }
                 } else {
-                    console.warn(`메인 이미지 미리보기 요소를 찾을 수 없습니다: ${uid}`);
+                    console.warn(`메인 이미지 미리보기 요소를 찾을 수 없습니다: ref-preview-${uid}`);
                 }
             }
         } catch (e) {
