@@ -2539,17 +2539,30 @@ function createTestData() {
 						}
 					}
            // 4. 스테이지 5 또는 전체 프로젝트 구조 로드 - 가장 우선 순위 높게 (덮어쓰기)
-           else if (newData.film_metadata && newData.breakdown_data && newData.breakdown_data.sequences && 
+           // v6.0 형식도 포함하기 위해 sequences 조건을 선택적으로 변경
+           else if (newData.film_metadata && newData.breakdown_data && 
+                    (newData.breakdown_data.sequences || newData.version === "6.0") && 
                     newData.breakdown_data.shots) { // shots 배열이 있으면 전체 Stage 5 데이터
                
                // schema_version 확인 로그
                console.log('📚 JSON 버전 정보:', {
                    schema_version: newData.schema_version,
+                   version: newData.version,
                    current_stage_name: newData.current_stage_name,
                    sequences: newData.breakdown_data.sequences?.length || 0,
                    scenes: newData.breakdown_data.scenes?.length || 0,
                    shots: newData.breakdown_data.shots?.length || 0
                });
+               
+               // v6.0 형식은 먼저 변환
+               if (newData.version === "6.0" && !newData.breakdown_data.sequences) {
+                   console.log('🔄 v6.0 형식 감지 - 변환 필요');
+                   const convertedData = convertStage5V5Format(newData);
+                   if (convertedData) {
+                       newData = convertedData;
+                       console.log('✅ v6.0 형식 변환 완료');
+                   }
+               }
                
                // v1.1.0 형식 명시적 처리
                if (newData.schema_version === "1.1.0") {
@@ -6698,7 +6711,7 @@ if (selectedPlanData && selectedPlanData.images) {
 											<label style="font-size: 0.85rem; color: #9370DB; font-weight: 600;">Veo2 구조화 프롬프트 (prompt_object_v6):</label>
 											<div class="veo2-structured-prompt" style="background: #2d1e3d; border: 1px solid #9370DB; border-radius: 4px; padding: 10px; margin-top: 5px; font-family: 'Courier New', monospace; font-size: 0.75rem; max-height: 200px; overflow-y: auto; white-space: pre; word-break: break-word; line-height: 1.4; color: #d0a0ff;">${veo2StructuredPrompt.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
 											<button class="copy-btn btn-small" style="margin-top: 5px; background: #9370DB;"
-												onclick="copyVeo2StructuredPrompt('${shot.id}', '${ai.id}', '${imageId}')">
+												onclick="copyVeo2StructuredPrompt('${shot.id}', '${ai.id}', '${imageId}', event)">
 												Veo2 구조화 프롬프트 복사
 											</button>
 										</div>
@@ -7310,10 +7323,10 @@ try {
 	}
 	
 	// Veo2 구조화 프롬프트 전용 복사 함수
-	function copyVeo2StructuredPrompt(shotId, aiId, imageId) {
+	function copyVeo2StructuredPrompt(shotId, aiId, imageId, event) {
 		try {
 			// 해당 버튼의 부모 요소에서 프롬프트 찾기
-			const button = event.target || event.srcElement;
+			const button = event ? (event.target || event.srcElement) : null;
 			let container = button;
 			
 			// 버튼의 부모 요소들을 탐색하여 .ai-video-image-item 찾기
