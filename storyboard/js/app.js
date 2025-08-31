@@ -7312,8 +7312,38 @@ try {
 	// Veo2 구조화 프롬프트 전용 복사 함수
 	function copyVeo2StructuredPrompt(shotId, aiId, imageId) {
 		try {
-			// DOM에서 직접 프롬프트 텍스트 가져오기
-			const promptElement = document.querySelector(`.veo2-structured-prompt`);
+			// 해당 버튼의 부모 요소에서 프롬프트 찾기
+			const button = event.target || event.srcElement;
+			let container = button;
+			
+			// 버튼의 부모 요소들을 탐색하여 .ai-video-image-item 찾기
+			while (container && !container.classList.contains('ai-video-image-item')) {
+				container = container.parentElement;
+			}
+			
+			if (!container) {
+				// 대체 방법: 모든 Veo2 프롬프트 중에서 imageId와 매칭되는 것 찾기
+				const allPrompts = document.querySelectorAll('.veo2-structured-prompt');
+				let promptElement = null;
+				
+				for (let prompt of allPrompts) {
+					// 프롬프트가 포함된 컨테이너에서 imageId 매칭 확인
+					const parentContainer = prompt.closest('.ai-video-image-item');
+					if (parentContainer && parentContainer.textContent.includes(imageId)) {
+						promptElement = prompt;
+						break;
+					}
+				}
+				
+				if (!promptElement) {
+					return showMessage('Veo2 구조화 프롬프트를 찾을 수 없습니다.', 'error');
+				}
+				
+				container = promptElement.closest('.ai-video-image-item');
+			}
+			
+			// 컨테이너 내에서 프롬프트 요소 찾기
+			const promptElement = container.querySelector('.veo2-structured-prompt');
 			if (!promptElement) {
 				return showMessage('Veo2 구조화 프롬프트를 찾을 수 없습니다.', 'error');
 			}
