@@ -198,7 +198,20 @@
                     if (!shot.video_prompts) {
                         shot.video_prompts = {};
                     }
-                    shot.video_prompts = { ...shot.video_prompts, ...promptData[shotId] };
+                    // kling_structured_prompt를 포함한 모든 프롬프트 데이터 병합
+                    const videoPromptData = promptData[shotId];
+                    
+                    // 각 AI 도구의 프롬프트 확인 및 저장
+                    Object.keys(videoPromptData).forEach(aiTool => {
+                        if (!shot.video_prompts[aiTool]) {
+                            shot.video_prompts[aiTool] = {};
+                        }
+                        // kling_structured_prompt 포함 모든 필드 저장
+                        shot.video_prompts[aiTool] = {
+                            ...shot.video_prompts[aiTool],
+                            ...videoPromptData[aiTool]
+                        };
+                    });
                 }
             });
             
@@ -207,7 +220,7 @@
                 window.DataStorage.saveStageData(7, promptData, currentData);
             }
             
-            console.log('✅ Stage 7 프롬프트 처리 완료');
+            console.log('✅ Stage 7 프롬프트 처리 완료 (kling_structured_prompt 포함)');
             return currentData;
             
         } catch (error) {

@@ -61,35 +61,39 @@ const getProjectName = window.AppUtils ? window.AppUtils.getProjectName : functi
     }
 };
 
-// showMessage 함수는 AppUtils 모듈로 이동됨
-// 호환성을 위한 별칭
-const showMessage = window.AppUtils ? window.AppUtils.showMessage : function(message, type) {
-    try {
-        const messageContainer = document.getElementById('message-container');
-        if (!messageContainer) {
-            return;
+// showMessage 함수 - AppUtils 모듈이 로드되면 사용, 아니면 기본 구현 사용
+let showMessage;
+if (window.AppUtils && window.AppUtils.showMessage) {
+    showMessage = window.AppUtils.showMessage;
+} else {
+    showMessage = function(message, type) {
+        try {
+            const messageContainer = document.getElementById('message-container');
+            if (!messageContainer) {
+                return;
+            }
+            
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${type}-message`;
+            messageElement.innerHTML = `
+                ${message}
+                <button class="close-button" onclick="this.parentElement.remove()">×</button>
+            `;
+            
+            messageContainer.appendChild(messageElement);
+            
+            if (type !== 'error') {
+                setTimeout(() => {
+                    if (messageContainer.contains(messageElement)) {
+                        messageContainer.removeChild(messageElement);
+                    }
+                }, 5000);
+            }
+        } catch (error) {
+            alert(message);
         }
-        
-        const messageElement = document.createElement('div');
-        messageElement.className = `message ${type}-message`;
-        messageElement.innerHTML = `
-            ${message}
-            <button class="close-button" onclick="this.parentElement.remove()">×</button>
-        `;
-        
-        messageContainer.appendChild(messageElement);
-        
-        if (type !== 'error') {
-            setTimeout(() => {
-                if (messageContainer.contains(messageElement)) {
-                    messageContainer.removeChild(messageElement);
-                }
-            }, 5000);
-        }
-    } catch (error) {
-        alert(message);
-    }
-};
+    };
+}
 
 // copyToClipboard 함수는 AppUtils 모듈로 이동됨
 // 호환성을 위한 별칭
@@ -2337,7 +2341,7 @@ function createTestData() {
                return;
            }
            // 3. 스테이지 7 (영상 관련 데이터) 병합
-					else if (newData.stage === 7 && newData.video_prompts) {
+					else if (newData.stage === 7 || (newData.version && newData.version.includes('7.') && newData.video_prompts)) {
               // Stage 2 구조 확인 (완화된 체크)
                 if (!hasStage2Structure && 
                     (!currentData?.breakdown_data?.sequences || currentData.breakdown_data.sequences.length === 0) &&
@@ -2406,10 +2410,9 @@ function createTestData() {
 
 									if (promptData.prompts) {
 										Object.keys(promptData.prompts).forEach(aiTool => {
-											existingShot.video_prompts[aiTool] = {
-												main_prompt: promptData.prompts[aiTool].prompt_en || '',
-												main_prompt_translated: promptData.prompts[aiTool].prompt_translated || '',
-												settings: promptData.prompts[aiTool].settings || {}
+											// 각 AI 도구의 모든 필드를 보존 (kling_structured_prompt 포함)
+											existingShot.video_prompts[`${aiTool}_${promptData.image_id}`] = {
+												...promptData.prompts[aiTool]
 											};
 										});
 										videoDataUpdated = true;
@@ -6518,14 +6521,56 @@ if (selectedPlanData && selectedPlanData.images) {
 				let aiImagesHtml = '';
 
 				selectedPlanData.images.forEach((image, index) => {
+					// Stage 7 JSON과 호환을 위해 여러 형식의 imageId 시도
 					const imageId = image.id || `IMG_${index + 1}`;
-					const videoPromptsForImage = findVideoPromptsForImage(shot.id, imageId, videoPrompts);
-					const promptData = videoPromptsForImage[ai.id];
+					
+					// 직접 shot.video_prompts에서 kling_이미지ID 패턴 검색
+					let promptData = null;
+					
+					// 방법 1: AI도구명_이미지ID 패턴으로 직접 검색
+					const directKeys = Object.keys(videoPrompts || {}).filter(k => k.startsWith(`${ai.id}_`));
+					if (directKeys.length > 0 && index < directKeys.length) {
+						// 순서대로 매칭 (첫 번째 이미지는 첫 번째 kling_ 키에 매칭)
+						const key = directKeys[index];
+						promptData = videoPrompts[key];
+						console.log(`✅ 직접 매칭: ${key}에서 프롬프트 발견`);
+					}
+					
+					// 방법 2: 기존 findVideoPromptsForImage 사용
+					if (!promptData) {
+						const alternativeImageIds = [
+							imageId,
+							`${shot.id}-${imageId}`,
+							`${shot.id}-A-${String(index + 1).padStart(2, '0')}`,
+							`${shot.id}-B-${String(index + 1).padStart(2, '0')}`,
+							`${shot.id}-C-${String(index + 1).padStart(2, '0')}`
+						];
+						
+						for (const tryId of alternativeImageIds) {
+							const found = findVideoPromptsForImage(shot.id, tryId, videoPrompts);
+							if (found && found[ai.id]) {
+								promptData = found[ai.id];
+								console.log(`✅ 대체 ID ${tryId}로 ${ai.id} prompts 발견`);
+								break;
+							}
+						}
+					}
 
 					if (promptData) {
 						aiHasContent = true;
 						const prompt = promptData.prompt_en || promptData.main_prompt || '';
 						const promptTranslated = promptData.prompt_translated || promptData.main_prompt_translated || '';
+						// Kling AI의 경우 kling_structured_prompt 추가 처리
+						const klingStructuredPrompt = (ai.id === 'kling' && promptData.kling_structured_prompt) ? promptData.kling_structured_prompt : '';
+						
+						// 디버깅: Kling 데이터 확인
+						if (ai.id === 'kling') {
+							console.log(`🎬 Kling 프롬프트 데이터 (${imageId}):`, promptData);
+							console.log('  - kling_structured_prompt 존재:', !!promptData.kling_structured_prompt);
+							if (promptData.kling_structured_prompt) {
+								console.log('  - kling_structured_prompt 내용:', promptData.kling_structured_prompt.substring(0, 100) + '...');
+							}
+						}
 						const settings = promptData.settings || {};
 						const url = videoUrls[`${ai.id}_${imageId}`] || '';
 
@@ -6535,6 +6580,16 @@ if (selectedPlanData && selectedPlanData.images) {
 								<div class="prompt-section" style="margin-bottom: 10px;">
 									<div class="prompt-text" style="background: #242424; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 4px; padding: 10px; font-family: 'Courier New', monospace; font-size: 0.85rem; max-height: 120px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; line-height: 1.4; color: #e0e0e0;">${prompt || '프롬프트가 없습니다.'}</div>
 									${promptTranslated ? `<div style="margin-top: 5px; font-size: 0.85rem; color: #999;">번역: ${promptTranslated}</div>` : ''}
+									${klingStructuredPrompt ? `
+										<div style="margin-top: 10px;">
+											<label style="font-size: 0.85rem; color: #FFD700; font-weight: 600;">Kling 구조화 프롬프트:</label>
+											<div class="kling-structured-prompt" style="background: #1e2d3d; border: 1px solid #4a90e2; border-radius: 4px; padding: 10px; margin-top: 5px; font-family: 'Courier New', monospace; font-size: 0.85rem; max-height: 150px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; line-height: 1.4; color: #a0d0ff;">${klingStructuredPrompt}</div>
+											<button class="copy-btn btn-small" style="margin-top: 5px;"
+												onclick="copyVideoPrompt('${klingStructuredPrompt.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, "\\n")}', 'Kling Structured', '${imageId}')">
+												Kling 프롬프트 복사
+											</button>
+										</div>
+									` : ''}
 									${Object.keys(settings).length > 0 ? `
 										<div style="margin-top: 5px; font-size: 0.8rem; color: #999;">
 											${Object.entries(settings).map(([key, value]) => `${key}: ${value}`).join(', ')}
@@ -6543,11 +6598,11 @@ if (selectedPlanData && selectedPlanData.images) {
 									<div style="display: flex; gap: 8px; margin-top: 8px;">
 										<button class="copy-btn btn-small" 
 												onclick="copyVideoPrompt('${prompt.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, "\\n")}', '${ai.name}', '${imageId}')">
-											프롬프트 복사
+											기본 프롬프트 복사
 										</button>
 										<!-- 영상탭에서는 프롬프트 수정과 AI수정 버튼을 숨김
 										<button class="edit-btn btn-small" 
-												onclick="editVideoPrompt('${shot.id}', '${ai.id}', '${imageId}', '${prompt.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, "\\n")}')">
+												onclick="editVideoPrompt('${shot.id}', '${ai.id}', '${imageId}', '${prompt.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, "\\n")}')"
 											프롬프트 수정
 										</button>
 										<button class="ai-improve-btn btn-small" 
@@ -6874,6 +6929,48 @@ try {
 		if (videoPrompts && typeof videoPrompts === 'object') {
 			console.log('🎬 전달받은 videoPrompts에서 검색...');
 			
+			// AI_도구명_이미지ID 형식으로 저장된 데이터를 재구성
+			const reconstructedPrompts = {};
+			let hasAIPrompts = false;
+			
+			// 각 AI 도구별로 프롬프트 수집 - 여러 패턴 시도
+			['luma', 'kling', 'veo2', 'runway'].forEach(aiTool => {
+				// 여러 가능한 키 패턴 시도
+				const possibleKeys = [
+					`${aiTool}_${imageId}`,
+					`${aiTool}_${imageId.replace('IMG_', '')}`,
+				];
+				
+				// imageId가 S01.01-A-01 형식이 아니면 추가 패턴 시도
+				if (!imageId.includes('-')) {
+					// S01.01-A-01, S01.01-B-01 등의 패턴 시도
+					const shotPrefix = imageId.split('.')[0] || 'S01';
+					['A', 'B', 'C'].forEach(letter => {
+						for (let i = 1; i <= 5; i++) {
+							possibleKeys.push(`${aiTool}_${shotPrefix}-${letter}-${String(i).padStart(2, '0')}`);
+						}
+					});
+				}
+				
+				for (const key of possibleKeys) {
+					if (videoPrompts[key]) {
+						reconstructedPrompts[aiTool] = videoPrompts[key];
+						hasAIPrompts = true;
+						console.log(`🎬 ${key} 프롬프트 발견!`);
+						// kling_structured_prompt 체크
+						if (aiTool === 'kling' && videoPrompts[key].kling_structured_prompt) {
+							console.log('  ✅ kling_structured_prompt 확인됨!');
+						}
+						break;
+					}
+				}
+			});
+			
+			if (hasAIPrompts) {
+				console.log('🎬 재구성된 AI 프롬프트 반환');
+				return reconstructedPrompts;
+			}
+			
 			// imageId로 직접 검색
 			if (videoPrompts[imageId]) {
 				console.log(`🎬 videoPrompts[${imageId}] 찾음`);
@@ -6934,6 +7031,27 @@ try {
 				if (shot.video_prompts[imageId]) {
 					return shot.video_prompts[imageId];
 				}
+				
+				// AI_도구명_이미지ID 형식으로 저장된 데이터 재구성 (샷 레벨에서)
+				const shotReconstructed = {};
+				let foundInShot = false;
+				
+				['luma', 'kling', 'veo2', 'runway'].forEach(aiTool => {
+					// 모든 키를 검색해서 패턴 매칭
+					Object.keys(shot.video_prompts).forEach(key => {
+						// kling_S01.01-A-01 형식 매칭
+						if (key.startsWith(`${aiTool}_`) && (key.includes(imageId) || key.includes(shotId))) {
+							shotReconstructed[aiTool] = shot.video_prompts[key];
+							foundInShot = true;
+							console.log(`🎯 샷 레벨에서 ${key} 발견!`);
+						}
+					});
+				});
+				
+				if (foundInShot) {
+					return shotReconstructed;
+				}
+				
 				// 전체 샷 공통 프롬프트 확인
 				if (Object.keys(shot.video_prompts).some(key => ['luma', 'kling', 'veo2', 'runway'].includes(key))) {
 					return shot.video_prompts;
@@ -8055,7 +8173,10 @@ try {
     window.updateNavigation = updateNavigation;
     window.expandAll = expandAll;
     window.collapseAll = collapseAll;
-    window.showMessage = showMessage;
+    // showMessage는 이미 위에서 정의됨
+    if (!window.showMessage) {
+        window.showMessage = showMessage;
+    }
     
     console.log('Functions exposed to window:', {
         currentData: typeof window.currentData,
@@ -8568,7 +8689,7 @@ try {
                                 const newData = result.data;
                                 
                                 // Stage 7 데이터 처리
-                                if (newData.stage === 7 && newData.video_prompts) {
+                                if (newData.stage === 7 || (newData.version && newData.version.includes('7.') && newData.video_prompts)) {
                                     console.log(`📚 Stage 7 영상 프롬프트 데이터 감지: ${fileNames[index]}`);
                                     
                                     // video_prompts가 배열이거나 객체인 경우 처리
