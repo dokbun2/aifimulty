@@ -141,7 +141,7 @@ function convertStage5V5Format(data) {
                         const parts = shot.id.split('.');
                         if (parts.length >= 1) {
                             shot.scene_id = parts[0];
-                            debugLog(`  샷 ${shot.id}에 scene_id 설정: ${shot.scene_id}`);
+                            console.log(`  샷 ${shot.id}에 scene_id 설정: ${shot.scene_id}`);
                         }
                     }
                 });
@@ -158,7 +158,7 @@ function convertStage5V5Format(data) {
                             scene.shot_ids.push(shot.id);
                         }
                     });
-                    debugLog(`  씬 ${scene.id}의 shot_ids: ${scene.shot_ids.join(', ')}`);
+                    console.log(`  씬 ${scene.id}의 shot_ids: ${scene.shot_ids.join(', ')}`);
                 });
                 
                 data.hasStage2Structure = true;
@@ -182,31 +182,8 @@ function convertStage5V5Format(data) {
         if (data.stage === 5 && data.version === "6.0" && data.breakdown_data) {
             debugLog('🔄 Stage 5 v6.0 형식 감지 (CF 프로젝트)');
             
-            // 이미 sequences가 있으면 그대로 사용
-            if (data.breakdown_data.sequences && data.breakdown_data.sequences.length > 0) {
-                debugLog('✅ v6.0 형식: 기존 sequences 데이터 사용');
-                
-                // sequences 데이터 정리 - sequence_id를 id로 정규화
-                data.breakdown_data.sequences = data.breakdown_data.sequences.map(seq => {
-                    // sequence_id를 id로 변환하고 원본 필드 제거
-                    if (seq.sequence_id && !seq.id) {
-                        seq.id = seq.sequence_id;
-                        delete seq.sequence_id;
-                        debugLog(`  시퀀스 ID 정규화: sequence_id → id (${seq.id})`);
-                    }
-                    // title이 없으면 name 필드를 title로 복사
-                    if (!seq.title && seq.name) {
-                        seq.title = seq.name;
-                    }
-                    return seq;
-                });
-                
-                debugLog('📦 sequences:', data.breakdown_data.sequences.length + '개');
-                debugLog('📦 scenes:', data.breakdown_data.scenes?.length + '개');
-                debugLog('📦 shots:', data.breakdown_data.shots?.length + '개');
-                
-            } else if (!data.breakdown_data.sequences) {
-                // sequences가 없으면 자동 생성
+            // sequences가 없으면 자동 생성
+            if (!data.breakdown_data.sequences) {
                 debugLog('📦 sequences 자동 생성 중...');
                 
                 const sequences = [];
@@ -255,18 +232,6 @@ function convertStage5V5Format(data) {
             // v3.0.0으로 schema_version 변경하여 호환성 확보
             data.schema_version = "3.0.0";
             data.hasStage2Structure = true;
-            
-            // ⭐ 중요 디버깅: 변환 후 데이터 확인
-            console.log('🔴 Stage 5 v6.0 변환 완료 - 최종 데이터:', {
-                sequences: data.breakdown_data.sequences?.length || 0,
-                scenes: data.breakdown_data.scenes?.length || 0,
-                shots: data.breakdown_data.shots?.length || 0,
-                sceneDetails: data.breakdown_data.scenes?.map(s => ({
-                    id: s.id,
-                    title: s.title,
-                    sequence_id: s.sequence_id
-                }))
-            });
             
             debugLog('✅ Stage 5 v6.0 형식이 자동 변환되었습니다');
             return data;
@@ -501,10 +466,10 @@ function convertStage5V5Format(data) {
         // Stage 2 구조 플래그 설정
         convertedData.hasStage2Structure = true;
         
-        debugLog('✅ Stage 5 v5.0.0 형식 변환 완료 (Stage 2 호환성 적용)');
-        debugLog('- 시퀀스 생성:', convertedData.breakdown_data.sequences.length);
-        debugLog('- 씬 변환:', convertedData.breakdown_data.scenes.length);
-        debugLog('- 샷 변환:', convertedData.breakdown_data.shots.length);
+        console.log('✅ Stage 5 v5.0.0 형식 변환 완료 (Stage 2 호환성 적용)');
+        console.log('- 시퀀스 생성:', convertedData.breakdown_data.sequences.length);
+        console.log('- 씬 변환:', convertedData.breakdown_data.scenes.length);
+        console.log('- 샷 변환:', convertedData.breakdown_data.shots.length);
         
         return convertedData;
         
@@ -1079,7 +1044,7 @@ function createTestData() {
 				for (const key of possibleKeys) {
 					const data = localStorage.getItem(key);
 					if (data) {
-						debugLog(`📂 localStorage에서 데이터 발견: ${key}`);
+						console.log(`📂 localStorage에서 데이터 발견: ${key}`);
 						savedData = data;
 						break;
 					}
@@ -1104,7 +1069,7 @@ function createTestData() {
 				const parsedData = JSON.parse(savedData);
 				
 				// Universal 이미지 데이터 확인 및 배열 구조 보장
-				debugLog('🔍 로드된 데이터에서 Universal 이미지 확인 및 정규화:');
+				console.log('🔍 로드된 데이터에서 Universal 이미지 확인 및 정규화:');
 				parsedData.breakdown_data?.shots?.forEach(shot => {
 					// image_design 구조 초기화 (ai_generated_images는 따로 처리)
 					if (!shot.image_design) {
@@ -1154,7 +1119,7 @@ function createTestData() {
 						const universalData = shot.image_design.ai_generated_images.universal;
 						const urlCount = universalData.filter(img => img && img.url).length;
 						if (urlCount > 0) {
-							debugLog(`✅ 샷 ${shot.id} Universal 데이터 로드: ${urlCount}개 URL`, universalData);
+							console.log(`✅ 샷 ${shot.id} Universal 데이터 로드: ${urlCount}개 URL`, universalData);
 						}
 					}
 				});
@@ -1168,9 +1133,9 @@ function createTestData() {
 				const savedStage7 = localStorage.getItem(`stage7VideoPrompts_${jsonFileName}`);
 				if (savedStage7) {
 					window.stage7VideoPrompts = JSON.parse(savedStage7);
-					debugLog('✅ localStorage에서 stage7VideoPrompts 복원:', Object.keys(window.stage7VideoPrompts).length, '개 샷');
+					console.log('✅ localStorage에서 stage7VideoPrompts 복원:', Object.keys(window.stage7VideoPrompts).length, '개 샷');
 				} else {
-					debugLog('⚠️ localStorage에 stage7VideoPrompts 데이터 없음');
+					console.log('⚠️ localStorage에 stage7VideoPrompts 데이터 없음');
 				}
 				
 				// 오디오 파일 데이터 복원
@@ -1192,10 +1157,10 @@ function createTestData() {
 				    (currentData.stage2_data)) {
 					hasStage2Structure = true;
 					currentData.hasStage2Structure = true; // 데이터에도 플래그 설정
-					debugLog('🎬 Stage 2 구조가 복원되었습니다:', hasStage2Structure);
+					console.log('🎬 Stage 2 구조가 복원되었습니다:', hasStage2Structure);
 				} else {
 					hasStage2Structure = false;
-					debugLog('⚠️ Stage 2 구조가 없습니다.');
+					console.log('⚠️ Stage 2 구조가 없습니다.');
 				}
 				
 				// 시퀀스 데이터 상세 확인
@@ -1271,7 +1236,7 @@ function createTestData() {
 					})).filter(item => item.universal?.some(img => img?.url) || item.nanobana?.some(img => img?.url));
 					
 					if (universalData.length > 0) {
-						debugLog('💾 Universal/Nanobana 데이터 저장 중:', universalData);
+						console.log('💾 Universal/Nanobana 데이터 저장 중:', universalData);
 					}
 					
 					const dataString = JSON.stringify(currentData);
@@ -1370,7 +1335,7 @@ function createTestData() {
            try {
                fullBackup.additional_stage_data.stage6ImagePrompts = JSON.parse(stage6Data);
            } catch (e) {
-               debugWarn('Stage 6 데이터 파싱 실패:', e);
+               console.warn('Stage 6 데이터 파싱 실패:', e);
            }
        }
        
@@ -1380,7 +1345,7 @@ function createTestData() {
            try {
                fullBackup.additional_stage_data.stage7VideoPrompts = JSON.parse(stage7Data);
            } catch (e) {
-               debugWarn('Stage 7 데이터 파싱 실패:', e);
+               console.warn('Stage 7 데이터 파싱 실패:', e);
            }
        }
        
@@ -1390,7 +1355,7 @@ function createTestData() {
            try {
                fullBackup.additional_stage_data.stage8AudioPrompts = JSON.parse(stage8Data);
            } catch (e) {
-               debugWarn('Stage 8 데이터 파싱 실패:', e);
+               console.warn('Stage 8 데이터 파싱 실패:', e);
            }
        }
        
@@ -1462,7 +1427,7 @@ function createTestData() {
 				    (parsedData.schema_version === "3.0.0" && parsedData.breakdown_data) ||
 				    (parsedData.schema_version === "1.1.0" && parsedData.breakdown_data) ||
 				    (parsedData.stage === 5 && parsedData.version === "6.0" && parsedData.breakdown_data)) {
-					debugLog('🔍 Stage 5 형식 감지됨:', parsedData.schema_version || parsedData.version);
+					console.log('🔍 Stage 5 형식 감지됨:', parsedData.schema_version || parsedData.version);
 					
 					// v1.1.0 형식은 이미 올바른 형식이므로 scene_id 매핑 확인 후 반환
 					if (parsedData.schema_version === "1.1.0" && 
@@ -1470,7 +1435,7 @@ function createTestData() {
 					    parsedData.breakdown_data.sequences && 
 					    parsedData.breakdown_data.scenes && 
 					    parsedData.breakdown_data.shots) {
-						debugLog('✅ v1.1.0 형식 확인 - 호환 가능');
+						console.log('✅ v1.1.0 형식 확인 - 호환 가능');
 						
 						// 샷의 scene_id 확인 및 정규화
 						parsedData.breakdown_data.shots.forEach(shot => {
@@ -1479,7 +1444,7 @@ function createTestData() {
 								const parts = shot.id.split('.');
 								if (parts.length >= 1) {
 									shot.scene_id = parts[0];
-									debugLog(`  샷 ${shot.id}에 scene_id 설정: ${shot.scene_id}`);
+									console.log(`  샷 ${shot.id}에 scene_id 설정: ${shot.scene_id}`);
 								}
 							}
 						});
@@ -1496,7 +1461,7 @@ function createTestData() {
 									scene.shot_ids.push(shot.id);
 								}
 							});
-							debugLog(`  씬 ${scene.id}의 shot_ids: ${scene.shot_ids.join(', ')}`);
+							console.log(`  씬 ${scene.id}의 shot_ids: ${scene.shot_ids.join(', ')}`);
 						});
 						
 						parsedData.hasStage2Structure = true;
@@ -1552,7 +1517,7 @@ function createTestData() {
 					if ((data.stage === 5 && data.schema_version === "5.0.0") || 
 					    (data.schema_version === "3.0.0" && data.breakdown_data) ||
 					    (data.stage === 5 && data.version === "6.0" && data.breakdown_data)) {
-						debugLog('🔍 Stage 5 형식 감지됨 (수정 후):', data.schema_version || data.version);
+						console.log('🔍 Stage 5 형식 감지됨 (수정 후):', data.schema_version || data.version);
 						const convertedData = convertStage5V5Format(data);
 						if (convertedData) {
 							if (data.schema_version === "5.0.0") {
@@ -1694,31 +1659,31 @@ function createTestData() {
 					let message = '';
 
            // v1.1.0 형식은 바로 처리 (디버깅 강화)
-           debugLog('📌 업로드된 파일 분석 중...');
-           debugLog('  - schema_version:', newData.schema_version);
-           debugLog('  - breakdown_data 존재:', !!newData.breakdown_data);
-           debugLog('  - video_prompts 존재:', !!newData.video_prompts, typeof newData.video_prompts);
+           console.log('📌 업로드된 파일 분석 중...');
+           console.log('  - schema_version:', newData.schema_version);
+           console.log('  - breakdown_data 존재:', !!newData.breakdown_data);
+           console.log('  - video_prompts 존재:', !!newData.video_prompts, typeof newData.video_prompts);
            if (newData.video_prompts) {
                if (Array.isArray(newData.video_prompts)) {
-                   debugLog('  - video_prompts 배열:', newData.video_prompts.length, '개');
+                   console.log('  - video_prompts 배열:', newData.video_prompts.length, '개');
                } else if (typeof newData.video_prompts === 'object') {
-                   debugLog('  - video_prompts 객체:', Object.keys(newData.video_prompts).length, '개');
-                   debugLog('  - video_prompts 키들:', Object.keys(newData.video_prompts).slice(0, 5));
+                   console.log('  - video_prompts 객체:', Object.keys(newData.video_prompts).length, '개');
+                   console.log('  - video_prompts 키들:', Object.keys(newData.video_prompts).slice(0, 5));
                }
            }
            if (newData.breakdown_data) {
-               debugLog('  - sequences 존재:', !!newData.breakdown_data.sequences, newData.breakdown_data.sequences?.length || 0, '개');
-               debugLog('  - scenes 존재:', !!newData.breakdown_data.scenes, newData.breakdown_data.scenes?.length || 0, '개');
-               debugLog('  - shots 존재:', !!newData.breakdown_data.shots, newData.breakdown_data.shots?.length || 0, '개');
+               console.log('  - sequences 존재:', !!newData.breakdown_data.sequences, newData.breakdown_data.sequences?.length || 0, '개');
+               console.log('  - scenes 존재:', !!newData.breakdown_data.scenes, newData.breakdown_data.scenes?.length || 0, '개');
+               console.log('  - shots 존재:', !!newData.breakdown_data.shots, newData.breakdown_data.shots?.length || 0, '개');
                
                // shots 배열이 없으면 빈 배열로 초기화
                if (!newData.breakdown_data.shots) {
-                   debugLog('⚠️ shots 배열이 없어서 빈 배열로 초기화');
+                   console.log('⚠️ shots 배열이 없어서 빈 배열로 초기화');
                    newData.breakdown_data.shots = [];
                }
                // shots가 null이거나 배열이 아닌 경우도 처리
                if (!Array.isArray(newData.breakdown_data.shots)) {
-                   debugLog('⚠️ shots가 배열이 아니어서 빈 배열로 초기화');
+                   console.log('⚠️ shots가 배열이 아니어서 빈 배열로 초기화');
                    newData.breakdown_data.shots = [];
                }
                
@@ -1728,16 +1693,16 @@ function createTestData() {
                    newData.breakdown_data.shots.forEach(shot => {
                        if (shot.video_prompts && Object.keys(shot.video_prompts).length > 0) {
                            videoPromptsCount++;
-                           debugLog(`  🎬 Shot ${shot.id}에 video_prompts 발견:`, Object.keys(shot.video_prompts).slice(0, 3));
+                           console.log(`  🎬 Shot ${shot.id}에 video_prompts 발견:`, Object.keys(shot.video_prompts).slice(0, 3));
                        }
                    });
-                   debugLog(`  - video_prompts가 있는 shots: ${videoPromptsCount}개`);
+                   console.log(`  - video_prompts가 있는 shots: ${videoPromptsCount}개`);
                }
            }
            
            if (newData.schema_version === "1.1.0" && newData.breakdown_data && 
                newData.breakdown_data.sequences && newData.breakdown_data.scenes && newData.breakdown_data.shots) {
-               debugLog('✅ v1.1.0 형식 조건 매치! 파일 처리 시작...');
+               console.log('✅ v1.1.0 형식 조건 매치! 파일 처리 시작...');
                
                // v1.1.0 형식은 그 자체가 완전한 데이터
                currentData = newData;
@@ -1746,23 +1711,23 @@ function createTestData() {
                
                // 각 shot의 video_prompts 확인 및 처리
                if (currentData.breakdown_data.shots && currentData.breakdown_data.shots.length > 0) {
-                   debugLog('🎬 각 shot의 video_prompts 확인 중...');
+                   console.log('🎬 각 shot의 video_prompts 확인 중...');
                    let processedCount = 0;
                    
                    currentData.breakdown_data.shots.forEach(shot => {
                        // video_prompts가 있는 경우 그대로 사용
                        if (shot.video_prompts && Object.keys(shot.video_prompts).length > 0) {
                            processedCount++;
-                           debugLog(`  ✅ Shot ${shot.id}: ${Object.keys(shot.video_prompts).length}개의 video_prompts 보존`);
+                           console.log(`  ✅ Shot ${shot.id}: ${Object.keys(shot.video_prompts).length}개의 video_prompts 보존`);
                        }
                    });
                    
-                   debugLog(`🎬 총 ${processedCount}개의 shot에서 video_prompts 확인됨`);
+                   console.log(`🎬 총 ${processedCount}개의 shot에서 video_prompts 확인됨`);
                }
                
                // breakdown_data에 별도의 video_prompts 객체가 있는 경우 (레거시 지원)
                if (currentData.breakdown_data.video_prompts && typeof currentData.breakdown_data.video_prompts === 'object') {
-                   debugLog('🎬 breakdown_data.video_prompts 발견 (레거시 형식)');
+                   console.log('🎬 breakdown_data.video_prompts 발견 (레거시 형식)');
                    const videoPromptsData = currentData.breakdown_data.video_prompts;
                    
                    // 각 shot에 대해 매칭되는 video_prompts 찾기
@@ -1777,7 +1742,7 @@ function createTestData() {
                                // 이미지 ID 추출 (예: S01.01-A-01 -> A-01)
                                const imageId = key.replace(shot.id + '-', '');
                                shot.video_prompts[imageId] = videoPromptsData[key];
-                               debugLog(`  ✅ ${shot.id}에 ${imageId} 영상 프롬프트 병합 (레거시)`);
+                               console.log(`  ✅ ${shot.id}에 ${imageId} 영상 프롬프트 병합 (레거시)`);
                            }
                        });
                    });
@@ -1792,9 +1757,9 @@ function createTestData() {
                    };
                }
                
-               debugLog('🔄 데이터 저장 시도...');
+               console.log('🔄 데이터 저장 시도...');
                saveDataToLocalStorage();
-               debugLog('🔄 UI 업데이트 시도...');
+               console.log('🔄 UI 업데이트 시도...');
                updateUI();
                
                const totalShots = currentData.breakdown_data.shots ? currentData.breakdown_data.shots.length : 0;
@@ -1867,20 +1832,20 @@ function createTestData() {
                    const totalScenes = currentData.breakdown_data.scenes ? currentData.breakdown_data.scenes.length : 0;
                    const totalSequences = currentData.breakdown_data.sequences.length;
                    
-                   debugLog(`✅ 백업 복원 완료: ${totalSequences}개 시퀀스, ${totalScenes}개 씬, ${totalShots}개 샷`);
-                   debugLog('📁 전체 데이터 구조:', currentData);
+                   console.log(`✅ 백업 복원 완료: ${totalSequences}개 시퀀스, ${totalScenes}개 씬, ${totalShots}개 샷`);
+                   console.log('📁 전체 데이터 구조:', currentData);
                    
                    // 샷 데이터 상세 확인
                    if (currentData.breakdown_data.shots && currentData.breakdown_data.shots.length > 0) {
-                       debugLog('📊 Shots 데이터 확인:');
+                       console.log('📊 Shots 데이터 확인:');
                        currentData.breakdown_data.shots.slice(0, 5).forEach(shot => {
-                           debugLog(`  - ${shot.id}: "${shot.title}" (scene_id: ${shot.scene_id})`);
+                           console.log(`  - ${shot.id}: "${shot.title}" (scene_id: ${shot.scene_id})`);
                        });
                        if (currentData.breakdown_data.shots.length > 5) {
-                           debugLog(`  ... 외 ${currentData.breakdown_data.shots.length - 5}개`);
+                           console.log(`  ... 외 ${currentData.breakdown_data.shots.length - 5}개`);
                        }
                    } else {
-                       debugWarn('⚠️ shots 배열이 비어있거나 없습니다!');
+                       console.warn('⚠️ shots 배열이 비어있거나 없습니다!');
                        
                        // shot_ids 확인
                        if (currentData.breakdown_data.scenes) {
@@ -1889,10 +1854,10 @@ function createTestData() {
                            }, 0);
                            
                            if (totalShotIds > 0) {
-                               debugWarn(`⚠️ ${totalShotIds}개의 shot_id가 있지만 shots 데이터가 없습니다.`);
+                               console.warn(`⚠️ ${totalShotIds}개의 shot_id가 있지만 shots 데이터가 없습니다.`);
                                currentData.breakdown_data.scenes.forEach(scene => {
                                    if (scene.shot_ids && scene.shot_ids.length > 0) {
-                                       debugLog(`  ${scene.id}: shot_ids = [${scene.shot_ids.join(', ')}]`);
+                                       console.log(`  ${scene.id}: shot_ids = [${scene.shot_ids.join(', ')}]`);
                                    }
                                });
                            }
@@ -1980,7 +1945,7 @@ function createTestData() {
                if (!hasStage2Structure && 
                    (!currentData?.breakdown_data?.sequences || currentData.breakdown_data.sequences.length === 0) &&
                    !currentData?.stage2_data) {
-                   debugWarn('⚠️ Stage 2 구조가 없어도 Stage 8 데이터를 처리합니다.');
+                   console.warn('⚠️ Stage 2 구조가 없어도 Stage 8 데이터를 처리합니다.');
                }
                if (!currentData || !currentData.breakdown_data || !currentData.breakdown_data.shots || currentData.breakdown_data.shots.length === 0) {
                    message = '오디오 데이터를 병합하려면 먼저 유효한 기본 프로젝트 데이터(샷 포함)를 로드해야 합니다.';
@@ -2077,7 +2042,7 @@ function createTestData() {
 							// generation_settings 저장 (선택된 AI 도구 정보 포함)
 							if (newData.generation_settings) {
 								window.stage6ImagePrompts.generation_settings = newData.generation_settings;
-								debugLog('📌 Stage 6 generation_settings:', newData.generation_settings);
+								console.log('📌 Stage 6 generation_settings:', newData.generation_settings);
 							}
 
 							newData.shots.forEach(shotData => {
@@ -2092,15 +2057,15 @@ function createTestData() {
 									// 디버깅: Universal과 Nanobana 프롬프트 확인
 									if (imageData.prompts) {
 										if (imageData.prompts.universal) {
-											debugLog(`✅ Stage 6 Universal 프롬프트 발견: ${shotId} - ${imageId}`);
+											console.log(`✅ Stage 6 Universal 프롬프트 발견: ${shotId} - ${imageId}`);
 										}
 										if (imageData.prompts.nanobana) {
-											debugLog(`✅ Stage 6 Nanobana 프롬프트 발견: ${shotId} - ${imageId}`);
+											console.log(`✅ Stage 6 Nanobana 프롬프트 발견: ${shotId} - ${imageId}`);
 										}
 									}
 								});
 								
-								debugLog(`📌 Stage 6 샷 ${shotId} 저장 완료:`, Object.keys(window.stage6ImagePrompts[shotId]).length, '개 이미지');
+								console.log(`📌 Stage 6 샷 ${shotId} 저장 완료:`, Object.keys(window.stage6ImagePrompts[shotId]).length, '개 이미지');
 							});
 
                     // Stage 6 데이터 localStorage에 저장
@@ -2216,8 +2181,8 @@ function createTestData() {
 
 						// 2. 스테이지 6 (샷별 AI 이미지 프롬프트) 병합
 						else if (newData.stage === 6 && newData.scene_info && newData.shots) {
-							debugLog('📌 Stage 6 데이터 감지됨');
-							debugLog('Stage 6 shots 개수:', newData.shots.length);
+							console.log('📌 Stage 6 데이터 감지됨');
+							console.log('Stage 6 shots 개수:', newData.shots.length);
 							
                     // Stage 2 구조 확인 (완화된 체크)
                    if (!hasStage2Structure && 
@@ -2234,9 +2199,9 @@ function createTestData() {
 							}
 
 							// 현재 로드된 샷 ID 확인
-							debugLog('🔍 현재 로드된 Stage 5 샷 ID 목록:');
+							console.log('🔍 현재 로드된 Stage 5 샷 ID 목록:');
 							currentData.breakdown_data.shots.forEach(shot => {
-								debugLog(`  - ${shot.id}`);
+								console.log(`  - ${shot.id}`);
 							});
 
 							let missingShots = [];
@@ -2244,7 +2209,7 @@ function createTestData() {
 							
 							newData.shots.forEach(newShotData => {
 								const shotIdToFind = newShotData.shot_id;
-								debugLog(`🔎 Stage 6 샷 매칭 시도: ${shotIdToFind}`);
+								console.log(`🔎 Stage 6 샷 매칭 시도: ${shotIdToFind}`);
 								
 								// 정확한 ID 매칭 시도
 								let existingShot = currentData.breakdown_data.shots.find(shot => shot.id === shotIdToFind);
@@ -2257,7 +2222,7 @@ function createTestData() {
 									);
 									
 									if (existingShot) {
-										debugLog(`  ✅ 공백 제거 후 매칭 성공: ${existingShot.id}`);
+										console.log(`  ✅ 공백 제거 후 매칭 성공: ${existingShot.id}`);
 									}
 								}
 
@@ -2269,11 +2234,11 @@ function createTestData() {
 
 								if (existingShot) {
 									successCount++;
-									debugLog(`  ✅ 매칭 성공: ${shotIdToFind} → ${existingShot.id}`);
+									console.log(`  ✅ 매칭 성공: ${shotIdToFind} → ${existingShot.id}`);
 
 									// Stage 6의 프롬프트 정보만 가져오기
 									if (newShotData.images && newShotData.images.length > 0) {
-										debugLog(`    📝 이미지 프롬프트 병합 중... (${newShotData.images.length}개 이미지)`);
+										console.log(`    📝 이미지 프롬프트 병합 중... (${newShotData.images.length}개 이미지)`);
 										
 										// image_design_plans 생성 (없는 경우)
 										if (!existingShot.image_design_plans) {
@@ -2452,7 +2417,7 @@ function createTestData() {
 					else if (newData.schema_version !== "1.1.0" && // v1.1.0은 여기서 처리하지 않음
                     newData.film_metadata && newData.film_metadata.current_scene !== undefined && newData.breakdown_data && 
                     newData.breakdown_data.shots) { // shots 배열이 있으면 Stage 5
-               debugLog('📌 Stage 5 씬 데이터로 인식됨 (v1.1.0이 아님)');
+               console.log('📌 Stage 5 씬 데이터로 인식됨 (v1.1.0이 아님)');
                // Stage 2 구조 확인 (일반적인 Stage 5 데이터의 경우)
                // v1.1.0은 이미 완전한 구조를 가지고 있으므로 위에서 이미 처리됨
                if (!hasStage2Structure && 
@@ -2586,7 +2551,7 @@ function createTestData() {
                     newData.breakdown_data.shots) { // shots 배열이 있으면 전체 Stage 5 데이터
                
                // schema_version 확인 로그
-               debugLog('📚 JSON 버전 정보:', {
+               console.log('📚 JSON 버전 정보:', {
                    schema_version: newData.schema_version,
                    version: newData.version,
                    current_stage_name: newData.current_stage_name,
@@ -2597,37 +2562,22 @@ function createTestData() {
                
                // v6.0 형식은 먼저 변환
                if (newData.version === "6.0" && !newData.breakdown_data.sequences) {
-                   debugLog('🔄 v6.0 형식 감지 - 변환 필요');
+                   console.log('🔄 v6.0 형식 감지 - 변환 필요');
                    const convertedData = convertStage5V5Format(newData);
                    if (convertedData) {
                        newData = convertedData;
-                       debugLog('✅ v6.0 형식 변환 완료');
+                       console.log('✅ v6.0 형식 변환 완료');
                    }
                }
                
                // v1.1.0 형식 명시적 처리
                if (newData.schema_version === "1.1.0") {
-                   debugLog('✅ v1.1.0 형식 JSON 파일 감지 - 직접 로드');
+                   console.log('✅ v1.1.0 형식 JSON 파일 감지 - 직접 로드');
                    newData.hasStage2Structure = true;
                }
                
                currentData = newData;
                window.currentData = currentData;
-               
-               // ⭐ 중요 디버깅: currentData 설정 후 확인
-               console.log('🔴 currentData 설정 완료:', {
-                   sequences: currentData.breakdown_data.sequences?.length || 0,
-                   scenes: currentData.breakdown_data.scenes?.length || 0,
-                   shots: currentData.breakdown_data.shots?.length || 0,
-                   sceneDetails: currentData.breakdown_data.scenes?.map(s => ({
-                       id: s.id,
-                       title: s.title,
-                       sequence_id: s.sequence_id
-                   }))
-               });
-               
-               // 데이터 구조 정합성 검증
-               validateDataIntegrity(currentData);
                
                // video_prompts 데이터가 있으면 stage7VideoPrompts에 저장
                if (newData.video_prompts) {
@@ -2651,38 +2601,38 @@ function createTestData() {
                        window.stage7VideoPrompts[shotId][imageId] = promptData;
                    });
                    
-                   debugLog('✅ video_prompts 데이터를 stage7VideoPrompts에 저장:', Object.keys(window.stage7VideoPrompts).length, '개 샷');
+                   console.log('✅ video_prompts 데이터를 stage7VideoPrompts에 저장:', Object.keys(window.stage7VideoPrompts).length, '개 샷');
                }
                
                // 시퀀스 데이터 확인
-               debugLog('📂 Stage 5 데이터 로드 - 시퀀스 개수:', currentData.breakdown_data.sequences.length);
-               debugLog('📂 시퀀스 목록:', currentData.breakdown_data.sequences.map(s => `${s.id}: ${s.title}`));
+               console.log('📂 Stage 5 데이터 로드 - 시퀀스 개수:', currentData.breakdown_data.sequences.length);
+               console.log('📂 시퀀스 목록:', currentData.breakdown_data.sequences.map(s => `${s.id}: ${s.title}`));
                
                // shots 배열 확인 및 디버깅
                if (currentData.breakdown_data.shots && currentData.breakdown_data.shots.length > 0) {
-                   debugLog('✅ shots 배열 발견:', currentData.breakdown_data.shots.length + '개');
-                   debugLog('📊 샷 샘플 (처음 5개):');
+                   console.log('✅ shots 배열 발견:', currentData.breakdown_data.shots.length + '개');
+                   console.log('📊 샷 샘플 (처음 5개):');
                    currentData.breakdown_data.shots.slice(0, 5).forEach(shot => {
-                       debugLog(`  - ${shot.id}: "${shot.title}" (scene_id: ${shot.scene_id})`);
+                       console.log(`  - ${shot.id}: "${shot.title}" (scene_id: ${shot.scene_id})`);
                    });
                } else {
-                   debugWarn('⚠️ shots 배열이 없습니다!');
+                   console.warn('⚠️ shots 배열이 없습니다!');
                }
                
                // 각 시퀀스의 샷 정보 디버깅
                currentData.breakdown_data.sequences.forEach(seq => {
                    const seqScenes = currentData.breakdown_data.scenes.filter(scene => scene.sequence_id === seq.id);
-                   debugLog(`🎬 시퀀스 ${seq.id}의 씬과 샷 정보:`);
+                   console.log(`🎬 시퀀스 ${seq.id}의 씬과 샷 정보:`);
                    seqScenes.forEach(scene => {
                        const shots = scene.shot_ids || [];
-                       debugLog(`  - ${scene.id}: ${shots.length}개 샷`);
+                       console.log(`  - ${scene.id}: ${shots.length}개 샷`);
                        shots.forEach(shotId => {
                            const shot = currentData.breakdown_data.shots.find(s => s.id === shotId);
                            if (shot) {
                                const hasImagePrompts = shot.image_prompts && Object.keys(shot.image_prompts).some(key => 
                                    shot.image_prompts[key].main_prompt || shot.image_prompts[key].main_prompt_translated
                                );
-                               debugLog(`    - ${shotId}: 이미지프롬프트=${hasImagePrompts}`);
+                               console.log(`    - ${shotId}: 이미지프롬프트=${hasImagePrompts}`);
                            }
                        });
                    });
@@ -2808,188 +2758,13 @@ function createTestData() {
    reader.readAsText(file);
    event.target.value = '';
        }
-       
-   // 데이터 구조 정합성 검증 함수
-   function validateDataIntegrity(data) {
-       if (!data || !data.breakdown_data) {
-           console.error('❌ 데이터 구조가 없음');
-           return false;
-       }
-       
-       const bd = data.breakdown_data;
-       const errors = [];
-       const warnings = [];
-       
-       // 1. 필수 배열 확인
-       if (!Array.isArray(bd.sequences)) bd.sequences = [];
-       if (!Array.isArray(bd.scenes)) bd.scenes = [];
-       if (!Array.isArray(bd.shots)) bd.shots = [];
-       
-       // 2. 중복 ID 검사
-       const sequenceIds = new Set();
-       const sceneIds = new Set();
-       const shotIds = new Set();
-       
-       // 시퀀스 중복 검사 및 정규화
-       bd.sequences = bd.sequences.filter((seq, index) => {
-           // sequence_id를 id로 정규화
-           if (seq.sequence_id && !seq.id) {
-               seq.id = seq.sequence_id;
-               delete seq.sequence_id;
-           }
-           
-           // title이 없으면 name 필드를 title로 복사
-           if (!seq.title && seq.name) {
-               seq.title = seq.name;
-           }
-           
-           if (!seq.id) {
-               warnings.push(`시퀀스 ${index}에 ID가 없음`);
-               return false;
-           }
-           
-           if (sequenceIds.has(seq.id)) {
-               warnings.push(`중복 시퀀스 ID: ${seq.id}`);
-               return false;
-           }
-           sequenceIds.add(seq.id);
-           return true;
-       });
-       
-       // 씬 중복 검사 및 정규화
-       bd.scenes = bd.scenes.filter((scene, index) => {
-           // scene_id를 id로 정규화
-           if (scene.scene_id && !scene.id) {
-               scene.id = scene.scene_id;
-               delete scene.scene_id;
-           }
-           
-           if (!scene.id) {
-               warnings.push(`씬 ${index}에 ID가 없음`);
-               return false;
-           }
-           
-           if (sceneIds.has(scene.id)) {
-               warnings.push(`중복 씬 ID: ${scene.id}`);
-               return false;
-           }
-           sceneIds.add(scene.id);
-           
-           // sequence_id 검증
-           if (!scene.sequence_id) {
-               // 시퀀스가 1개뿐이면 자동 할당
-               if (bd.sequences.length === 1) {
-                   scene.sequence_id = bd.sequences[0].id;
-                   warnings.push(`씬 ${scene.id}에 시퀀스 자동 할당: ${scene.sequence_id}`);
-               } else {
-                   errors.push(`씬 ${scene.id}에 sequence_id가 없음`);
-               }
-           } else if (!sequenceIds.has(scene.sequence_id)) {
-               // 잘못된 sequence_id 수정
-               if (bd.sequences.length === 1) {
-                   const oldId = scene.sequence_id;
-                   scene.sequence_id = bd.sequences[0].id;
-                   warnings.push(`씬 ${scene.id}의 sequence_id 수정: ${oldId} → ${scene.sequence_id}`);
-               } else {
-                   errors.push(`씬 ${scene.id}의 sequence_id가 유효하지 않음: ${scene.sequence_id}`);
-               }
-           }
-           
-           return true;
-       });
-       
-       // 샷 중복 검사 및 정규화
-       bd.shots = bd.shots.filter((shot, index) => {
-           // shot_id를 id로 정규화
-           if (shot.shot_id && !shot.id) {
-               shot.id = shot.shot_id;
-               delete shot.shot_id;
-           }
-           
-           if (!shot.id) {
-               warnings.push(`샷 ${index}에 ID가 없음`);
-               return false;
-           }
-           
-           if (shotIds.has(shot.id)) {
-               warnings.push(`중복 샷 ID: ${shot.id}`);
-               return false;
-           }
-           shotIds.add(shot.id);
-           
-           // scene_id 검증
-           if (!shot.scene_id) {
-               // 씬이 1개뿐이면 자동 할당
-               if (bd.scenes.length === 1) {
-                   shot.scene_id = bd.scenes[0].id;
-                   warnings.push(`샷 ${shot.id}에 씬 자동 할당: ${shot.scene_id}`);
-               } else {
-                   errors.push(`샷 ${shot.id}에 scene_id가 없음`);
-               }
-           } else if (!sceneIds.has(shot.scene_id)) {
-               // 잘못된 scene_id 수정
-               if (bd.scenes.length === 1) {
-                   const oldId = shot.scene_id;
-                   shot.scene_id = bd.scenes[0].id;
-                   warnings.push(`샷 ${shot.id}의 scene_id 수정: ${oldId} → ${shot.scene_id}`);
-               } else {
-                   errors.push(`샷 ${shot.id}의 scene_id가 유효하지 않음: ${shot.scene_id}`);
-               }
-           }
-           
-           return true;
-       });
-       
-       // 3. 씬의 샷 배열 재구성
-       bd.scenes.forEach(scene => {
-           scene.shots = bd.shots
-               .filter(shot => shot.scene_id === scene.id)
-               .map(shot => shot.id);
-           
-           console.log(`📝 씬 ${scene.id}에 ${scene.shots.length}개 샷 연결:`, scene.shots);
-       });
-       
-       // 4. 시퀀스의 씬 배열 재구성
-       bd.sequences.forEach(seq => {
-           seq.scenes = bd.scenes
-               .filter(scene => scene.sequence_id === seq.id)
-               .map(scene => ({
-                   id: scene.id,
-                   sequence_id: seq.id,
-                   name: scene.name || scene.title || '',
-                   description: scene.description || ''
-               }));
-           
-           console.log(`📂 시퀀스 ${seq.id}에 ${seq.scenes.length}개 씬 연결:`, seq.scenes.map(s => s.id));
-       });
-       
-       // 5. 결과 출력
-       if (errors.length > 0) {
-           console.error('❌ 데이터 정합성 오류:', errors);
-       }
-       
-       if (warnings.length > 0) {
-           console.warn('⚠️ 데이터 정합성 경고:', warnings);
-       }
-       
-       console.log('✅ 데이터 정합성 검증 완료:', {
-           sequences: bd.sequences.length,
-           scenes: bd.scenes.length,
-           shots: bd.shots.length,
-           errors: errors.length,
-           warnings: warnings.length
-       });
-       
-       return errors.length === 0;
-   }
-       
    // 새로운 함수: Stage 2 데이터 처리
 			function handleStage2Data(jsonData) {
 
 				try {
 					// 광고 프레임워크 처리 추가 - scenario_data를 narrative_data로 매핑
 					if (jsonData.scenario_data && !jsonData.narrative_data) {
-						debugLog('🎯 광고 프레임워크 데이터 감지 - 자동 변환 시작');
+						console.log('🎯 광고 프레임워크 데이터 감지 - 자동 변환 시작');
 						jsonData.narrative_data = jsonData.scenario_data;
 						
 						// screenplay_data를 scenario_data로 매핑
@@ -3137,7 +2912,7 @@ function createTestData() {
 				
 				// CF 프로젝트인 경우 모든 씬 데이터를 처리
 				if (isCFProject) {
-					debugLog('CF 프로젝트 타입 감지: 모든 씬 데이터 처리');
+					console.log('CF 프로젝트 타입 감지: 모든 씬 데이터 처리');
 					
 					// Stage 5에서 제공한 모든 씬 정보 추가
 					if (newScenes.length > 0) {
@@ -3339,9 +3114,6 @@ function createTestData() {
 				// 타임스탬프 업데이트
 				currentData.timestamp = new Date().toISOString();
 				currentData.current_stage_name = "scenario_breakdown";
-				
-				// 데이터 정합성 검증
-				validateDataIntegrity(currentData);
 
 				// 저장 및 UI 업데이트
 				saveDataToLocalStorage();
@@ -3389,13 +3161,13 @@ function createTestData() {
        // 전체 펼치기/접기
        // 전체 펼치기 기능
        function expandAll() {
-   debugLog('Expand all called');
-   debugLog('Found scenes-container:', document.querySelectorAll('.scenes-container').length);
-   debugLog('Found shots-container:', document.querySelectorAll('.shots-container').length);
+   console.log('Expand all called');
+   console.log('Found scenes-container:', document.querySelectorAll('.scenes-container').length);
+   console.log('Found shots-container:', document.querySelectorAll('.shots-container').length);
    
    // 모든 시퀀스 컨테이너 펼치기
    document.querySelectorAll('.scenes-container').forEach(container => {
-       debugLog('Expanding scene container:', container);
+       console.log('Expanding scene container:', container);
        container.classList.remove('collapsed');
        container.style.maxHeight = 'none';
        container.style.overflow = 'visible';
@@ -3414,7 +3186,7 @@ function createTestData() {
    // 모든 샷 컨테이너 펼치기
    setTimeout(() => {
        document.querySelectorAll('.shots-container').forEach(container => {
-           debugLog('Expanding shots container:', container);
+           console.log('Expanding shots container:', container);
            container.classList.remove('collapsed');
            container.style.maxHeight = 'none';
            container.style.overflow = 'visible';
@@ -3437,13 +3209,13 @@ function createTestData() {
 
        // 전체 접기 기능
        function collapseAll() {
-   debugLog('Collapse all called');
-   debugLog('Found scenes-container:', document.querySelectorAll('.scenes-container').length);
-   debugLog('Found shots-container:', document.querySelectorAll('.shots-container').length);
+   console.log('Collapse all called');
+   console.log('Found scenes-container:', document.querySelectorAll('.scenes-container').length);
+   console.log('Found shots-container:', document.querySelectorAll('.shots-container').length);
    
    // 모든 샷 컨테이너 접기 먼저
    document.querySelectorAll('.shots-container').forEach(container => {
-       debugLog('Collapsing shots container:', container);
+       console.log('Collapsing shots container:', container);
        container.classList.add('collapsed');
        container.style.maxHeight = '0';
        container.style.overflow = 'hidden';
@@ -3462,7 +3234,7 @@ function createTestData() {
    // 모든 씬 컨테이너 접기
    setTimeout(() => {
        document.querySelectorAll('.scenes-container').forEach(container => {
-           debugLog('Collapsing scene container:', container);
+           console.log('Collapsing scene container:', container);
            container.classList.add('collapsed');
            container.style.maxHeight = '0';
            container.style.overflow = 'hidden';
@@ -3611,13 +3383,11 @@ function createTestData() {
 							scene => scene.sequence_id === sequence.id
 						).length;
 						
-						// title이 없는 경우 name이나 id를 사용
-						const sequenceTitle = sequence.title || sequence.name || sequence.id;
 						html += `
 							<div class="sequence-item">
 								<div class="sequence-header" data-sequence-id="${sequence.id}">
 									<span class="toggle-icon">▶</span>
-									<span>${sequence.id}: ${sequenceTitle}</span>
+									<span>${sequence.id}: ${sequence.title}</span>
 								</div>
 								<div class="scenes-container collapsed" id="scenes-${sequence.id}"></div>
 							</div>`;
@@ -3705,22 +3475,10 @@ function createTestData() {
    try {
        if (!currentData || !currentData.breakdown_data) return;
        
-       debugLog(`\n🔍 loadScenesForSequence 호출 - 시퀀스: ${sequenceId}`);
-       debugLog('현재 shots 배열 상태:', currentData.breakdown_data.shots ? currentData.breakdown_data.shots.length + '개' : '없음');
+       console.log(`\n🔍 loadScenesForSequence 호출 - 시퀀스: ${sequenceId}`);
+       console.log('현재 shots 배열 상태:', currentData.breakdown_data.shots ? currentData.breakdown_data.shots.length + '개' : '없음');
        
        const scenes = currentData.breakdown_data.scenes.filter(scene => scene.sequence_id === sequenceId);
-       
-       // ⭐ 중요 디버깅: scenes 배열 확인
-       console.log('🔴 scenes 배열 상태:', {
-           total: scenes.length,
-           scenes: scenes.map(s => ({
-               id: s.id,
-               title: s.title,
-               sequence_id: s.sequence_id,
-               hasScenarioText: !!s.original_scenario?.scenario_text
-           }))
-       });
-       
        if (scenes.length === 0) {
            container.innerHTML = '<div style="padding: 15px 40px; color: #ccc; font-size: 0.9rem;">씬이 없습니다</div>';
            return;
@@ -3750,34 +3508,34 @@ function createTestData() {
                    });
                    
                    if (shots.length > 0) {
-                       debugLog(`✅ ${scene.id}: shots 배열에서 ${shots.length}개 샷 찾음`);
+                       console.log(`✅ ${scene.id}: shots 배열에서 ${shots.length}개 샷 찾음`);
                        shots.forEach(s => {
-                           debugLog(`    - ${s.id}: "${s.title}"`);
+                           console.log(`    - ${s.id}: "${s.title}"`);
                        });
                    } else {
-                       debugLog(`❌ ${scene.id}: shots 배열에서 매칭되는 샷을 찾지 못함`);
+                       console.log(`❌ ${scene.id}: shots 배열에서 매칭되는 샷을 찾지 못함`);
                        // 디버깅을 위한 상세 정보
-                       debugLog(`   scene.id: "${scene.id}" (type: ${typeof scene.id}, length: ${scene.id.length})`);
+                       console.log(`   scene.id: "${scene.id}" (type: ${typeof scene.id}, length: ${scene.id.length})`);
                        // shots 배열이 있을 때만 map 수행
                        if (currentData.breakdown_data.shots && Array.isArray(currentData.breakdown_data.shots) && currentData.breakdown_data.shots.length > 0) {
                            const sceneIds = currentData.breakdown_data.shots.map(s => s.scene_id);
-                           debugLog(`   첫 번째 shot의 scene_id: "${sceneIds[0]}" (type: ${typeof sceneIds[0]}, length: ${sceneIds[0] ? sceneIds[0].length : 0})`);
-                           debugLog(`   shots의 scene_id 목록:`, [...new Set(sceneIds)]);
+                           console.log(`   첫 번째 shot의 scene_id: "${sceneIds[0]}" (type: ${typeof sceneIds[0]}, length: ${sceneIds[0] ? sceneIds[0].length : 0})`);
+                           console.log(`   shots의 scene_id 목록:`, [...new Set(sceneIds)]);
                        } else {
-                           debugLog(`   shots 배열이 비어있거나 null입니다.`);
+                           console.log(`   shots 배열이 비어있거나 null입니다.`);
                        }
                    }
                } else {
-                   debugLog(`⚠️ ${scene.id}: shots 배열이 없거나 비어있음`);
+                   console.log(`⚠️ ${scene.id}: shots 배열이 없거나 비어있음`);
                }
                
                // 방법 2: scene.shot_ids 사용
                if (shots.length === 0 && scene.shot_ids && Array.isArray(scene.shot_ids) && scene.shot_ids.length > 0) {
-                   debugLog(`⚠️ ${scene.id}: shot_ids로 샷 생성 중 (${scene.shot_ids.join(', ')})`);
+                   console.log(`⚠️ ${scene.id}: shot_ids로 샷 생성 중 (${scene.shot_ids.join(', ')})`);
                    shots = scene.shot_ids.map((shotId, index) => {
                        const existingShot = currentData.breakdown_data.shots?.find(s => s.id === shotId);
                        if (existingShot) {
-                           debugLog(`  ✅ ${shotId}: "${existingShot.title}" 찾음`);
+                           console.log(`  ✅ ${shotId}: "${existingShot.title}" 찾음`);
                            return existingShot;
                        }
                        
@@ -3790,7 +3548,7 @@ function createTestData() {
                            }
                        }
                        
-                       debugLog(`  ❌ ${shotId}: 기본 제목 "${shotTitle}" 사용`);
+                       console.log(`  ❌ ${shotId}: 기본 제목 "${shotTitle}" 사용`);
                        return {
                            id: shotId,
                            title: shotTitle,
@@ -3973,7 +3731,7 @@ function createTestData() {
        // 샷 선택
        function selectShot(shotId, element = null) {
    try {
-       debugLog('🎯 selectShot 호출됨 - shotId:', shotId);
+       console.log('🎯 selectShot 호출됨 - shotId:', shotId);
        
        if (!currentData || !currentData.breakdown_data || !currentData.breakdown_data.shots) {
            console.error('❌ selectShot: currentData 또는 shots 데이터 없음');
@@ -3988,14 +3746,14 @@ function createTestData() {
        
        const shot = currentData.breakdown_data.shots.find(s => s.id === shotId);
        if (shot) {
-           debugLog('✅ selectShot: 샷 찾음:', shot);
+           console.log('✅ selectShot: 샷 찾음:', shot);
            const scene = currentData.breakdown_data.scenes.find(sc => sc.id === shot.scene_id);
            if (scene) {
                document.querySelector(`.scene-header[data-scene-id="${scene.id}"]`)?.classList.add('active');
                document.querySelector(`.sequence-header[data-sequence-id="${scene.sequence_id}"]`)?.classList.add('active');
            }
        } else {
-           debugWarn('⚠️ selectShot: 샷을 찾을 수 없음 - shotId:', shotId);
+           console.warn('⚠️ selectShot: 샷을 찾을 수 없음 - shotId:', shotId);
        }
        
        const currentElement = element || document.querySelector(`.shot-item[data-shot-id="${shotId}"]`);
@@ -4492,8 +4250,7 @@ function createTestData() {
            return;
        }
        
-       const sequenceTitle = sequence.title || sequence.name || sequence.id;
-       const fileName = `${sequence.id}_${sequenceTitle.replace(/[^a-zA-Z0-9가-힣]/g, '_')}`;
+       const fileName = `${sequence.id}_${sequence.title.replace(/[^a-zA-Z0-9가-힣]/g, '_')}`;
        
        if (format === 'txt') {
            const blob = new Blob([sequenceText], { type: 'text/plain;charset=utf-8' });
@@ -4517,26 +4274,7 @@ function createTestData() {
        // 샷 내용 표시 (모듈화된 탭 시스템 사용)
        function showShotContent(shotId) {
    try {
-       debugLog('🎬 showShotContent 호출됨 - shotId:', shotId);
-       
-       // 디버깅: 샷의 시퀀스 정보 확인
-       const debugShot = currentData?.breakdown_data?.shots?.find(s => s.id === shotId);
-       if (debugShot) {
-           const scene = currentData?.breakdown_data?.scenes?.find(sc => sc.id === debugShot.scene_id);
-           const sequence = scene ? currentData?.breakdown_data?.sequences?.find(seq => seq.id === scene.sequence_id) : null;
-           
-           console.log('🔍 샷 계층 구조:', {
-               shot: { id: debugShot.id, title: debugShot.title, scene_id: debugShot.scene_id },
-               scene: scene ? { id: scene.id, title: scene.title, sequence_id: scene.sequence_id } : 'not found',
-               sequence: sequence ? { id: sequence.id, title: sequence.title || sequence.name || sequence.id } : 'not found'
-           });
-           
-           // 사이드바에 표시될 정보
-           if (!sequence && scene) {
-               console.warn('⚠️ 씬의 시퀀스를 찾을 수 없음:', scene.sequence_id);
-               console.log('사용 가능한 시퀀스:', currentData?.breakdown_data?.sequences?.map(s => s.id));
-           }
-       }
+       console.log('🎬 showShotContent 호출됨 - shotId:', shotId);
        
        if (!currentData || !currentData.breakdown_data || !currentData.breakdown_data.shots) {
            console.error('❌ currentData가 없거나 shots 데이터가 없습니다:', currentData);
@@ -4547,11 +4285,11 @@ function createTestData() {
        const shot = currentData.breakdown_data.shots.find(s => s.id === shotId);
        if (!shot) {
            console.error('❌ 샷을 찾을 수 없음 - shotId:', shotId);
-           debugLog('사용 가능한 샷 ID:', currentData.breakdown_data.shots.map(s => s.id));
+           console.log('사용 가능한 샷 ID:', currentData.breakdown_data.shots.map(s => s.id));
            return;
        }
        
-       debugLog('✅ 샷 데이터 찾음:', shot);
+       console.log('✅ 샷 데이터 찾음:', shot);
        
        const contentTitle = document.getElementById('content-title');
        const contentSubtitle = document.getElementById('content-subtitle');
@@ -4576,7 +4314,7 @@ function createTestData() {
        //     window.showShotContentModular(shotId);
        // } else {
        //     // 폴백: 기존 방식 사용
-       //     debugWarn('Modular system not loaded, using fallback');
+       //     console.warn('Modular system not loaded, using fallback');
        //     showShotContentFallback(shotId);
        // }
        
@@ -4626,20 +4364,20 @@ function createTestData() {
        </div>`;
    
    // 초기 로드 시 디버깅
-   debugLog('🔍 샷 컨텐츠 로드 완료. 디버깅을 위해 debugTabContent() 실행...');
+   console.log('🔍 샷 컨텐츠 로드 완료. 디버깅을 위해 debugTabContent() 실행...');
    setTimeout(() => {
        if (window.debugTabContent) window.debugTabContent();
        // 오디오 섹션 강제 숨김
        document.querySelectorAll('.tab-content:not(#tab-audio) .audio-section').forEach(section => {
            section.style.display = 'none';
            section.style.visibility = 'hidden';
-           debugWarn('⚠️ 오디오 섹션이 잘못된 위치에서 발견되어 숨김 처리:', section.parentElement.id);
+           console.warn('⚠️ 오디오 섹션이 잘못된 위치에서 발견되어 숨김 처리:', section.parentElement.id);
        });
        // 음악 섹션 강제 숨김
        document.querySelectorAll('.tab-content:not(#tab-music) .music-ost-section').forEach(section => {
            section.style.display = 'none';
            section.style.visibility = 'hidden';
-           debugWarn('⚠️ 음악 섹션이 잘못된 위치에서 발견되어 숨김 처리:', section.parentElement.id);
+           console.warn('⚠️ 음악 섹션이 잘못된 위치에서 발견되어 숨김 처리:', section.parentElement.id);
        });
    }, 100);
        }
@@ -4651,7 +4389,7 @@ function createTestData() {
        if (!tabContainer) return;
        
        // 디버깅용 로그
-       debugLog(`🔄 탭 전환 시작: ${tabName}`);
+       console.log(`🔄 탭 전환 시작: ${tabName}`);
        
        // 모든 탭 버튼 비활성화
        tabContainer.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
@@ -4719,7 +4457,7 @@ function createTestData() {
                    setTimeout(() => {
                        if (typeof rebindPromptButtons === 'function') {
                            rebindPromptButtons();
-                           debugLog('✅ 이미지 탭 버튼 재바인딩 호출');
+                           console.log('✅ 이미지 탭 버튼 재바인딩 호출');
                        } else {
                            console.error('❌ rebindPromptButtons 함수를 찾을 수 없습니다');
                        }
@@ -4728,7 +4466,7 @@ function createTestData() {
                
                // 디버깅: 활성 탭의 오디오 섹션 확인
                const audioSections = activeContent.querySelectorAll('.audio-section');
-               debugLog(`✅ ${tabName} 탭 활성화 완료. 오디오 섹션 수: ${audioSections.length}`);
+               console.log(`✅ ${tabName} 탭 활성화 완료. 오디오 섹션 수: ${audioSections.length}`);
            }, 10);
        }
        
@@ -4743,7 +4481,7 @@ function createTestData() {
        
        // 탭 컨텐츠 디버깅 함수
        window.debugTabContent = function() {
-   debugLog('===== 탭 컨텐츠 디버깅 시작 =====');
+   console.log('===== 탭 컨텐츠 디버깅 시작 =====');
    const tabs = document.querySelectorAll('.tab-content');
    
    tabs.forEach(tab => {
@@ -4763,7 +4501,7 @@ function createTestData() {
            el.textContent.includes('🎶')
        );
        
-       debugLog(`
+       console.log(`
 📋 탭: ${tab.id}
 - display: ${window.getComputedStyle(tab).display}
 - visibility: ${window.getComputedStyle(tab).visibility}
@@ -4779,8 +4517,8 @@ function createTestData() {
        if (tab.id !== 'tab-audio' && audioSections.length > 0) {
            console.error(`❌ 오류: ${tab.id}에 오디오 섹션이 발견됨!`);
            audioSections.forEach((section, i) => {
-               debugLog(`  - 오디오 섹션 ${i+1}:`, section);
-               debugLog(`    HTML:`, section.outerHTML.substring(0, 200) + '...');
+               console.log(`  - 오디오 섹션 ${i+1}:`, section);
+               console.log(`    HTML:`, section.outerHTML.substring(0, 200) + '...');
            });
        }
        
@@ -4788,8 +4526,8 @@ function createTestData() {
        if (tab.id !== 'tab-music' && musicSections.length > 0) {
            console.error(`❌ 오류: ${tab.id}에 음악 섹션이 발견됨!`);
            musicSections.forEach((section, i) => {
-               debugLog(`  - 음악 섹션 ${i+1}:`, section);
-               debugLog(`    HTML:`, section.outerHTML.substring(0, 200) + '...');
+               console.log(`  - 음악 섹션 ${i+1}:`, section);
+               console.log(`    HTML:`, section.outerHTML.substring(0, 200) + '...');
            });
        }
        
@@ -4797,13 +4535,13 @@ function createTestData() {
        if (tab.id !== 'tab-audio' && tab.id !== 'tab-info' && tab.id !== 'tab-music' && allTextContaining.length > 0) {
            console.error(`❌ 오류: ${tab.id}에 오디오/음악 관련 텍스트 발견!`);
            allTextContaining.slice(0, 3).forEach((el, i) => {
-               debugLog(`  - 요소 ${i+1}:`, el.tagName, el.className);
-               debugLog(`    텍스트:`, el.textContent.substring(0, 100) + '...');
+               console.log(`  - 요소 ${i+1}:`, el.tagName, el.className);
+               console.log(`    텍스트:`, el.textContent.substring(0, 100) + '...');
            });
        }
    });
    
-   debugLog('===== 탭 컨텐츠 디버깅 종료 =====');
+   console.log('===== 탭 컨텐츠 디버깅 종료 =====');
    return '디버깅 완료 - 콘솔 확인';
        };
 
@@ -4866,7 +4604,7 @@ function createShotInfoTab(shot) {
        // 샷 이미지 탭 생성 (이미지 설계 플랜 방식)
 
 	function createShotImageTab(shot) {
-    debugLog('🖼️ createShotImageTab 시작 (이미지별 프롬프트 표시)');
+    console.log('🖼️ createShotImageTab 시작 (이미지별 프롬프트 표시)');
     try {
 const imageDesign = shot.image_design || {};
 const imageDesignPlans = imageDesign.plans || {};
@@ -4891,7 +4629,7 @@ if (!shot.image_design.ai_generated_images) {
 const aiGeneratedImages = shot.image_design.ai_generated_images;
 
 // Universal 데이터 확인 로그
-debugLog('🎨 createShotImageTab 시작 - 전체 이미지 데이터:', {
+console.log('🎨 createShotImageTab 시작 - 전체 이미지 데이터:', {
     shotId: shot.id,
     imageDesign: shot.image_design,
     aiGeneratedImages: aiGeneratedImages,
@@ -4902,14 +4640,14 @@ const referenceImagesData = shot.reference_images || [];
 
 // Stage 5 CSV 데이터 (csv_mapping)에서 프롬프트 가져오기
 const csvMapping = shot.csv_mapping || {};
-debugLog('🔍 Stage 5 CSV 데이터 확인:', shot.id, Object.keys(csvMapping).length, 'images');
+console.log('🔍 Stage 5 CSV 데이터 확인:', shot.id, Object.keys(csvMapping).length, 'images');
 
 // Stage 6 데이터에서 이미지별 프롬프트 가져오기
 // v1.1.0 형식인 경우 shot.image_prompts를 직접 사용
 let shotStage6Data = {};
 if (shot.image_prompts) {
     // v1.1.0 형식: shot.image_prompts를 직접 사용
-    debugLog('📌 v1.1.0 형식 image_prompts 사용');
+    console.log('📌 v1.1.0 형식 image_prompts 사용');
     // 모든 플랜 이미지에 대해 동일한 프롬프트를 사용하도록 설정
     shotStage6Data = {};
     // Plan별 이미지 ID에 동일한 프롬프트 데이터 매핑
@@ -4930,21 +4668,21 @@ if (shot.image_prompts) {
     
     // Stage 6 데이터 디버깅
     if (Object.keys(shotStage6Data).length > 0) {
-        debugLog('📌 Stage 6 데이터 로드됨:', shot.id);
+        console.log('📌 Stage 6 데이터 로드됨:', shot.id);
         Object.keys(shotStage6Data).forEach(imageId => {
             const imageData = shotStage6Data[imageId];
             if (imageData.prompts) {
                 if (imageData.prompts.universal) {
-                    debugLog(`  ✅ Universal 프롬프트: ${imageId}`);
+                    console.log(`  ✅ Universal 프롬프트: ${imageId}`);
                 }
                 if (imageData.prompts.nanobana) {
-                    debugLog(`  ✅ Nanobana 프롬프트: ${imageId}`);
+                    console.log(`  ✅ Nanobana 프롬프트: ${imageId}`);
                 }
             }
         });
     }
 }
-debugLog('🔍 Stage 6 데이터 확인:', shot.id, Object.keys(shotStage6Data).length, 'images', shotStage6Data);
+console.log('🔍 Stage 6 데이터 확인:', shot.id, Object.keys(shotStage6Data).length, 'images', shotStage6Data);
 
 let planSelectorHtml = '';
 let selectedPlanData = null;
@@ -4967,7 +4705,7 @@ if (complexity === 'simple' && imageDesignPlans.single) {
 // Complex 샷인 경우
 else {
     selectedPlanData = imageDesignPlans[selectedPlan] || imageDesignPlans.A || {};
-    debugLog('📸 선택된 플랜:', selectedPlan, 'images:', selectedPlanData.images?.length);
+    console.log('📸 선택된 플랜:', selectedPlan, 'images:', selectedPlanData.images?.length);
     planSelectorHtml = `
         <div class="image-design-plan-selector">
             <h4>🖌️ 이미지 설계 플랜 선택</h4>
@@ -5062,10 +4800,10 @@ let aiSectionsHtml = '';
 				});
 			}
 			
-			debugLog('📊 선택된 플랜:', selectedPlan, '플랜 데이터:', imageDesignPlans[selectedPlan]);
-			debugLog('📊 모든 플랜 이미지 수집:', allPlanImages.length, '개', allPlanImages);
-			debugLog('📊 Stage 6 데이터 확인:', shotStage6Data);
-			debugLog('📊 CSV 매핑 데이터 확인:', csvMapping);
+			console.log('📊 선택된 플랜:', selectedPlan, '플랜 데이터:', imageDesignPlans[selectedPlan]);
+			console.log('📊 모든 플랜 이미지 수집:', allPlanImages.length, '개', allPlanImages);
+			console.log('📊 Stage 6 데이터 확인:', shotStage6Data);
+			console.log('📊 CSV 매핑 데이터 확인:', csvMapping);
 			
 			if (allPlanImages.length > 0) {
 				// Stage 6에서 선택된 AI 도구 확인
@@ -5158,7 +4896,7 @@ let aiSectionsHtml = '';
 						// 직접 해당 ID의 데이터를 조회 (JSON에 이미 플랜별로 저장됨)
 						const imageStage6Data = shotStage6Data[dataLookupId] || {};
 						const imageCsvData = csvMapping[dataLookupId] || {};
-						debugLog(`  🖼️ AI: ${ai.name}, Plan ${planImage.planId}, Image ${imgIdx + 1}:`, imageId, 'has Stage6:', !!imageStage6Data.prompts, 'has Stage5:', !!imageCsvData.SCENE);
+						console.log(`  🖼️ AI: ${ai.name}, Plan ${planImage.planId}, Image ${imgIdx + 1}:`, imageId, 'has Stage6:', !!imageStage6Data.prompts, 'has Stage5:', !!imageCsvData.SCENE);
 						
 						let imagePrompts = imageStage6Data.prompts?.[ai.id] || {};
 						
@@ -5175,7 +4913,7 @@ let aiSectionsHtml = '';
 								} else {
 									imagePrompts = universalData;
 								}
-								debugLog(`    📌 Universal 프롬프트 로드: ${imageId}`, imagePrompts.prompt?.substring(0, 100) + '...');
+								console.log(`    📌 Universal 프롬프트 로드: ${imageId}`, imagePrompts.prompt?.substring(0, 100) + '...');
 							}
 						} 
 						// nanobana 프롬프트 특별 처리
@@ -5191,7 +4929,7 @@ let aiSectionsHtml = '';
 								} else {
 									imagePrompts = nanobanaData;
 								}
-								debugLog(`    📌 Nanobana 프롬프트 로드: ${imageId}`, imagePrompts.prompt?.substring(0, 100) + '...');
+								console.log(`    📌 Nanobana 프롬프트 로드: ${imageId}`, imagePrompts.prompt?.substring(0, 100) + '...');
 							}
 							// Stage 6 데이터가 없고 Stage 5 CSV 데이터가 있으면 CSV 데이터를 프롬프트로 사용
 							else if (imageCsvData && Object.keys(imageCsvData).length > 0) {
@@ -5350,7 +5088,7 @@ let aiSectionsHtml = '';
 						
 						// 디버깅 로그
 						if (ai.id === 'universal' && imageData.url) {
-							debugLog('🎨 Universal 이미지 URL 발견:', {
+							console.log('🎨 Universal 이미지 URL 발견:', {
 								shotId: shot.id,
 								imageId: imageId,
 								imageIndex: imageIndex,
@@ -5360,7 +5098,7 @@ let aiSectionsHtml = '';
 						
 						// 이미지 로드 확인 (디버깅용)
 						if (ai.id === 'universal') {
-							debugLog('🔍 Universal 이미지 로드 확인:', {
+							console.log('🔍 Universal 이미지 로드 확인:', {
 								imageId,
 								imageIndex,
 								imageData,
@@ -5377,7 +5115,7 @@ let aiSectionsHtml = '';
 								const inputId = `url-input-${shot.id}-${ai.id}-${imageId}`;
 								const inputElement = document.getElementById(inputId);
 								if (inputElement && !inputElement.value) {
-									debugLog(`📝 ${ai.name} URL 입력 필드에 값 설정:`, inputId, imageData.url);
+									console.log(`📝 ${ai.name} URL 입력 필드에 값 설정:`, inputId, imageData.url);
 									inputElement.value = imageData.url;
 								}
 								
@@ -5759,7 +5497,7 @@ const tabHtml = `
 
 // AI 이미지 데이터 확인 및 재검증
 if (selectedPlanData && selectedPlanData.images) {
-    debugLog('🎨 AI 이미지 데이터 검증:', {
+    console.log('🎨 AI 이미지 데이터 검증:', {
         shotId: shot.id,
         planImages: selectedPlanData.images.length,
         universalData: aiGeneratedImages.universal
@@ -5942,13 +5680,13 @@ try {
 		}
 		
 		// 기본값: 첫 번째 슬롯 사용
-		debugWarn('⚠️ imageId를 파싱할 수 없음, 기본값 0 사용:', imageId);
+		console.warn('⚠️ imageId를 파싱할 수 없음, 기본값 0 사용:', imageId);
 		return 0;
 	}
 
 	function updateImageUrl(shotId, aiType, imageId, newUrl) {
 		try {
-			debugLog('📸 updateImageUrl 호출:', { shotId, aiType, imageId, newUrl });
+			console.log('📸 updateImageUrl 호출:', { shotId, aiType, imageId, newUrl });
 			
 			const shot = currentData.breakdown_data.shots.find(s => s.id === shotId);
 			if (!shot) {
@@ -5965,7 +5703,7 @@ try {
 				// dl=0을 raw=1로 변환
 				if (newUrl.includes('dl=0')) {
 					processedUrl = newUrl.replace('dl=0', 'raw=1');
-					debugLog('🔄 Dropbox URL 변환:', newUrl, '→', processedUrl);
+					console.log('🔄 Dropbox URL 변환:', newUrl, '→', processedUrl);
 					showMessage('Dropbox URL이 자동으로 이미지 표시 형식으로 변환되었습니다.', 'success');
 					
 					// input 필드도 변환된 URL로 업데이트
@@ -5978,7 +5716,7 @@ try {
 				else if (!newUrl.includes('raw=1') && !newUrl.includes('dl=1')) {
 					// 파라미터가 없는 경우 raw=1 추가
 					processedUrl = newUrl + (newUrl.includes('?') ? '&' : '?') + 'raw=1';
-					debugLog('🔄 Dropbox URL에 raw=1 추가:', processedUrl);
+					console.log('🔄 Dropbox URL에 raw=1 추가:', processedUrl);
 					
 					// input 필드도 변환된 URL로 업데이트
 					const inputElement = document.querySelector(`input[onchange*="updateImageUrl('${shotId}', '${aiType}', '${imageId}',"]`);
@@ -6003,7 +5741,7 @@ try {
 					originalUrl: newUrl // 원본 URL도 저장
 				};
 				saveImageCacheToLocalStorage();
-				debugLog('💾 URL 캐시 저장:', cacheKey, {
+				console.log('💾 URL 캐시 저장:', cacheKey, {
 					변환된URL: processedUrl,
 					원본URL: newUrl,
 					캐시키: cacheKey
@@ -6055,7 +5793,7 @@ try {
 			shot.image_design.ai_generated_images[aiType][imageIndex].url = processedUrl;
 			
 			// 저장 전 최종 데이터 확인
-			debugLog('✅ Universal 이미지 저장:', {
+			console.log('✅ Universal 이미지 저장:', {
 				aiType,
 				imageId,
 				imageIndex,
@@ -6065,7 +5803,7 @@ try {
 			});
 			
 			const saveResult = saveDataToLocalStorage();
-			debugLog('💾 저장 결과:', saveResult !== false ? '성공' : '실패');
+			console.log('💾 저장 결과:', saveResult !== false ? '성공' : '실패');
 			
 			// 저장 후 currentData를 다시 로드하여 동기화
 			if (saveResult) {
@@ -6075,13 +5813,13 @@ try {
 					const reloadedData = JSON.parse(savedData);
 					currentData = reloadedData;
 					window.currentData = currentData;
-					debugLog('♻️ currentData 재동기화 완료');
+					console.log('♻️ currentData 재동기화 완료');
 				}
 			}
 			
 			// 저장 후 확인 - localStorage에서 직접 읽어와 확인
 			if (aiType === 'universal') {
-				debugLog('🔍 Universal 저장 후 확인:', {
+				console.log('🔍 Universal 저장 후 확인:', {
 					shot: shot.id,
 					universal배열: shot.image_design.ai_generated_images.universal
 				});
@@ -6094,7 +5832,7 @@ try {
 						const parsedData = JSON.parse(savedData);
 						const savedShot = parsedData.breakdown_data.shots.find(s => s.id === shotId);
 						if (savedShot && savedShot.image_design && savedShot.image_design.ai_generated_images) {
-							debugLog('📦 localStorage에 실제 저장된 Universal 데이터:', 
+							console.log('📦 localStorage에 실제 저장된 Universal 데이터:', 
 								savedShot.image_design.ai_generated_images.universal);
 						}
 					} catch (e) {
@@ -6117,7 +5855,7 @@ try {
 			const jsonFileName = getProjectFileName();
 			const cacheKey = `imageUrlCache_${jsonFileName}`;
 			localStorage.setItem(cacheKey, JSON.stringify(imageUrlCache));
-			debugLog('✅ 이미지 캐시 저장 완료:', Object.keys(imageUrlCache).length, '개 항목');
+			console.log('✅ 이미지 캐시 저장 완료:', Object.keys(imageUrlCache).length, '개 항목');
 			return true;
 		} catch (e) {
 			console.error('❌ 이미지 캐시 저장 실패:', e);
@@ -6133,7 +5871,7 @@ try {
 			const cached = localStorage.getItem(cacheKey);
 			if (cached) {
 				imageUrlCache = JSON.parse(cached);
-				debugLog('✅ 이미지 캐시 로드 완료:', Object.keys(imageUrlCache).length, '개 항목');
+				console.log('✅ 이미지 캐시 로드 완료:', Object.keys(imageUrlCache).length, '개 항목');
 				return true;
 			}
 		} catch (e) {
@@ -6147,7 +5885,7 @@ try {
 		const cacheKey = `${shotId}_${aiType}_${imageId}`;
 		const cached = imageUrlCache[cacheKey];
 		if (cached) {
-			debugLog('🔍 캐시된 URL 발견:', cacheKey, cached.url);
+			console.log('🔍 캐시된 URL 발견:', cacheKey, cached.url);
 			return cached.url;
 		}
 		return null;
@@ -6175,9 +5913,9 @@ try {
 					} else {
 						preview.innerHTML = `<div style="color:#ccc;font-size:0.8rem;">${aiType === 'universal' ? 'Universal' : 'Nanobana'} ${imageId}</div>`;
 					}
-					debugLog(`✅ ${aiType} 미리보기 업데이트 완료:`, uniqueId, newUrl);
+					console.log(`✅ ${aiType} 미리보기 업데이트 완료:`, uniqueId, newUrl);
 				} else {
-					debugWarn(`⚠️ ${aiType} 미리보기 요소를 찾을 수 없음:`, `preview-${uniqueId}`);
+					console.warn(`⚠️ ${aiType} 미리보기 요소를 찾을 수 없음:`, `preview-${uniqueId}`);
 				}
 				return;
 			}
@@ -6417,24 +6155,24 @@ try {
 	// 새로운 DOM 기반 AI 수정 함수 - Image Prompt Generator로 프롬프트 전달
 	function aiEditPromptFromDOM(shotId, aiName, imageId, evt) {
 		try {
-			debugLog('aiEditPromptFromDOM 시작:', { shotId, aiName, imageId });
+			console.log('aiEditPromptFromDOM 시작:', { shotId, aiName, imageId });
 			let promptText = '';
 			
 			// 버튼의 부모 요소에서 원본 프롬프트 찾기
 			if (evt && evt.target) {
 				const button = evt.target;
-				debugLog('버튼 찾음:', button);
+				console.log('버튼 찾음:', button);
 				
 				const promptContainer = button.closest('.ai-image-prompt-details');
-				debugLog('프롬프트 컨테이너:', promptContainer);
+				console.log('프롬프트 컨테이너:', promptContainer);
 				
 				if (promptContainer) {
 					const promptElement = promptContainer.querySelector('.prompt-original .ai-image-prompt-full-text');
-					debugLog('프롬프트 요소:', promptElement);
+					console.log('프롬프트 요소:', promptElement);
 					
 					if (promptElement) {
 						promptText = promptElement.textContent || promptElement.innerText || '';
-						debugLog('추출한 프롬프트 텍스트:', promptText.substring(0, 100) + '...');
+						console.log('추출한 프롬프트 텍스트:', promptText.substring(0, 100) + '...');
 					} else {
 						console.error('프롬프트 요소를 찾을 수 없음');
 					}
@@ -6461,7 +6199,7 @@ try {
 				.replace(/&amp;/g, '&');
 			
 			// localStorage에 프롬프트 저장
-			debugLog('localStorage에 저장 중:', {
+			console.log('localStorage에 저장 중:', {
 				text: decodedPrompt.substring(0, 100) + '...',
 				source: aiName,
 				imageId: imageId
@@ -6472,7 +6210,7 @@ try {
 			localStorage.setItem('aiEditImageId', imageId);
 			
 			// 저장 확인
-			debugLog('localStorage 저장 확인:', {
+			console.log('localStorage 저장 확인:', {
 				saved: localStorage.getItem('aiEditPromptText') !== null,
 				length: localStorage.getItem('aiEditPromptText')?.length
 			});
@@ -6482,8 +6220,8 @@ try {
 			const isStoryboardPath = currentPath.includes('/storyboard/');
 			const promptBuilderPath = isStoryboardPath ? '../prompt-builder.html' : 'prompt-builder.html';
 			
-			debugLog('Current path:', currentPath);
-			debugLog('Opening prompt builder at:', promptBuilderPath);
+			console.log('Current path:', currentPath);
+			console.log('Opening prompt builder at:', promptBuilderPath);
 			
 			window.open(promptBuilderPath, '_blank');
 			
@@ -6611,7 +6349,7 @@ try {
 					const promptElement = promptContainer.querySelector('.prompt-original .ai-image-prompt-full-text');
 					if (promptElement) {
 						promptText = promptElement.textContent || promptElement.innerText || prompt;
-						debugLog('DOM에서 프롬프트 찾음:', promptText);
+						console.log('DOM에서 프롬프트 찾음:', promptText);
 					}
 				}
 			}
@@ -6680,7 +6418,7 @@ try {
                 preview.innerHTML = `<div style="color:#ccc;font-size:0.8rem;">참조 ${refIndex+1} URL</div>`;
             }
         } else {
-            debugWarn(`참조 이미지 미리보기 요소를 찾을 수 없습니다: ${uid}`);
+            console.warn(`참조 이미지 미리보기 요소를 찾을 수 없습니다: ${uid}`);
         }
     }
 } catch (e) {
@@ -6719,7 +6457,7 @@ try {
                 // Dropbox URL이 변환된 경우 알림 및 input 업데이트
                 const originalValue = document.querySelector(`input[onchange*="updateMainImage('${shotId}', ${refIndex}, 'url'"]`)?.value;
                 if (value !== originalValue && originalValue && originalValue.includes('dropbox.com')) {
-                    debugLog('🔄 메인 이미지 Dropbox URL 변환:', originalValue, '→', value);
+                    console.log('🔄 메인 이미지 Dropbox URL 변환:', originalValue, '→', value);
                     showMessage('Dropbox URL이 자동으로 이미지 표시 형식으로 변환되었습니다.', 'success');
                     
                     // input 필드도 변환된 URL로 업데이트
@@ -6750,7 +6488,7 @@ try {
                         preview.innerHTML = `<div style="color:#ccc;font-size:0.8rem;">메인 ${refIndex+1} URL</div>`;
                     }
                 } else {
-                    debugWarn(`메인 이미지 미리보기 요소를 찾을 수 없습니다: ref-preview-${uid}`);
+                    console.warn(`메인 이미지 미리보기 요소를 찾을 수 없습니다: ref-preview-${uid}`);
                 }
             }
         } catch (e) {
@@ -6819,7 +6557,7 @@ if (modal && (
 
     // 샷 영상 탭 생성 (추출된 이미지 정보 포함)
     function createShotVideoTab(shot) {
-    debugLog('🎥 createShotVideoTab 시작 (이미지별 영상 프롬프트 표시)');
+    console.log('🎥 createShotVideoTab 시작 (이미지별 영상 프롬프트 표시)');
     try {
 const imageDesign = shot.image_design || {};
 		const imageDesignPlans = imageDesign.plans || {};
@@ -6906,7 +6644,7 @@ if (selectedPlanData && selectedPlanData.images) {
 						// 순서대로 매칭 (첫 번째 이미지는 첫 번째 kling_ 키에 매칭)
 						const key = directKeys[index];
 						promptData = videoPrompts[key];
-						debugLog(`✅ 직접 매칭: ${key}에서 프롬프트 발견`);
+						console.log(`✅ 직접 매칭: ${key}에서 프롬프트 발견`);
 					}
 					
 					// 방법 2: 기존 findVideoPromptsForImage 사용
@@ -6923,7 +6661,7 @@ if (selectedPlanData && selectedPlanData.images) {
 							const found = findVideoPromptsForImage(shot.id, tryId, videoPrompts);
 							if (found && found[ai.id]) {
 								promptData = found[ai.id];
-								debugLog(`✅ 대체 ID ${tryId}로 ${ai.id} prompts 발견`);
+								console.log(`✅ 대체 ID ${tryId}로 ${ai.id} prompts 발견`);
 								break;
 							}
 						}
@@ -6950,10 +6688,10 @@ if (selectedPlanData && selectedPlanData.images) {
 						
 						// 디버깅: AI별 구조화 프롬프트 확인
 						if (ai.id === 'kling' && klingStructuredPrompt) {
-							debugLog(`🎬 Kling 구조화 프롬프트 감지 (${imageId})`);
+							console.log(`🎬 Kling 구조화 프롬프트 감지 (${imageId})`);
 						}
 						if (ai.id === 'veo2' && veo2StructuredPrompt) {
-							debugLog(`🎬 Veo2 구조화 프롬프트 감지 (${imageId})`);
+							console.log(`🎬 Veo2 구조화 프롬프트 감지 (${imageId})`);
 						}
 						const settings = promptData.settings || {};
 						const url = videoUrls[`${ai.id}_${imageId}`] || '';
@@ -7064,7 +6802,7 @@ return `<div class="info-section"><h3>영상 탭 로드 오류</h3><p>${e.messag
 
     // 샷 오디오 탭 생성 (dialogue_by_character 구조 대응)
     function createShotAudioTab(shot) {
-debugLog('🔊 createShotAudioTab 시작 (dialogue_by_character 구조)');
+console.log('🔊 createShotAudioTab 시작 (dialogue_by_character 구조)');
 try {
     const audioUrls = shot.content?.audio_urls || {};
     const dialogueByCharacter = shot.content?.dialogue_by_character || {};
@@ -7296,7 +7034,7 @@ try {
             </div>` : ''}
         </div>`;
 
-    debugLog('✅ createShotAudioTab 완료');
+    console.log('✅ createShotAudioTab 완료');
     return `${dialogueHtml}${narrationHtml}${soundEffectsHtml}`;
 } catch (error) {
     console.error('❌ createShotAudioTab 오류:', error);
@@ -7306,22 +7044,22 @@ try {
 
     // 특정 이미지에 대한 영상 프롬프트 찾기
 		function findVideoPromptsForImage(shotId, imageId, videoPrompts) {
-		debugLog('🎬 findVideoPromptsForImage 호출:', { shotId, imageId });
-		debugLog('🎬 전달받은 videoPrompts:', videoPrompts ? Object.keys(videoPrompts).slice(0, 5) : 'null');
+		console.log('🎬 findVideoPromptsForImage 호출:', { shotId, imageId });
+		console.log('🎬 전달받은 videoPrompts:', videoPrompts ? Object.keys(videoPrompts).slice(0, 5) : 'null');
 		
 		// 1. Stage 7 형식의 영상 프롬프트 데이터가 있는 경우 우선 확인
 		if (window.stage7VideoPrompts && window.stage7VideoPrompts[shotId]) {
-			debugLog('🎬 window.stage7VideoPrompts에서 찾기 시도...');
+			console.log('🎬 window.stage7VideoPrompts에서 찾기 시도...');
 			const imagePromptData = window.stage7VideoPrompts[shotId][imageId];
 			if (imagePromptData && imagePromptData.prompts) {
-				debugLog('🎬 stage7VideoPrompts에서 prompts 반환');
+				console.log('🎬 stage7VideoPrompts에서 prompts 반환');
 				return imagePromptData.prompts;
 			}
 		}
 
 		// 2. 전달받은 videoPrompts에서 데이터 확인
 		if (videoPrompts && typeof videoPrompts === 'object') {
-			debugLog('🎬 전달받은 videoPrompts에서 검색...');
+			console.log('🎬 전달받은 videoPrompts에서 검색...');
 			
 			// AI_도구명_이미지ID 형식으로 저장된 데이터를 재구성
 			const reconstructedPrompts = {};
@@ -7350,10 +7088,10 @@ try {
 					if (videoPrompts[key]) {
 						reconstructedPrompts[aiTool] = videoPrompts[key];
 						hasAIPrompts = true;
-						debugLog(`🎬 ${key} 프롬프트 발견!`);
+						console.log(`🎬 ${key} 프롬프트 발견!`);
 						// kling_structured_prompt 체크
 						if (aiTool === 'kling' && videoPrompts[key].kling_structured_prompt) {
-							debugLog('  ✅ kling_structured_prompt 확인됨!');
+							console.log('  ✅ kling_structured_prompt 확인됨!');
 						}
 						break;
 					}
@@ -7361,46 +7099,46 @@ try {
 			});
 			
 			if (hasAIPrompts) {
-				debugLog('🎬 재구성된 AI 프롬프트 반환');
+				console.log('🎬 재구성된 AI 프롬프트 반환');
 				return reconstructedPrompts;
 			}
 			
 			// imageId로 직접 검색
 			if (videoPrompts[imageId]) {
-				debugLog(`🎬 videoPrompts[${imageId}] 찾음`);
+				console.log(`🎬 videoPrompts[${imageId}] 찾음`);
 				// prompts 속성이 있는 경우 (새 형식)
 				if (videoPrompts[imageId].prompts) {
-					debugLog(`🎬 ${imageId}.prompts 반환`);
+					console.log(`🎬 ${imageId}.prompts 반환`);
 					return videoPrompts[imageId].prompts;
 				}
 				// 바로 AI 도구별 프롬프트가 있는 경우 (기존 형식)
 				if (Object.keys(videoPrompts[imageId]).some(key => ['luma', 'kling', 'veo2', 'runway'].includes(key))) {
-					debugLog(`🎬 ${imageId} AI 도구 프롬프트 반환`);
+					console.log(`🎬 ${imageId} AI 도구 프롬프트 반환`);
 					return videoPrompts[imageId];
 				}
 			}
 			
 			// videoPrompts가 직접 AI 도구별로 구조화된 경우 (전체 샷 공통)
 			if (Object.keys(videoPrompts).some(key => ['luma', 'kling', 'veo2', 'runway'].includes(key))) {
-				debugLog('🎬 전체 샷 공통 AI 프롬프트 반환');
+				console.log('🎬 전체 샷 공통 AI 프롬프트 반환');
 				return videoPrompts;
 			}
 		}
 
 		// 3. breakdown_data.video_prompts에서 데이터 확인 (JSON 파일 구조 대응)
 		if (currentData && currentData.breakdown_data && currentData.breakdown_data.video_prompts) {
-			debugLog('🎬 breakdown_data.video_prompts에서 검색 시작');
+			console.log('🎬 breakdown_data.video_prompts에서 검색 시작');
 			
 			// 이미지 ID로 직접 검색
 			if (currentData.breakdown_data.video_prompts[imageId]) {
-				debugLog(`🎬 ${imageId} 찾음 (직접)`);
+				console.log(`🎬 ${imageId} 찾음 (직접)`);
 				return currentData.breakdown_data.video_prompts[imageId];
 			}
 			
 			// shotId-imageId 형식으로 검색
 			const fullImageId = `${shotId}-${imageId}`;
 			if (currentData.breakdown_data.video_prompts[fullImageId]) {
-				debugLog(`🎬 ${fullImageId} 찾음`);
+				console.log(`🎬 ${fullImageId} 찾음`);
 				return currentData.breakdown_data.video_prompts[fullImageId];
 			}
 			
@@ -7410,11 +7148,11 @@ try {
 			});
 			
 			if (matchingKeys.length > 0) {
-				debugLog(`🎬 패턴 매칭으로 ${matchingKeys[0]} 찾음`);
+				console.log(`🎬 패턴 매칭으로 ${matchingKeys[0]} 찾음`);
 				return currentData.breakdown_data.video_prompts[matchingKeys[0]];
 			}
 			
-			debugLog(`🎬 ${shotId}, ${imageId}에 대한 video_prompts를 찾지 못함`);
+			console.log(`🎬 ${shotId}, ${imageId}에 대한 video_prompts를 찾지 못함`);
 		}
 
 		// 4. 현재 샷 데이터에서 video_prompts 확인 (추가 폴백)
@@ -7437,7 +7175,7 @@ try {
 						if (key.startsWith(`${aiTool}_`) && (key.includes(imageId) || key.includes(shotId))) {
 							shotReconstructed[aiTool] = shot.video_prompts[key];
 							foundInShot = true;
-							debugLog(`🎯 샷 레벨에서 ${key} 발견!`);
+							console.log(`🎯 샷 레벨에서 ${key} 발견!`);
 						}
 					});
 				});
@@ -7454,7 +7192,7 @@ try {
 		}
 
 		// 모든 검색이 실패하면 빈 객체 반환
-		debugLog('🎬 영상 프롬프트를 찾지 못함, 빈 객체 반환');
+		console.log('🎬 영상 프롬프트를 찾지 못함, 빈 객체 반환');
 		return {};
 	 }
 
@@ -7718,8 +7456,8 @@ try {
 				.replace(/&amp;/g, '&')
 				.replace(/\\n/g, '\n');
 			
-			debugLog('AI 영상 프롬프트 개선 - 원본:', currentPrompt);
-			debugLog('AI 영상 프롬프트 개선 - 디코드:', decodedPrompt);
+			console.log('AI 영상 프롬프트 개선 - 원본:', currentPrompt);
+			console.log('AI 영상 프롬프트 개선 - 디코드:', decodedPrompt);
 			
 			// localStorage에 프롬프트 저장
 			localStorage.setItem('videoEditPrompt', decodedPrompt);
@@ -8118,7 +7856,7 @@ try {
 
     // 샷 음악 탭 생성
     function createShotMusicTab(shot) {
-debugLog('🎵 createShotMusicTab 시작');
+console.log('🎵 createShotMusicTab 시작');
 try {
     const projectMusicPrompts = currentData.film_metadata?.project_music_prompts || {};
     const projectMusicUrls = currentData.film_metadata?.project_music_urls || {};
@@ -8653,7 +8391,7 @@ try {
         window.showMessage = showMessage;
     }
     
-    debugLog('Functions exposed to window:', {
+    console.log('Functions exposed to window:', {
         currentData: typeof window.currentData,
         updateNavigation: typeof window.updateNavigation,
         expandAll: typeof window.expandAll,
@@ -8761,7 +8499,7 @@ try {
                                     updateUI();
                                     successCount++;
                                 } else {
-                                    debugWarn(`Stage 5 형식이 아닌 파일: ${fileNames[index]}`);
+                                    console.warn(`Stage 5 형식이 아닌 파일: ${fileNames[index]}`);
                                 }
                             } else {
                                 console.error(`JSON 파일 처리 실패: ${fileNames[index]}`);
@@ -8775,7 +8513,7 @@ try {
                         // 모든 파일 처리 완료시 메시지 표시
                         if (processedCount === jsonFiles.length) {
                             if (successCount > 0) {
-                                debugLog(`✅ ${successCount}개의 Stage 5 파일을 성공적으로 로드했습니다. (총 ${jsonFiles.length}개 중)`);
+                                console.log(`✅ ${successCount}개의 Stage 5 파일을 성공적으로 로드했습니다. (총 ${jsonFiles.length}개 중)`);
                             } else {
                                 showMessage('Stage 5 형식의 JSON 파일을 찾을 수 없습니다.', 'warning');
                             }
@@ -8794,7 +8532,7 @@ try {
                 }
             } else {
                 // Stage 5 데이터가 없는 경우 - 정상적인 경우일 수 있음
-                debugLog('Stage 5 임시 데이터가 없습니다.');
+                console.log('Stage 5 임시 데이터가 없습니다.');
                 // showMessage('임시 저장된 파일들을 찾을 수 없습니다.', 'warning');
             }
         }, 2000);
@@ -8920,13 +8658,13 @@ try {
                                             });
                                             
                                             if (mergedCount > 0) {
-                                                debugLog(`✅ ${mergedCount}개의 샷에 Stage 6 이미지 프롬프트를 병합했습니다.`);
+                                                console.log(`✅ ${mergedCount}개의 샷에 Stage 6 이미지 프롬프트를 병합했습니다.`);
                                                 // showMessage(`Stage 6 이미지 프롬프트가 ${mergedCount}개의 샷에 성공적으로 적용되었습니다.`, 'success');
                                                 
                                                 // 데이터 저장
                                                 saveDataToLocalStorage();
                                             } else {
-                                                debugLog('⚠️ 병합할 수 있는 Stage 6 데이터를 찾지 못했습니다.');
+                                                console.log('⚠️ 병합할 수 있는 Stage 6 데이터를 찾지 못했습니다.');
                                             }
                                         }
                                         
@@ -9010,7 +8748,7 @@ try {
                                     
                                     successCount++;
                                 } else {
-                                    debugWarn(`Stage 6 형식이 아닌 파일: ${fileNames[index]}`);
+                                    console.warn(`Stage 6 형식이 아닌 파일: ${fileNames[index]}`);
                                 }
                             } else {
                                 console.error(`JSON 파일 처리 실패: ${fileNames[index]}`);
@@ -9029,7 +8767,7 @@ try {
                                 const jsonFileName = getProjectFileName();
                                 localStorage.setItem(`stage6ImagePrompts_${jsonFileName}`, JSON.stringify(window.stage6ImagePrompts));
                                 
-                                debugLog(`✅ ${successCount}개의 Stage 6 파일을 성공적으로 로드했습니다. (총 ${jsonFiles.length}개 중)`);
+                                console.log(`✅ ${successCount}개의 Stage 6 파일을 성공적으로 로드했습니다. (총 ${jsonFiles.length}개 중)`);
                                 
                                 // Stage 6 데이터를 현재 shots에 병합
                                 if (currentData && currentData.breakdown_data && currentData.breakdown_data.shots) {
@@ -9093,13 +8831,13 @@ try {
                                     });
                                     
                                     if (mergedCount > 0) {
-                                        debugLog(`✅ ${mergedCount}개의 샷에 Stage 6 이미지 프롬프트를 병합했습니다.`);
+                                        console.log(`✅ ${mergedCount}개의 샷에 Stage 6 이미지 프롬프트를 병합했습니다.`);
                                         // showMessage(`Stage 6 이미지 프롬프트가 ${mergedCount}개의 샷에 성공적으로 적용되었습니다.`, 'success');
                                         
                                         // 데이터 저장
                                         saveDataToLocalStorage();
                                     } else {
-                                        debugLog('⚠️ 병합할 수 있는 Stage 6 데이터를 찾지 못했습니다.');
+                                        console.log('⚠️ 병합할 수 있는 Stage 6 데이터를 찾지 못했습니다.');
                                     }
                                 }
                                 
@@ -9121,14 +8859,14 @@ try {
                 }
             } else {
                 // Stage 6 데이터가 없는 경우 - 정상적인 경우일 수 있음
-                debugLog('Stage 6 임시 데이터가 없습니다.');
+                console.log('Stage 6 임시 데이터가 없습니다.');
                 // showMessage('임시 저장된 파일들을 찾을 수 없습니다.', 'warning');
             }
         }, 3500);
     }
     // Stage 7에서 임시 저장된 JSON 파일들 자동 로드
     if (urlParams.get('loadStage7JsonMultiple') === 'true') {
-        debugLog('🔄 Stage 7 임시 저장된 JSON 파일들 자동 로드 실행...');
+        console.log('🔄 Stage 7 임시 저장된 JSON 파일들 자동 로드 실행...');
         setTimeout(() => {
             const tempJsonFiles = localStorage.getItem('stage7TempJsonFiles');
             const tempFileNames = localStorage.getItem('stage7TempFileNames');
@@ -9136,7 +8874,7 @@ try {
             if (tempJsonFiles && tempFileNames) {
                 // 중복 처리 방지 체크
                 if (localStorage.getItem('stage7TempProcessed') === 'true') {
-                    debugLog('⚠️ Stage 7 데이터가 이미 처리되었습니다. 중복 처리를 방지합니다.');
+                    console.log('⚠️ Stage 7 데이터가 이미 처리되었습니다. 중복 처리를 방지합니다.');
                     // showMessage 제거 - 콘솔에만 표시
                     return;
                 }
@@ -9145,7 +8883,7 @@ try {
                     const jsonFiles = JSON.parse(tempJsonFiles);
                     const fileNames = JSON.parse(tempFileNames);
                     
-                    debugLog(`📁 Stage 7 임시 JSON 파일들 로드: ${fileNames.length}개`);
+                    console.log(`📁 Stage 7 임시 JSON 파일들 로드: ${fileNames.length}개`);
                     
                     let processedCount = 0;
                     let successCount = 0;
@@ -9165,7 +8903,7 @@ try {
                                 
                                 // Stage 7 데이터 처리
                                 if (newData.stage === 7 || (newData.version && newData.version.includes('7.') && newData.video_prompts)) {
-                                    debugLog(`📚 Stage 7 영상 프롬프트 데이터 감지: ${fileNames[index]}`);
+                                    console.log(`📚 Stage 7 영상 프롬프트 데이터 감지: ${fileNames[index]}`);
                                     
                                     // video_prompts가 배열이거나 객체인 경우 처리
                                     let videoPromptsToProcess = [];
@@ -9187,7 +8925,7 @@ try {
                                         successCount++;
                                     }
                                 } else {
-                                    debugWarn(`Stage 7 형식이 아닌 파일: ${fileNames[index]}`);
+                                    console.warn(`Stage 7 형식이 아닌 파일: ${fileNames[index]}`);
                                 }
                             } else {
                                 console.error(`JSON 파일 처리 실패: ${fileNames[index]}`);
@@ -9203,7 +8941,7 @@ try {
                             if (successCount > 0) {
                                 const jsonFileName = getProjectFileName();
                                 localStorage.setItem(`stage7VideoPrompts_${jsonFileName}`, JSON.stringify(window.stage7VideoPrompts));
-                                debugLog(`✅ ${successCount}개의 Stage 7 파일을 성공적으로 로드했습니다. (총 ${jsonFiles.length}개 중)`);
+                                console.log(`✅ ${successCount}개의 Stage 7 파일을 성공적으로 로드했습니다. (총 ${jsonFiles.length}개 중)`);
                             } else {
                                 showMessage('Stage 7 형식의 JSON 파일을 찾을 수 없습니다.', 'warning');
                             }
@@ -9220,14 +8958,14 @@ try {
                 }
             } else {
                 // Stage 7 데이터가 없는 경우 - 정상적인 경우일 수 있음
-                debugLog('Stage 7 임시 데이터가 없습니다.');
+                console.log('Stage 7 임시 데이터가 없습니다.');
                 // showMessage('임시 저장된 파일들을 찾을 수 없습니다.', 'warning');
             }
         }, 4500);
     }
     // Stage 8에서 임시 저장된 JSON 파일들 자동 로드
     if (urlParams.get('loadStage8JsonMultiple') === 'true') {
-        debugLog('🔄 Stage 8 임시 저장된 JSON 파일들 자동 로드 실행...');
+        console.log('🔄 Stage 8 임시 저장된 JSON 파일들 자동 로드 실행...');
         setTimeout(() => {
             const tempJsonFiles = localStorage.getItem('stage8TempJsonFiles');
             const tempFileNames = localStorage.getItem('stage8TempFileNames');
@@ -9235,7 +8973,7 @@ try {
             if (tempJsonFiles && tempFileNames) {
                 // 중복 처리 방지 체크
                 if (localStorage.getItem('stage8TempProcessed') === 'true') {
-                    debugLog('⚠️ Stage 8 데이터가 이미 처리되었습니다. 중복 처리를 방지합니다.');
+                    console.log('⚠️ Stage 8 데이터가 이미 처리되었습니다. 중복 처리를 방지합니다.');
                     // showMessage 제거 - 콘솔에만 표시
                     return;
                 }
@@ -9244,7 +8982,7 @@ try {
                     const jsonFiles = JSON.parse(tempJsonFiles);
                     const fileNames = JSON.parse(tempFileNames);
                     
-                    debugLog(`📁 Stage 8 임시 JSON 파일들 로드: ${fileNames.length}개`);
+                    console.log(`📁 Stage 8 임시 JSON 파일들 로드: ${fileNames.length}개`);
                     
                     let processedCount = 0;
                     let successCount = 0;
@@ -9260,30 +8998,30 @@ try {
                                 
                                 // Stage 8 데이터 처리
                                 if (newData.stage === 8 && newData.audio_data) {
-                                    debugLog(`📚 Stage 8 오디오 프롬프트 데이터 감지: ${fileNames[index]}`);
+                                    console.log(`📚 Stage 8 오디오 프롬프트 데이터 감지: ${fileNames[index]}`);
                                     
                                     // 기존 handleFileSelect 로직에서 Stage 8 처리 부분 재사용
                                     if (currentData && currentData.breakdown_data && currentData.breakdown_data.shots && currentData.breakdown_data.shots.length > 0) {
-                                        debugLog(`🔍 현재 프로젝트의 shot 개수: ${currentData.breakdown_data.shots.length}`);
-                                        debugLog(`🔍 현재 프로젝트의 shot IDs:`, currentData.breakdown_data.shots.map(s => s.id));
+                                        console.log(`🔍 현재 프로젝트의 shot 개수: ${currentData.breakdown_data.shots.length}`);
+                                        console.log(`🔍 현재 프로젝트의 shot IDs:`, currentData.breakdown_data.shots.map(s => s.id));
                                         
                                         // Stage 8 JSON 구조: audio_data.shots 배열 접근
                                         const audioShots = newData.audio_data && newData.audio_data.shots ? newData.audio_data.shots : [];
-                                        debugLog(`🔍 처리할 오디오 shot 개수: ${audioShots.length}`);
-                                        debugLog(`🔍 오디오 shot IDs:`, audioShots.map(s => s.id));
+                                        console.log(`🔍 처리할 오디오 shot 개수: ${audioShots.length}`);
+                                        console.log(`🔍 오디오 shot IDs:`, audioShots.map(s => s.id));
                                         
                                         let matchedCount = 0;
                                         audioShots.forEach((audioShot, audioIndex) => {
-                                            debugLog(`🔍 오디오 Shot ${audioIndex + 1}:`, audioShot);
+                                            console.log(`🔍 오디오 Shot ${audioIndex + 1}:`, audioShot);
                                             
                                             const shotId = audioShot.id;
-                                            debugLog(`🔍 찾는 shot_id: ${shotId}`);
+                                            console.log(`🔍 찾는 shot_id: ${shotId}`);
                                             
                                             if (shotId) {
                                                 const shot = currentData.breakdown_data.shots.find(s => s.id === shotId);
                                                 
                                                 if (shot) {
-                                                    debugLog(`✅ Shot 매치됨: ${shotId}`);
+                                                    console.log(`✅ Shot 매치됨: ${shotId}`);
                                                     
                                                     // shot.content가 없으면 생성
                                                     if (!shot.content) {
@@ -9294,16 +9032,16 @@ try {
                                                     if (audioShot.content) {
                                                         // dialogue_by_character, dialogue_sequence, narration 등을 병합
                                                         Object.assign(shot.content, audioShot.content);
-                                                        debugLog(`✅ content 병합됨:`, audioShot.content);
-                                                        debugLog(`✅ 병합 후 shot.content:`, shot.content);
-                                                        debugLog(`✅ dialogue_by_character:`, shot.content.dialogue_by_character);
-                                                        debugLog(`✅ dialogue_sequence:`, shot.content.dialogue_sequence);
+                                                        console.log(`✅ content 병합됨:`, audioShot.content);
+                                                        console.log(`✅ 병합 후 shot.content:`, shot.content);
+                                                        console.log(`✅ dialogue_by_character:`, shot.content.dialogue_by_character);
+                                                        console.log(`✅ dialogue_sequence:`, shot.content.dialogue_sequence);
                                                     }
                                                     
                                                     // audio_prompts 병합 및 한글 음향효과 설명 처리
                                                     if (audioShot.audio_prompts) {
                                                         shot.audio_prompts = audioShot.audio_prompts;
-                                                        debugLog(`✅ audio_prompts 병합됨`);
+                                                        console.log(`✅ audio_prompts 병합됨`);
                                                         
                                                         // Stage 8에서 한글 음향효과 설명 추출 (개선된 로직)
                                                         // 이미 sound_effects가 있으면 덮어쓰지 않음
@@ -9337,11 +9075,11 @@ try {
                                                                 }
                                                                 
                                                                 shot.content.sound_effects = koDescription;
-                                                                debugLog(`✅ 한글 음향효과 설명 추출됨:`, koDescription);
+                                                                console.log(`✅ 한글 음향효과 설명 추출됨:`, koDescription);
                                                             } else if (audioShot.audio_prompts.sound_effects.description) {
                                                                 // fallback: description 사용
                                                                 shot.content.sound_effects = audioShot.audio_prompts.sound_effects.description;
-                                                                debugLog(`✅ 음향효과 description 사용:`, shot.content.sound_effects);
+                                                                console.log(`✅ 음향효과 description 사용:`, shot.content.sound_effects);
                                                             }
                                                         }
                                                     }
@@ -9349,26 +9087,26 @@ try {
                                                     // music_memo 병합
                                                     if (audioShot.music_memo) {
                                                         shot.music_memo = audioShot.music_memo;
-                                                        debugLog(`✅ music_memo 병합됨`);
+                                                        console.log(`✅ music_memo 병합됨`);
                                                     }
                                                     
                                                     audioDataUpdated = true;
                                                     matchedCount++;
                                                 } else {
-                                                    debugWarn(`❌ Shot을 찾을 수 없음: ${shotId}`);
+                                                    console.warn(`❌ Shot을 찾을 수 없음: ${shotId}`);
                                                 }
                                             } else {
-                                                debugWarn(`❌ shot_id가 없는 오디오 Shot:`, audioShot);
+                                                console.warn(`❌ shot_id가 없는 오디오 Shot:`, audioShot);
                                             }
                                         });
                                         
-                                        debugLog(`📊 매치된 오디오 데이터: ${matchedCount}/${audioShots.length}`);
+                                        console.log(`📊 매치된 오디오 데이터: ${matchedCount}/${audioShots.length}`);
                                         successCount++;
                                     } else {
-                                        debugWarn(`기본 프로젝트 데이터 부족으로 파일 건너뜀: ${fileNames[index]}`);
+                                        console.warn(`기본 프로젝트 데이터 부족으로 파일 건너뜀: ${fileNames[index]}`);
                                     }
                                 } else {
-                                    debugWarn(`Stage 8 형식이 아닌 파일: ${fileNames[index]}`);
+                                    console.warn(`Stage 8 형식이 아닌 파일: ${fileNames[index]}`);
                                 }
                             } else {
                                 console.error(`JSON 파일 처리 실패: ${fileNames[index]}`);
@@ -9384,7 +9122,7 @@ try {
                             if (successCount > 0 && audioDataUpdated) {
                                 saveDataToLocalStorage();
                                 updateUI();
-                                debugLog(`✅ ${successCount}개의 Stage 8 파일을 성공적으로 로드했습니다. (총 ${jsonFiles.length}개 중)`);
+                                console.log(`✅ ${successCount}개의 Stage 8 파일을 성공적으로 로드했습니다. (총 ${jsonFiles.length}개 중)`);
                             } else if (successCount > 0) {
                                 showMessage('오디오 데이터 병합 중 문제가 발생했습니다.', 'warning');
                             } else if (processedCount > 0) {
@@ -9405,21 +9143,21 @@ try {
                 }
             } else {
                 // Stage 8 데이터가 없는 경우 - 정상적인 경우일 수 있음
-                debugLog('Stage 8 임시 데이터가 없습니다.');
+                console.log('Stage 8 임시 데이터가 없습니다.');
                 // showMessage('임시 저장된 파일들을 찾을 수 없습니다.', 'warning');
             }
         }, 5000);
     }
     // 기존 autoImport 파라미터 처리
     else if (urlParams.get('autoImport') === 'true') {
-        debugLog('🔄 자동 JSON 가져오기 실행...');
+        console.log('🔄 자동 JSON 가져오기 실행...');
         setTimeout(() => {
             // 파일 입력 요소 직접 클릭하여 파일 선택 대화상자 열기
             const fileInput = document.getElementById('file-input');
             if (fileInput) {
                 fileInput.click();
                 showMessage('JSON 파일을 선택해주세요.', 'info');
-                debugLog('✅ 파일 선택 대화상자가 열렸습니다.');
+                console.log('✅ 파일 선택 대화상자가 열렸습니다.');
             } else {
                 console.error('❌ 파일 입력 요소를 찾을 수 없습니다.');
                 showMessage('파일 입력 요소를 찾을 수 없습니다.', 'error');
@@ -9427,14 +9165,14 @@ try {
         }, 1500); // 1.5초 지연으로 페이지가 완전히 로드된 후 실행
     }
     
-    debugLog('✅ 초기화 완료');
+    console.log('✅ 초기화 완료');
 } catch (error) {
     console.error('❌ 초기화 오류:', error);
     showMessage(`초기화 오류: ${error.message}`, 'error');
 }
     });
     
-    debugLog('✅ JavaScript 로딩 완료');
+    console.log('✅ JavaScript 로딩 완료');
 
 // 프롬프트 수정 기능 관련 코드
 // localStorage에서 수정된 프롬프트 데이터 로드
@@ -9698,9 +9436,9 @@ function aiEditImagePrompt(shotId, aiName, imageId, originalPrompt) {
         
         if (editedPrompt && editedPrompt.originalPrompt) {
             promptToTransfer = editedPrompt.originalPrompt;
-            debugLog('수정된 프롬프트 사용:', promptToTransfer);
+            console.log('수정된 프롬프트 사용:', promptToTransfer);
         } else {
-            debugLog('원본 프롬프트 사용:', promptToTransfer);
+            console.log('원본 프롬프트 사용:', promptToTransfer);
         }
         
         // 프롬프트를 localStorage에 저장 (이미지프롬프트 전용 키 사용)
@@ -9732,7 +9470,7 @@ window.aiImproveVideoPrompt = aiImproveVideoPrompt;
 window.applyImprovedVideoPrompt = applyImprovedVideoPrompt;
 
 // 디버깅을 위한 로그
-debugLog('프롬프트 관련 함수들이 전역 스코프에 등록되었습니다:', {
+console.log('프롬프트 관련 함수들이 전역 스코프에 등록되었습니다:', {
     copyImagePrompt: typeof window.copyImagePrompt,
     editImagePrompt: typeof window.editImagePrompt,
     aiEditImagePrompt: typeof window.aiEditImagePrompt
@@ -9781,7 +9519,7 @@ function rebindPromptButtons() {
             });
         });
         
-        debugLog(`✅ 프롬프트 버튼 ${fixedCount}개 재바인딩 완료`);
+        console.log(`✅ 프롬프트 버튼 ${fixedCount}개 재바인딩 완료`);
     }, 500); // DOM 렌더링 완료 대기
 }
 
@@ -9811,9 +9549,9 @@ window.debugPromptButtons = function() {
     });
     
     console.table(buttonInfo);
-    debugLog('총 버튼 수:', buttonInfo.length);
-    debugLog('&apos; 포함 버튼:', buttonInfo.filter(b => b.hasApos).length);
-    debugLog('&quot; 포함 버튼:', buttonInfo.filter(b => b.hasQuote).length);
+    console.log('총 버튼 수:', buttonInfo.length);
+    console.log('&apos; 포함 버튼:', buttonInfo.filter(b => b.hasApos).length);
+    console.log('&quot; 포함 버튼:', buttonInfo.filter(b => b.hasQuote).length);
     
     return buttonInfo;
 };
@@ -9842,7 +9580,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
         if (typeof rebindPromptButtons === 'function') {
             rebindPromptButtons();
-            debugLog('✅ 초기 로드 시 프롬프트 버튼 재바인딩 완료');
+            console.log('✅ 초기 로드 시 프롬프트 버튼 재바인딩 완료');
         }
     }, 1000);
     

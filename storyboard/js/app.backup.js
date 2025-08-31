@@ -182,31 +182,8 @@ function convertStage5V5Format(data) {
         if (data.stage === 5 && data.version === "6.0" && data.breakdown_data) {
             debugLog('🔄 Stage 5 v6.0 형식 감지 (CF 프로젝트)');
             
-            // 이미 sequences가 있으면 그대로 사용
-            if (data.breakdown_data.sequences && data.breakdown_data.sequences.length > 0) {
-                debugLog('✅ v6.0 형식: 기존 sequences 데이터 사용');
-                
-                // sequences 데이터 정리 - sequence_id를 id로 정규화
-                data.breakdown_data.sequences = data.breakdown_data.sequences.map(seq => {
-                    // sequence_id를 id로 변환하고 원본 필드 제거
-                    if (seq.sequence_id && !seq.id) {
-                        seq.id = seq.sequence_id;
-                        delete seq.sequence_id;
-                        debugLog(`  시퀀스 ID 정규화: sequence_id → id (${seq.id})`);
-                    }
-                    // title이 없으면 name 필드를 title로 복사
-                    if (!seq.title && seq.name) {
-                        seq.title = seq.name;
-                    }
-                    return seq;
-                });
-                
-                debugLog('📦 sequences:', data.breakdown_data.sequences.length + '개');
-                debugLog('📦 scenes:', data.breakdown_data.scenes?.length + '개');
-                debugLog('📦 shots:', data.breakdown_data.shots?.length + '개');
-                
-            } else if (!data.breakdown_data.sequences) {
-                // sequences가 없으면 자동 생성
+            // sequences가 없으면 자동 생성
+            if (!data.breakdown_data.sequences) {
                 debugLog('📦 sequences 자동 생성 중...');
                 
                 const sequences = [];
@@ -255,18 +232,6 @@ function convertStage5V5Format(data) {
             // v3.0.0으로 schema_version 변경하여 호환성 확보
             data.schema_version = "3.0.0";
             data.hasStage2Structure = true;
-            
-            // ⭐ 중요 디버깅: 변환 후 데이터 확인
-            console.log('🔴 Stage 5 v6.0 변환 완료 - 최종 데이터:', {
-                sequences: data.breakdown_data.sequences?.length || 0,
-                scenes: data.breakdown_data.scenes?.length || 0,
-                shots: data.breakdown_data.shots?.length || 0,
-                sceneDetails: data.breakdown_data.scenes?.map(s => ({
-                    id: s.id,
-                    title: s.title,
-                    sequence_id: s.sequence_id
-                }))
-            });
             
             debugLog('✅ Stage 5 v6.0 형식이 자동 변환되었습니다');
             return data;
@@ -2614,21 +2579,6 @@ function createTestData() {
                currentData = newData;
                window.currentData = currentData;
                
-               // ⭐ 중요 디버깅: currentData 설정 후 확인
-               console.log('🔴 currentData 설정 완료:', {
-                   sequences: currentData.breakdown_data.sequences?.length || 0,
-                   scenes: currentData.breakdown_data.scenes?.length || 0,
-                   shots: currentData.breakdown_data.shots?.length || 0,
-                   sceneDetails: currentData.breakdown_data.scenes?.map(s => ({
-                       id: s.id,
-                       title: s.title,
-                       sequence_id: s.sequence_id
-                   }))
-               });
-               
-               // 데이터 구조 정합성 검증
-               validateDataIntegrity(currentData);
-               
                // video_prompts 데이터가 있으면 stage7VideoPrompts에 저장
                if (newData.video_prompts) {
                    if (!window.stage7VideoPrompts) {
@@ -2808,181 +2758,6 @@ function createTestData() {
    reader.readAsText(file);
    event.target.value = '';
        }
-       
-   // 데이터 구조 정합성 검증 함수
-   function validateDataIntegrity(data) {
-       if (!data || !data.breakdown_data) {
-           console.error('❌ 데이터 구조가 없음');
-           return false;
-       }
-       
-       const bd = data.breakdown_data;
-       const errors = [];
-       const warnings = [];
-       
-       // 1. 필수 배열 확인
-       if (!Array.isArray(bd.sequences)) bd.sequences = [];
-       if (!Array.isArray(bd.scenes)) bd.scenes = [];
-       if (!Array.isArray(bd.shots)) bd.shots = [];
-       
-       // 2. 중복 ID 검사
-       const sequenceIds = new Set();
-       const sceneIds = new Set();
-       const shotIds = new Set();
-       
-       // 시퀀스 중복 검사 및 정규화
-       bd.sequences = bd.sequences.filter((seq, index) => {
-           // sequence_id를 id로 정규화
-           if (seq.sequence_id && !seq.id) {
-               seq.id = seq.sequence_id;
-               delete seq.sequence_id;
-           }
-           
-           // title이 없으면 name 필드를 title로 복사
-           if (!seq.title && seq.name) {
-               seq.title = seq.name;
-           }
-           
-           if (!seq.id) {
-               warnings.push(`시퀀스 ${index}에 ID가 없음`);
-               return false;
-           }
-           
-           if (sequenceIds.has(seq.id)) {
-               warnings.push(`중복 시퀀스 ID: ${seq.id}`);
-               return false;
-           }
-           sequenceIds.add(seq.id);
-           return true;
-       });
-       
-       // 씬 중복 검사 및 정규화
-       bd.scenes = bd.scenes.filter((scene, index) => {
-           // scene_id를 id로 정규화
-           if (scene.scene_id && !scene.id) {
-               scene.id = scene.scene_id;
-               delete scene.scene_id;
-           }
-           
-           if (!scene.id) {
-               warnings.push(`씬 ${index}에 ID가 없음`);
-               return false;
-           }
-           
-           if (sceneIds.has(scene.id)) {
-               warnings.push(`중복 씬 ID: ${scene.id}`);
-               return false;
-           }
-           sceneIds.add(scene.id);
-           
-           // sequence_id 검증
-           if (!scene.sequence_id) {
-               // 시퀀스가 1개뿐이면 자동 할당
-               if (bd.sequences.length === 1) {
-                   scene.sequence_id = bd.sequences[0].id;
-                   warnings.push(`씬 ${scene.id}에 시퀀스 자동 할당: ${scene.sequence_id}`);
-               } else {
-                   errors.push(`씬 ${scene.id}에 sequence_id가 없음`);
-               }
-           } else if (!sequenceIds.has(scene.sequence_id)) {
-               // 잘못된 sequence_id 수정
-               if (bd.sequences.length === 1) {
-                   const oldId = scene.sequence_id;
-                   scene.sequence_id = bd.sequences[0].id;
-                   warnings.push(`씬 ${scene.id}의 sequence_id 수정: ${oldId} → ${scene.sequence_id}`);
-               } else {
-                   errors.push(`씬 ${scene.id}의 sequence_id가 유효하지 않음: ${scene.sequence_id}`);
-               }
-           }
-           
-           return true;
-       });
-       
-       // 샷 중복 검사 및 정규화
-       bd.shots = bd.shots.filter((shot, index) => {
-           // shot_id를 id로 정규화
-           if (shot.shot_id && !shot.id) {
-               shot.id = shot.shot_id;
-               delete shot.shot_id;
-           }
-           
-           if (!shot.id) {
-               warnings.push(`샷 ${index}에 ID가 없음`);
-               return false;
-           }
-           
-           if (shotIds.has(shot.id)) {
-               warnings.push(`중복 샷 ID: ${shot.id}`);
-               return false;
-           }
-           shotIds.add(shot.id);
-           
-           // scene_id 검증
-           if (!shot.scene_id) {
-               // 씬이 1개뿐이면 자동 할당
-               if (bd.scenes.length === 1) {
-                   shot.scene_id = bd.scenes[0].id;
-                   warnings.push(`샷 ${shot.id}에 씬 자동 할당: ${shot.scene_id}`);
-               } else {
-                   errors.push(`샷 ${shot.id}에 scene_id가 없음`);
-               }
-           } else if (!sceneIds.has(shot.scene_id)) {
-               // 잘못된 scene_id 수정
-               if (bd.scenes.length === 1) {
-                   const oldId = shot.scene_id;
-                   shot.scene_id = bd.scenes[0].id;
-                   warnings.push(`샷 ${shot.id}의 scene_id 수정: ${oldId} → ${shot.scene_id}`);
-               } else {
-                   errors.push(`샷 ${shot.id}의 scene_id가 유효하지 않음: ${shot.scene_id}`);
-               }
-           }
-           
-           return true;
-       });
-       
-       // 3. 씬의 샷 배열 재구성
-       bd.scenes.forEach(scene => {
-           scene.shots = bd.shots
-               .filter(shot => shot.scene_id === scene.id)
-               .map(shot => shot.id);
-           
-           console.log(`📝 씬 ${scene.id}에 ${scene.shots.length}개 샷 연결:`, scene.shots);
-       });
-       
-       // 4. 시퀀스의 씬 배열 재구성
-       bd.sequences.forEach(seq => {
-           seq.scenes = bd.scenes
-               .filter(scene => scene.sequence_id === seq.id)
-               .map(scene => ({
-                   id: scene.id,
-                   sequence_id: seq.id,
-                   name: scene.name || scene.title || '',
-                   description: scene.description || ''
-               }));
-           
-           console.log(`📂 시퀀스 ${seq.id}에 ${seq.scenes.length}개 씬 연결:`, seq.scenes.map(s => s.id));
-       });
-       
-       // 5. 결과 출력
-       if (errors.length > 0) {
-           console.error('❌ 데이터 정합성 오류:', errors);
-       }
-       
-       if (warnings.length > 0) {
-           console.warn('⚠️ 데이터 정합성 경고:', warnings);
-       }
-       
-       console.log('✅ 데이터 정합성 검증 완료:', {
-           sequences: bd.sequences.length,
-           scenes: bd.scenes.length,
-           shots: bd.shots.length,
-           errors: errors.length,
-           warnings: warnings.length
-       });
-       
-       return errors.length === 0;
-   }
-       
    // 새로운 함수: Stage 2 데이터 처리
 			function handleStage2Data(jsonData) {
 
@@ -3339,9 +3114,6 @@ function createTestData() {
 				// 타임스탬프 업데이트
 				currentData.timestamp = new Date().toISOString();
 				currentData.current_stage_name = "scenario_breakdown";
-				
-				// 데이터 정합성 검증
-				validateDataIntegrity(currentData);
 
 				// 저장 및 UI 업데이트
 				saveDataToLocalStorage();
@@ -3611,13 +3383,11 @@ function createTestData() {
 							scene => scene.sequence_id === sequence.id
 						).length;
 						
-						// title이 없는 경우 name이나 id를 사용
-						const sequenceTitle = sequence.title || sequence.name || sequence.id;
 						html += `
 							<div class="sequence-item">
 								<div class="sequence-header" data-sequence-id="${sequence.id}">
 									<span class="toggle-icon">▶</span>
-									<span>${sequence.id}: ${sequenceTitle}</span>
+									<span>${sequence.id}: ${sequence.title}</span>
 								</div>
 								<div class="scenes-container collapsed" id="scenes-${sequence.id}"></div>
 							</div>`;
@@ -3709,18 +3479,6 @@ function createTestData() {
        debugLog('현재 shots 배열 상태:', currentData.breakdown_data.shots ? currentData.breakdown_data.shots.length + '개' : '없음');
        
        const scenes = currentData.breakdown_data.scenes.filter(scene => scene.sequence_id === sequenceId);
-       
-       // ⭐ 중요 디버깅: scenes 배열 확인
-       console.log('🔴 scenes 배열 상태:', {
-           total: scenes.length,
-           scenes: scenes.map(s => ({
-               id: s.id,
-               title: s.title,
-               sequence_id: s.sequence_id,
-               hasScenarioText: !!s.original_scenario?.scenario_text
-           }))
-       });
-       
        if (scenes.length === 0) {
            container.innerHTML = '<div style="padding: 15px 40px; color: #ccc; font-size: 0.9rem;">씬이 없습니다</div>';
            return;
@@ -4492,8 +4250,7 @@ function createTestData() {
            return;
        }
        
-       const sequenceTitle = sequence.title || sequence.name || sequence.id;
-       const fileName = `${sequence.id}_${sequenceTitle.replace(/[^a-zA-Z0-9가-힣]/g, '_')}`;
+       const fileName = `${sequence.id}_${sequence.title.replace(/[^a-zA-Z0-9가-힣]/g, '_')}`;
        
        if (format === 'txt') {
            const blob = new Blob([sequenceText], { type: 'text/plain;charset=utf-8' });
@@ -4518,25 +4275,6 @@ function createTestData() {
        function showShotContent(shotId) {
    try {
        debugLog('🎬 showShotContent 호출됨 - shotId:', shotId);
-       
-       // 디버깅: 샷의 시퀀스 정보 확인
-       const debugShot = currentData?.breakdown_data?.shots?.find(s => s.id === shotId);
-       if (debugShot) {
-           const scene = currentData?.breakdown_data?.scenes?.find(sc => sc.id === debugShot.scene_id);
-           const sequence = scene ? currentData?.breakdown_data?.sequences?.find(seq => seq.id === scene.sequence_id) : null;
-           
-           console.log('🔍 샷 계층 구조:', {
-               shot: { id: debugShot.id, title: debugShot.title, scene_id: debugShot.scene_id },
-               scene: scene ? { id: scene.id, title: scene.title, sequence_id: scene.sequence_id } : 'not found',
-               sequence: sequence ? { id: sequence.id, title: sequence.title || sequence.name || sequence.id } : 'not found'
-           });
-           
-           // 사이드바에 표시될 정보
-           if (!sequence && scene) {
-               console.warn('⚠️ 씬의 시퀀스를 찾을 수 없음:', scene.sequence_id);
-               console.log('사용 가능한 시퀀스:', currentData?.breakdown_data?.sequences?.map(s => s.id));
-           }
-       }
        
        if (!currentData || !currentData.breakdown_data || !currentData.breakdown_data.shots) {
            console.error('❌ currentData가 없거나 shots 데이터가 없습니다:', currentData);
