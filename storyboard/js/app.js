@@ -7,19 +7,20 @@ let hasStage2Structure = false; // Stage 2 구조 로드 여부
 let editedPrompts = {}; // 프롬프트 수정 데이터 저장용
 let imageUrlCache = {}; // 이미지 URL 캐시 저장용
 
-// HTML 속성용 문자열 이스케이프 함수
-function escapeHtmlAttribute(str) {
+// escapeHtmlAttribute 함수는 AppUtils 모듈로 이동됨
+// 호환성을 위한 별칭
+const escapeHtmlAttribute = window.AppUtils ? window.AppUtils.escapeHtmlAttribute : function(str) {
     if (!str) return '';
     return str
-        .replace(/&/g, '&amp;')   // & 를 먼저 이스케이프
-        .replace(/"/g, '&quot;')  // 큰따옴표를 HTML 엔티티로 변경
-        .replace(/'/g, '&apos;')  // 작은따옴표를 HTML 엔티티로 변경 (중요!)
-        .replace(/</g, '&lt;')    // < 를 HTML 엔티티로 변경
-        .replace(/>/g, '&gt;')    // > 를 HTML 엔티티로 변경
-        .replace(/\n/g, '\\n')    // 줄바꿈 이스케이프
-        .replace(/\r/g, '\\r')    // 캐리지 리턴 이스케이프
-        .replace(/\t/g, '\\t');   // 탭 이스케이프
-}
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '\\r')
+        .replace(/\t/g, '\\t');
+};
 
 // 디버깅용 전역 변수 노출
 window.debugData = {
@@ -37,22 +38,20 @@ function getEditedPrompt(shotId, aiName, imageId) {
     return editedPrompts[editKey];
 }
 
-// 동적 파일명 관리
-function getProjectFileName() {
+// getProjectFileName과 getProjectName 함수는 AppUtils 모듈로 이동됨
+// 호환성을 위한 별칭
+const getProjectFileName = window.AppUtils ? window.AppUtils.getProjectFileName : function() {
     try {
-        // 프로젝트 데이터가 있고 파일명이 있으면 사용
         if (currentData && currentData.project_info && currentData.project_info.name) {
             return currentData.project_info.name;
         }
-        
-        // 기본값: 고정된 파일명 사용 (페이지 이동 시에도 일관성 유지)
         return 'Film_Production_Manager.json';
     } catch (error) {
         return 'Film_Production_Manager.json';
     }
-}
+};
 
-function getProjectName() {
+const getProjectName = window.AppUtils ? window.AppUtils.getProjectName : function() {
     try {
         return getProjectFileName()
             .replace('_Manager.json', '')
@@ -60,11 +59,11 @@ function getProjectName() {
     } catch (error) {
         return 'Film Production Manager';
     }
-}
+};
 
-// 메시지 표시
-function showMessage(message, type) {
-    
+// showMessage 함수는 AppUtils 모듈로 이동됨
+// 호환성을 위한 별칭
+const showMessage = window.AppUtils ? window.AppUtils.showMessage : function(message, type) {
     try {
         const messageContainer = document.getElementById('message-container');
         if (!messageContainer) {
@@ -90,10 +89,11 @@ function showMessage(message, type) {
     } catch (error) {
         alert(message);
     }
-}
+};
 
-// 클립보드 복사 함수
-async function copyToClipboard(text) {
+// copyToClipboard 함수는 AppUtils 모듈로 이동됨
+// 호환성을 위한 별칭
+const copyToClipboard = window.AppUtils ? window.AppUtils.copyToClipboard : async function(text) {
     try {
         await navigator.clipboard.writeText(text);
         return true;
@@ -5498,25 +5498,20 @@ try {
 }
     }
     
-    // 드롭박스 URL을 raw 형식으로 변환하는 함수
-    function convertDropboxUrl(url) {
+    // convertDropboxUrl 함수는 AppUtils 모듈로 이동됨
+    // 호환성을 위한 별칭
+    const convertDropboxUrl = window.AppUtils ? window.AppUtils.convertDropboxUrl : function(url) {
         if (!url) return url;
-        
-        // 드롭박스 URL인지 확인
         if (url.includes('dropbox.com')) {
-            // dl=0을 raw=1로 변경
             if (url.includes('dl=0')) {
                 return url.replace('dl=0', 'raw=1');
-            }
-            // dl 파라미터가 없으면 raw=1 추가
-            else if (!url.includes('dl=') && !url.includes('raw=')) {
+            } else if (!url.includes('dl=') && !url.includes('raw=')) {
                 const separator = url.includes('?') ? '&' : '?';
                 return url + separator + 'raw=1';
             }
         }
-        
         return url;
-    }
+    };
     
     // 이미지별 URL 업데이트 (새로운 구조)
 	// imageId를 안전하게 인덱스로 변환하는 헬퍼 함수

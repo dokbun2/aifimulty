@@ -4,144 +4,220 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-AIFI is an AI-based video production and concept art management web application. It's a pure frontend application using vanilla HTML, CSS, and JavaScript, designed for creating and managing video storyboards and concept art prompts for AI tools.
+AIFI (아이파이) is an AI-based video production and concept art management web application. It's a pure frontend application using vanilla HTML, CSS, and JavaScript, designed for creating and managing video storyboards and concept art prompts for AI video/image generation tools.
 
 ## Architecture
 
-### Core Components
+### Core Applications
 
-The application consists of three main pages:
-- **Dashboard** (`index.html`): Project overview and navigation hub with stage-based JSON import system
-- **Video Framework Storyboard** (`your_title_storyboard_v9.4.html`): Hierarchical storyboard management system with sequence/scene/shot structure
-- **Concept Art Prompt Library** (`your_title_storyboard_v9.4_c.html`): Character/location/prop categorized prompt management system
+The project is now organized into a modular structure with three main applications:
+
+1. **Dashboard** (`index.html`) - Central hub for project navigation and stage-based workflow
+2. **Storyboard** (`storyboard/index.html`) - Video storyboard management with hierarchical structure (Sequence → Scene → Shot)
+3. **Concept Art** (`concept-art/index.html`) - Character/location/prop prompt management system
+4. **Media Gallery** (`media-gallery/index.html`) - Apple-style media management interface
+5. **Prompt Builder** (`prompt-builder.html`) - Advanced prompt engineering tool
 
 ### Technology Stack
 - Pure HTML5, CSS3, JavaScript (ES6+)
-- No build tools or package managers
-- Local storage for data persistence
-- Netlify for deployment
+- No build tools or package managers required
+- Browser localStorage for data persistence
+- Netlify deployment
+- Custom Paperlogy font (9 weights)
 
-### File Structure
+### Current File Structure
 ```
 /
-├── index.html                              # Main dashboard
-├── your_title_storyboard_v9.4.html       # Video storyboard tool
-├── your_title_storyboard_v9.4_c.html     # Concept art prompt library
-├── script.js                             # Main dashboard JavaScript
-├── styles.css                            # Main dashboard styles
-├── simple_video_player.js                # Google Drive video embed player
-├── fonts/                                # Custom Paperlogy font files (9 weights)
-├── netlify.toml                          # Netlify deployment config
-├── _redirects                            # Netlify redirects config
-└── 아이파이 백업 v6/                        # Backup directory
+├── index.html                     # Main dashboard
+├── storyboard/
+│   ├── index.html                # Storyboard application
+│   ├── js/
+│   │   ├── app.js                # Main storyboard logic (refactoring in progress)
+│   │   ├── storyboard-functions.js
+│   │   ├── shot-ui-improvements.js
+│   │   └── modules/              # Refactored modular components
+│   │       ├── app-config.js     # Configuration and constants
+│   │       ├── app-utils.js      # Utility functions (includes Dropbox URL conversion)
+│   │       ├── data/
+│   │       │   ├── storage.js    # localStorage management
+│   │       │   └── import-export.js # JSON import/export
+│   │       ├── ui/
+│   │       │   ├── navigation.js # Navigation UI components
+│   │       │   └── content-display.js # Content display functions
+│   │       ├── stage/
+│   │       │   └── stage-converter.js # Stage 4-7 data conversion
+│   │       └── events/
+│   │           └── event-handlers.js # Event listeners and handlers
+│   └── css/
+│       └── apple-style.css       # Apple-inspired UI
+├── concept-art/
+│   ├── index.html                # Concept art manager
+│   └── js/
+│       ├── bundle.js             # Bundled logic
+│       └── gallery.js            # Gallery functionality
+├── media-gallery/
+│   └── index.html                # Media gallery
+├── assets/
+│   ├── fonts/                    # Paperlogy font files
+│   └── css/
+│       └── core.css              # Shared styles
+└── netlify.toml                  # Deployment config
 ```
 
 ## Development Commands
 
 ### Local Development
 ```bash
-# Serve files locally using any HTTP server
+# Python (recommended)
 python -m http.server 8000
-# or
+
+# Node.js alternatives
 npx serve .
-# or
 npx http-server .
-# or simply open index.html in browser for basic functionality
+
+# Direct file access (limited functionality)
+# Simply open index.html in browser
 ```
 
-### Testing
-Since this is a client-side application, testing is primarily done through:
-- Manual browser testing across different devices/screen sizes
-- localStorage data persistence testing
-- JSON import/export functionality testing
-- Cross-browser compatibility testing
-
 ### Deployment
-The project is configured for Netlify deployment:
-- Files are served from the root directory
-- Netlify configuration is in `netlify.toml`
-- Live URL: https://aifiwb.netlify.app
-- Direct page access configured in `_redirects`
+```bash
+# Deploy to Netlify (automatic on push to main)
+# Live URL: https://aifiwb.netlify.app
+```
 
-## Architecture Patterns
+## Key Architectural Patterns
 
-### Self-Contained Applications
-Each HTML file is a complete, self-contained application with:
-- Embedded CSS styles (no external stylesheets except for main dashboard)
-- Embedded JavaScript functionality (no external scripts except video player)  
-- Complete data management within the file
+### Data Management
+- **localStorage Keys**: 
+  - Storyboard: `breakdownData_[projectName]`
+  - Concept Art: `conceptArtManagerData_v1.2`
+  - Stage transitions: `stage[N]TempJson`, `stage[N]TempFileName`
+  - Image cache: `imageUrlCache_[projectName]`
+  - Stage-specific: `stage6ImagePrompts_[projectName]`, `stage7VideoPrompts_[projectName]`
 
-### Data Architecture
-- **Dashboard**: Stage-based project workflow with JSON import/export between stages
-- **Storyboard**: Hierarchical data structure (Project → Sequence → Scene → Shot)
-- **Concept Art**: Category-based organization (Characters/Locations/Props) with image gallery
+### Storyboard Data Structure
+```javascript
+{
+  project_info: { name, film_id },
+  film_metadata: { title, genre, director, duration },
+  breakdown_data: {
+    sequences: [
+      {
+        id, name, description,
+        scenes: [
+          {
+            id, sequence_id, name, description,
+            shots: [] // Shot references
+          }
+        ]
+      }
+    ],
+    shots: [
+      {
+        id, scene_id, title, description,
+        content: { dialogue, narration, sound_effects },
+        image_design: {
+          ai_generated_images: {
+            universal: [], nanobana: [], midjourney: [], ...
+          }
+        },
+        main_images: [], reference_images: [],
+        video_urls: {}, audio_urls: {}
+      }
+    ]
+  }
+}
+```
 
-### Storage Patterns
-- localStorage keys follow semantic versioning (e.g., `conceptArtManagerData_v1.2`)
-- JSON export/import for cross-device data sharing
-- Temporary storage for stage transitions (e.g., `stage4TempJson`)
+### Recent Features & Improvements
 
-### UI Patterns
-- Fixed header with navigation and action buttons
-- Responsive grid layouts using CSS Flexbox/Grid
-- Modal dialogs for forms and confirmations
-- Card-based information display
-- Progressive enhancement with JavaScript
+#### Code Refactoring (진행 중)
+- **Phase 1-3 완료 (45% 완료)**: app.js를 모듈화된 구조로 리팩토링
+- **IIFE 패턴 사용**: 브라우저 호환성을 위해 ES6 모듈 대신 IIFE 패턴 적용
+- **모듈 구조**:
+  - `app-config.js`: 설정 및 상수
+  - `app-utils.js`: 유틸리티 함수 (escapeHtmlAttribute, showMessage, copyToClipboard, convertDropboxUrl 등)
+  - `data/storage.js`: localStorage 관리
+  - `data/import-export.js`: JSON 가져오기/내보내기
+  - `ui/navigation.js`: 네비게이션 UI
+  - `ui/content-display.js`: 컨텐츠 표시
+  - `stage/stage-converter.js`: Stage 데이터 변환
+  - `events/event-handlers.js`: 이벤트 핸들러
 
-## Data Management
+#### Dropbox URL Auto-conversion
+- Automatically converts Dropbox share links (`dl=0`) to direct image links (`raw=1`)
+- Applied to: Main images, reference images, and all AI-generated image inputs
+- Caches converted URLs for performance
+- 함수 위치: `AppUtils.convertDropboxUrl()`
 
-### localStorage Keys
-- Main storyboard data: Application-specific keys in embedded JavaScript
-- Concept art data: `conceptArtManagerData_v1.2`
-- Stage transition data: `stage[N]TempJson` + `stage[N]TempFileName`
+#### Image Management
+- Support for 20+ AI tools (Universal, Nanobana, Midjourney, Ideogram, etc.)
+- Three image slots per AI tool per shot
+- Main images (2 slots) and reference images (3 slots) per shot
+- Stage 6 (image prompts) and Stage 7 (video prompts) integration
 
-### JSON Structure
-Each application maintains its own data schema:
-- Storyboard: Hierarchical project/sequence/scene/shot structure
-- Concept Art: Category-based with character/location/prop classifications
-- Stage data: Application-specific staging format for workflow transitions
+### UI/UX Patterns
+- Apple-inspired design with glassmorphism effects
+- Tab-based navigation for shot details
+- Modal dialogs for image viewing and editing
+- Real-time preview updates
+- Responsive grid layouts
 
-## Styling and UI
+## Important Implementation Notes
 
-### Typography
-- Primary: Paperlogy font family (9 weights: Thin to Black)
-- Fallback: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif
-- Korean language optimized
+### URL Processing
+- Always use `convertDropboxUrl()` function for Dropbox links
+- Cache processed URLs using `imageUrlCache` global object
+- Update preview immediately after URL change
 
-### Color Scheme  
-- Primary gradient: `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`
-- Background: `#f5f5f5`
-- Text: `#333`
+### Data Persistence
+- Always call `saveDataToLocalStorage()` after data modifications
+- Check localStorage quota (handle `QuotaExceededError`)
+- Use JSON export/import for backup and cross-device transfer
 
-### Responsive Breakpoints
-- Desktop: 1200px+
-- Tablet: 768px - 1199px  
-- Mobile: 767px and below
+### Korean Language Support
+- Primary interface language is Korean
+- Use Korean placeholders and messages
+- Support both Korean and English prompts
 
-## Important Notes
+### Browser Compatibility
+- Test on Chrome, Firefox, Safari, Edge
+- Ensure localStorage is available
+- Handle iframe security for Google Drive embeds
 
-- This is a client-side only application with no backend
-- All AI tool integrations are through external APIs/services
-- Data persistence relies on browser localStorage
-- Files contain embedded CSS and JavaScript (no external dependencies except video player)
-- Korean language is the primary interface language
-- Google Drive video embeds use official iframe preview method
-- Content Security Policy configured for Google Drive iframe embedding
+## Custom Rules
+
+- 답변은 한국어로 해줘 (Respond in Korean)
+- 아이콘은 rails_icons 쓰고, tabler 써줘 (Use rails_icons and tabler for icons)
 
 ## Common Development Tasks
 
-### Adding New Features
-- Modify the respective HTML file (all-in-one approach)
-- Update localStorage schema if needed
-- Test JSON export/import functionality
-- Ensure responsive design compatibility
+### Adding New AI Tool Support
+1. Add to `IMAGE_AI_TOOLS` array in `storyboard/js/app.js`
+2. Update image slot generation in `createShotImageTab()`
+3. Ensure proper data structure initialization
 
 ### Modifying Data Structure
-- Update localStorage key versioning
-- Implement data migration if needed
-- Test backward compatibility with existing data
-- Update JSON export/import functions
+1. Update localStorage key versioning
+2. Implement data migration in `loadDataFromLocalStorage()`
+3. Test backward compatibility
+4. Update JSON export/import handlers
 
-## rules
-- 답변은 한국어로 해줘
-- 아이콘은 rails_icons 쓰고, tabler 써줘 
+### Debugging
+- Use browser DevTools Console
+- Check `window.debugData` for runtime inspection
+- Monitor localStorage usage with `Storage` tab
+- Use `console.log` with emojis for clear debugging (🔍, ✅, ❌, ⚠️)
+
+## Stage-based Workflow
+
+The application supports an 8-stage video production workflow:
+1. Stage 1: Initial setup
+2. Stage 2: Story breakdown
+3. Stage 3-4: Development
+4. Stage 5: Image prompt generation
+5. Stage 6: Image creation
+6. Stage 7: Video generation
+7. Stage 8: Audio production
+
+Each stage has specific data import/export capabilities for seamless workflow integration.
