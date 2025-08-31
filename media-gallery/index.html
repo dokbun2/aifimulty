@@ -6,13 +6,13 @@
     <title>미디어 갤러리 - AIFI</title>
     
     <!-- 파비콘 -->
-    <link rel="icon" type="image/x-icon" href="favicon_io/favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon_io/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon_io/favicon-16x16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="favicon_io/apple-touch-icon.png">
-    <link rel="manifest" href="favicon_io/site.webmanifest">
+    <link rel="icon" type="image/x-icon" href="../favicon_io/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="../favicon_io/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../favicon_io/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../favicon_io/apple-touch-icon.png">
+    <link rel="manifest" href="../favicon_io/site.webmanifest">
     
-    <link rel="stylesheet" href="apple-developer-style.css">
+    <link rel="stylesheet" href="../apple-developer-style.css">
     <style>
         /* 서브 탭 스타일 */
         .sub-tab-navigation {
@@ -579,14 +579,14 @@
         }
     </style>
     <!-- Tabler Icons Library -->
-    <script src="tabler-icons.js"></script>
+    <script src="../tabler-icons.js"></script>
 </head>
 <body>
     <!-- Navigation -->
     <nav class="apple-nav">
         <div class="nav-content" style="justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 20px;">
-                <a href="index.html#features" class="nav-link" style="font-weight: 500; display: flex; align-items: center; gap: 6px;">
+                <a href="../index.html#features" class="nav-link" style="font-weight: 500; display: flex; align-items: center; gap: 6px;">
                     <span class="nav-icon-mg" style="display: flex; align-items: center;"></span>
                     홈
                 </a>
@@ -596,8 +596,8 @@
             </div>
             <a href="#" onclick="event.preventDefault(); return false;" class="nav-brand" style="cursor: pointer; position: absolute; left: 50%; transform: translateX(-50%);">MEDIA GALLERY</a>
             <ul class="nav-menu">
-                <li><a href="storyboard/index.html" class="nav-link">스토리보드</a></li>
-                <li><a href="concept-art/index.html" class="nav-link">컨셉아트</a></li>
+                <li><a href="../storyboard/index.html" class="nav-link">스토리보드</a></li>
+                <li><a href="../concept-art/index.html" class="nav-link">컨셉아트</a></li>
             </ul>
         </div>
     </nav>
@@ -719,9 +719,9 @@
         // 갤러리 데이터 관리
         const galleryData = {
             storyboard: {
-                images: [],
-                videos: [],
-                all: [],
+                images: '',
+                videos: '',
+                all: '',
                 shots: {} // 샷별 데이터
             },
             conceptart: [],
@@ -746,6 +746,12 @@
             // 초기 상태 로그
             console.log('탭 버튼들:', document.querySelectorAll('.tab-btn'));
             console.log('서브 탭 버튼들:', document.querySelectorAll('.sub-tab-btn'));
+            
+            // 초기 탭 활성화
+            setTimeout(() => {
+                switchTab('storyboard');
+                switchSubTab('images');
+            }, 100);
         });
 
         // 이벤트 리스너 설정
