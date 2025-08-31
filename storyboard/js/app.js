@@ -6563,13 +6563,24 @@ if (selectedPlanData && selectedPlanData.images) {
 						// Kling AI의 경우 kling_structured_prompt 추가 처리
 						const klingStructuredPrompt = (ai.id === 'kling' && promptData.kling_structured_prompt) ? promptData.kling_structured_prompt : '';
 						
-						// 디버깅: Kling 데이터 확인
-						if (ai.id === 'kling') {
-							console.log(`🎬 Kling 프롬프트 데이터 (${imageId}):`, promptData);
-							console.log('  - kling_structured_prompt 존재:', !!promptData.kling_structured_prompt);
-							if (promptData.kling_structured_prompt) {
-								console.log('  - kling_structured_prompt 내용:', promptData.kling_structured_prompt.substring(0, 100) + '...');
+						// Veo2의 경우 prompt_object_v6 추가 처리
+						let veo2StructuredPrompt = '';
+						if (ai.id === 'veo2' && promptData.prompt_object_v6) {
+							// JSON을 보기 좋게 포맷팅
+							try {
+								veo2StructuredPrompt = JSON.stringify(promptData.prompt_object_v6, null, 2);
+							} catch (e) {
+								console.error('Veo2 prompt_object_v6 포맷팅 오류:', e);
+								veo2StructuredPrompt = '';
 							}
+						}
+						
+						// 디버깅: AI별 구조화 프롬프트 확인
+						if (ai.id === 'kling' && klingStructuredPrompt) {
+							console.log(`🎬 Kling 구조화 프롬프트 감지 (${imageId})`);
+						}
+						if (ai.id === 'veo2' && veo2StructuredPrompt) {
+							console.log(`🎬 Veo2 구조화 프롬프트 감지 (${imageId})`);
 						}
 						const settings = promptData.settings || {};
 						const url = videoUrls[`${ai.id}_${imageId}`] || '';
@@ -6587,6 +6598,16 @@ if (selectedPlanData && selectedPlanData.images) {
 											<button class="copy-btn btn-small" style="margin-top: 5px;"
 												onclick="copyVideoPrompt('${klingStructuredPrompt.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, "\\n")}', 'Kling Structured', '${imageId}')">
 												Kling 프롬프트 복사
+											</button>
+										</div>
+									` : ''}
+									${veo2StructuredPrompt ? `
+										<div style="margin-top: 10px;">
+											<label style="font-size: 0.85rem; color: #9370DB; font-weight: 600;">Veo2 구조화 프롬프트 (prompt_object_v6):</label>
+											<div class="veo2-structured-prompt" style="background: #2d1e3d; border: 1px solid #9370DB; border-radius: 4px; padding: 10px; margin-top: 5px; font-family: 'Courier New', monospace; font-size: 0.75rem; max-height: 200px; overflow-y: auto; white-space: pre; word-break: break-word; line-height: 1.4; color: #d0a0ff;">${veo2StructuredPrompt.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+											<button class="copy-btn btn-small" style="margin-top: 5px; background: #9370DB;"
+												onclick="copyVideoPrompt('${veo2StructuredPrompt.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/</g, '&lt;').replace(/>/g, '&gt;')}', 'Veo2 Structured', '${imageId}')">
+												Veo2 구조화 프롬프트 복사
 											</button>
 										</div>
 									` : ''}
@@ -7168,13 +7189,27 @@ try {
 
 	// 영상 프롬프트 복사
 	function copyVideoPrompt(prompt, aiName, imageId) {
-		const actualPromptText = prompt.replace(/\\n/g, "\n");
+		// HTML 엔티티 디코딩
+		let actualPromptText = prompt.replace(/\\n/g, "\n");
+		actualPromptText = actualPromptText.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+		
 		if (!actualPromptText || actualPromptText.trim() === '프롬프트가 없습니다.') {
 			return showMessage(`${aiName} 프롬프트가 비어 있습니다.`, 'warning');
 		}
+		
+		// JSON 포맷팅 시도 (Veo2 구조화 프롬프트의 경우)
+		if (aiName.includes('Veo2') && actualPromptText.startsWith('{')) {
+			try {
+				const jsonObj = JSON.parse(actualPromptText);
+				actualPromptText = JSON.stringify(jsonObj, null, 2);
+			} catch (e) {
+				// JSON 파싱 실패시 원본 사용
+			}
+		}
+		
 		copyToClipboard(actualPromptText).then(success => {
 			if (success) {
-				showMessage(`${aiName} 영상 프롬프트 (${imageId})가 복사되었습니다.`, 'success');
+				showMessage(`${aiName} 프롬프트 (${imageId})가 복사되었습니다.`, 'success');
 			}
 		});
 	}
