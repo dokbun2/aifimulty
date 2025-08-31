@@ -5061,9 +5061,10 @@ let aiSectionsHtml = '';
 												<input type="text" class="form-input" 
 													   id="url-input-${shot.id}-${ai.id}-${imageId}"
 													   value="${(imageData && imageData.url) ? imageData.url.replace(/"/g, '&quot;') : ''}" 
-													   placeholder="${ai.name} URL" 
+													   placeholder="${ai.name} URL (Dropbox 링크 자동 변환)" 
 													   onchange="updateImageUrl('${shot.id}', '${ai.id}', '${imageId}', this.value)"
-													   style="flex: 1;">
+													   style="flex: 1;"
+													   title="Dropbox 링크(dl=0)를 입력하면 자동으로 이미지 표시용(raw=1)으로 변환됩니다">
 												<button type="button" class="btn btn-secondary btn-small" 
 														onclick="uploadImageForShot('${shot.id}', '${ai.id}', '${imageId}')" 
 														title="로컬 파일 업로드">
@@ -5295,8 +5296,9 @@ universalNanobanaHtml += `
             <input type="text" class="form-input" 
                    id="url-input-${universalId}"
                    value="${universalData.url || ''}" 
-                   placeholder="Universal URL" 
-                   onchange="updateImageUrl('${shot.id}', 'universal', '${universalImageId}', this.value)">
+                   placeholder="Universal URL (Dropbox 링크 자동 변환)" 
+                   onchange="updateImageUrl('${shot.id}', 'universal', '${universalImageId}', this.value)"
+                   title="Dropbox 링크(dl=0)를 입력하면 자동으로 이미지 표시용(raw=1)으로 변환됩니다">
         </div>
         <div class="form-group">
             <label class="form-label">설명:</label>
@@ -5337,8 +5339,9 @@ universalNanobanaHtml += `
             <input type="text" class="form-input" 
                    id="url-input-${nanobanaId}"
                    value="${nanobanaData.url || ''}" 
-                   placeholder="Nanobana URL" 
-                   onchange="updateImageUrl('${shot.id}', 'nanobana', '${nanobanaImageId}', this.value)">
+                   placeholder="Nanobana URL (Dropbox 링크 자동 변환)" 
+                   onchange="updateImageUrl('${shot.id}', 'nanobana', '${nanobanaImageId}', this.value)"
+                   title="Dropbox 링크(dl=0)를 입력하면 자동으로 이미지 표시용(raw=1)으로 변환됩니다">
         </div>
         <div class="form-group">
             <label class="form-label">설명:</label>
@@ -5584,8 +5587,37 @@ try {
 			// imageId를 안전하게 인덱스로 변환 (이미 숫자인 경우도 처리)
 			const imageIndex = typeof imageId === 'number' ? imageId : parseImageIndex(imageId);
 			
-			// 드롭박스 URL 자동 변환
-			const processedUrl = convertDropboxUrl(newUrl);
+			// Dropbox URL 자동 변환 (dl=0을 raw=1로 변경)
+			let processedUrl = newUrl;
+			if (newUrl && newUrl.includes('dropbox.com')) {
+				// dl=0을 raw=1로 변환
+				if (newUrl.includes('dl=0')) {
+					processedUrl = newUrl.replace('dl=0', 'raw=1');
+					console.log('🔄 Dropbox URL 변환:', newUrl, '→', processedUrl);
+					showMessage('Dropbox URL이 자동으로 이미지 표시 형식으로 변환되었습니다.', 'success');
+					
+					// input 필드도 변환된 URL로 업데이트
+					const inputElement = document.querySelector(`input[onchange*="updateImageUrl('${shotId}', '${aiType}', '${imageId}',"]`);
+					if (inputElement && inputElement.value !== processedUrl) {
+						inputElement.value = processedUrl;
+					}
+				}
+				// dl=1이나 raw=1이 이미 있는 경우는 그대로 사용
+				else if (!newUrl.includes('raw=1') && !newUrl.includes('dl=1')) {
+					// 파라미터가 없는 경우 raw=1 추가
+					processedUrl = newUrl + (newUrl.includes('?') ? '&' : '?') + 'raw=1';
+					console.log('🔄 Dropbox URL에 raw=1 추가:', processedUrl);
+					
+					// input 필드도 변환된 URL로 업데이트
+					const inputElement = document.querySelector(`input[onchange*="updateImageUrl('${shotId}', '${aiType}', '${imageId}',"]`);
+					if (inputElement && inputElement.value !== processedUrl) {
+						inputElement.value = processedUrl;
+					}
+				}
+			} else {
+				// 기존 convertDropboxUrl 함수도 호출 (다른 URL 변환 로직이 있을 경우)
+				processedUrl = convertDropboxUrl(newUrl);
+			}
 			
 			// URL을 캐시에 저장 (참조이미지와 동일한 방식)
 			if (processedUrl) {
@@ -5595,10 +5627,15 @@ try {
 					timestamp: new Date().toISOString(),
 					shotId: shotId,
 					aiType: aiType,
-					imageId: imageId
+					imageId: imageId,
+					originalUrl: newUrl // 원본 URL도 저장
 				};
 				saveImageCacheToLocalStorage();
-				console.log('💾 URL 캐시 저장:', cacheKey, processedUrl);
+				console.log('💾 URL 캐시 저장:', cacheKey, {
+					변환된URL: processedUrl,
+					원본URL: newUrl,
+					캐시키: cacheKey
+				});
 			}
 
 			// image_design 구조 초기화 (ai_generated_images는 따로 처리)
