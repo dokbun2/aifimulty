@@ -172,6 +172,65 @@ function convertStage5V5Format(data) {
             }
         }
         
+        // v6.0 형식 체크 (CF 프로젝트 등에서 사용)
+        if (data.stage === 5 && data.version === "6.0" && data.breakdown_data) {
+            console.log('🔄 Stage 5 v6.0 형식 감지 (CF 프로젝트)');
+            
+            // sequences가 없으면 자동 생성
+            if (!data.breakdown_data.sequences) {
+                console.log('📦 sequences 자동 생성 중...');
+                
+                const sequences = [];
+                const sequenceMap = {};
+                
+                // scenes 데이터에서 sequence 정보 추출
+                if (data.breakdown_data.scenes && data.breakdown_data.scenes.length > 0) {
+                    data.breakdown_data.scenes.forEach(scene => {
+                        const sequenceId = scene.sequence_id || 'SEQ_DEFAULT';
+                        
+                        // 여러 시퀀스 ID가 쉼표로 구분된 경우 첫 번째만 사용
+                        const primarySeqId = sequenceId.split(',')[0].trim();
+                        
+                        if (!sequenceMap[primarySeqId]) {
+                            sequenceMap[primarySeqId] = {
+                                id: primarySeqId,
+                                title: `시퀀스 ${primarySeqId}`,
+                                description: `자동 생성된 시퀀스`,
+                                scenes: []
+                            };
+                        }
+                        
+                        // 씬을 시퀀스에 추가
+                        sequenceMap[primarySeqId].scenes.push({
+                            id: scene.id,
+                            title: scene.title,
+                            description: scene.description
+                        });
+                    });
+                    
+                    // 맵을 배열로 변환
+                    data.breakdown_data.sequences = Object.values(sequenceMap);
+                } else {
+                    // scenes가 없으면 기본 시퀀스 생성
+                    data.breakdown_data.sequences = [{
+                        id: 'SEQ_DEFAULT',
+                        title: '기본 시퀀스',
+                        description: '자동 생성된 기본 시퀀스',
+                        scenes: []
+                    }];
+                }
+                
+                console.log('✅ sequences 생성 완료:', data.breakdown_data.sequences.length, '개');
+            }
+            
+            // v3.0.0으로 schema_version 변경하여 호환성 확보
+            data.schema_version = "3.0.0";
+            data.hasStage2Structure = true;
+            
+            console.log('✅ Stage 5 v6.0 형식이 자동 변환되었습니다');
+            return data;
+        }
+        
         // v5.0.0 형식인지 확인
         if (data.stage !== 5 || data.schema_version !== "5.0.0") {
             return null;
@@ -1357,11 +1416,12 @@ function createTestData() {
 				// 1차 시도: 그냥 파싱
 				const parsedData = JSON.parse(jsonString);
 				
-				// Stage 5 형식 체크 및 변환 (v5.0.0, v3.0.0, v1.1.0 지원)
+				// Stage 5 형식 체크 및 변환 (v5.0.0, v3.0.0, v1.1.0, v6.0 지원)
 				if ((parsedData.stage === 5 && parsedData.schema_version === "5.0.0") || 
 				    (parsedData.schema_version === "3.0.0" && parsedData.breakdown_data) ||
-				    (parsedData.schema_version === "1.1.0" && parsedData.breakdown_data)) {
-					console.log('🔍 Stage 5 형식 감지됨:', parsedData.schema_version);
+				    (parsedData.schema_version === "1.1.0" && parsedData.breakdown_data) ||
+				    (parsedData.stage === 5 && parsedData.version === "6.0" && parsedData.breakdown_data)) {
+					console.log('🔍 Stage 5 형식 감지됨:', parsedData.schema_version || parsedData.version);
 					
 					// v1.1.0 형식은 이미 올바른 형식이므로 scene_id 매핑 확인 후 반환
 					if (parsedData.schema_version === "1.1.0" && 
@@ -1406,6 +1466,8 @@ function createTestData() {
 					if (convertedData) {
 						if (parsedData.schema_version === "5.0.0") {
 							showMessage('Stage 5 v5.0.0 형식을 자동으로 변환했습니다.', 'success');
+						} else if (parsedData.version === "6.0") {
+							showMessage('Stage 5 v6.0 형식(CF 프로젝트)을 자동으로 변환했습니다.', 'success');
 						} else if (parsedData.schema_version === "3.0.0") {
 							// showMessage('Stage 5 v3.0.0 형식을 확인했습니다.', 'success'); // 메시지 표시 비활성화
 						}
@@ -1445,14 +1507,17 @@ function createTestData() {
 				try {
 					const data = JSON.parse(fixedString);
 					
-					// Stage 5 형식 체크 및 변환 (오류 수정 후에도 시도)
+					// Stage 5 형식 체크 및 변환 (오류 수정 후에도 시도, v6.0 포함)
 					if ((data.stage === 5 && data.schema_version === "5.0.0") || 
-					    (data.schema_version === "3.0.0" && data.breakdown_data)) {
-						console.log('🔍 Stage 5 형식 감지됨 (수정 후):', data.schema_version);
+					    (data.schema_version === "3.0.0" && data.breakdown_data) ||
+					    (data.stage === 5 && data.version === "6.0" && data.breakdown_data)) {
+						console.log('🔍 Stage 5 형식 감지됨 (수정 후):', data.schema_version || data.version);
 						const convertedData = convertStage5V5Format(data);
 						if (convertedData) {
 							if (data.schema_version === "5.0.0") {
 								showMessage('Stage 5 v5.0.0 형식을 자동으로 변환했습니다.', 'success');
+							} else if (data.version === "6.0") {
+								showMessage('Stage 5 v6.0 형식(CF 프로젝트)을 자동으로 변환했습니다.', 'success');
 							} else if (data.schema_version === "3.0.0") {
 								// showMessage('Stage 5 v3.0.0 형식을 확인했습니다.', 'success'); // 메시지 표시 비활성화
 							}
@@ -2110,6 +2175,9 @@ function createTestData() {
 
 						// 2. 스테이지 6 (샷별 AI 이미지 프롬프트) 병합
 						else if (newData.stage === 6 && newData.scene_info && newData.shots) {
+							console.log('📌 Stage 6 데이터 감지됨');
+							console.log('Stage 6 shots 개수:', newData.shots.length);
+							
                     // Stage 2 구조 확인 (완화된 체크)
                    if (!hasStage2Structure && 
                        (!currentData?.breakdown_data?.sequences || currentData.breakdown_data.sequences.length === 0) &&
@@ -2124,12 +2192,33 @@ function createTestData() {
 								return;
 							}
 
+							// 현재 로드된 샷 ID 확인
+							console.log('🔍 현재 로드된 Stage 5 샷 ID 목록:');
+							currentData.breakdown_data.shots.forEach(shot => {
+								console.log(`  - ${shot.id}`);
+							});
+
 							let missingShots = [];
 							let successCount = 0;
 							
 							newData.shots.forEach(newShotData => {
 								const shotIdToFind = newShotData.shot_id;
-								const existingShot = currentData.breakdown_data.shots.find(shot => shot.id === shotIdToFind);
+								console.log(`🔎 Stage 6 샷 매칭 시도: ${shotIdToFind}`);
+								
+								// 정확한 ID 매칭 시도
+								let existingShot = currentData.breakdown_data.shots.find(shot => shot.id === shotIdToFind);
+								
+								// 매칭 실패 시 다양한 형식 시도
+								if (!existingShot) {
+									// 공백 제거 후 재시도
+									existingShot = currentData.breakdown_data.shots.find(shot => 
+										shot.id.trim() === shotIdToFind.trim()
+									);
+									
+									if (existingShot) {
+										console.log(`  ✅ 공백 제거 후 매칭 성공: ${existingShot.id}`);
+									}
+								}
 
 								// Stage 5 데이터가 없는 샷은 병합하지 않음
 								if (!existingShot) {
@@ -2139,9 +2228,12 @@ function createTestData() {
 
 								if (existingShot) {
 									successCount++;
+									console.log(`  ✅ 매칭 성공: ${shotIdToFind} → ${existingShot.id}`);
 
 									// Stage 6의 프롬프트 정보만 가져오기
 									if (newShotData.images && newShotData.images.length > 0) {
+										console.log(`    📝 이미지 프롬프트 병합 중... (${newShotData.images.length}개 이미지)`);
+										
 										// image_design_plans 생성 (없는 경우)
 										if (!existingShot.image_design_plans) {
 											// Stage 6에는 이미 Plan별로 구분된 ID가 있으므로 Plan별로 필터링만 수행
@@ -6606,7 +6698,7 @@ if (selectedPlanData && selectedPlanData.images) {
 											<label style="font-size: 0.85rem; color: #9370DB; font-weight: 600;">Veo2 구조화 프롬프트 (prompt_object_v6):</label>
 											<div class="veo2-structured-prompt" style="background: #2d1e3d; border: 1px solid #9370DB; border-radius: 4px; padding: 10px; margin-top: 5px; font-family: 'Courier New', monospace; font-size: 0.75rem; max-height: 200px; overflow-y: auto; white-space: pre; word-break: break-word; line-height: 1.4; color: #d0a0ff;">${veo2StructuredPrompt.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
 											<button class="copy-btn btn-small" style="margin-top: 5px; background: #9370DB;"
-												onclick="copyVideoPrompt('${veo2StructuredPrompt.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/</g, '&lt;').replace(/>/g, '&gt;')}', 'Veo2 Structured', '${imageId}')">
+												onclick="copyVeo2StructuredPrompt('${shot.id}', '${ai.id}', '${imageId}')">
 												Veo2 구조화 프롬프트 복사
 											</button>
 										</div>
@@ -7192,6 +7284,8 @@ try {
 		// HTML 엔티티 디코딩
 		let actualPromptText = prompt.replace(/\\n/g, "\n");
 		actualPromptText = actualPromptText.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+		actualPromptText = actualPromptText.replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+		actualPromptText = actualPromptText.replace(/&amp;/g, '&');
 		
 		if (!actualPromptText || actualPromptText.trim() === '프롬프트가 없습니다.') {
 			return showMessage(`${aiName} 프롬프트가 비어 있습니다.`, 'warning');
@@ -7204,6 +7298,7 @@ try {
 				actualPromptText = JSON.stringify(jsonObj, null, 2);
 			} catch (e) {
 				// JSON 파싱 실패시 원본 사용
+				console.error('Veo2 JSON 파싱 실패:', e);
 			}
 		}
 		
@@ -7212,6 +7307,40 @@ try {
 				showMessage(`${aiName} 프롬프트 (${imageId})가 복사되었습니다.`, 'success');
 			}
 		});
+	}
+	
+	// Veo2 구조화 프롬프트 전용 복사 함수
+	function copyVeo2StructuredPrompt(shotId, aiId, imageId) {
+		try {
+			// DOM에서 직접 프롬프트 텍스트 가져오기
+			const promptElement = document.querySelector(`.veo2-structured-prompt`);
+			if (!promptElement) {
+				return showMessage('Veo2 구조화 프롬프트를 찾을 수 없습니다.', 'error');
+			}
+			
+			// textContent로 실제 텍스트 가져오기
+			let promptText = promptElement.textContent;
+			
+			// JSON 포맷팅 시도
+			if (promptText.trim().startsWith('{')) {
+				try {
+					const jsonObj = JSON.parse(promptText);
+					promptText = JSON.stringify(jsonObj, null, 2);
+				} catch (e) {
+					// JSON 파싱 실패시 원본 사용
+					console.error('Veo2 JSON 파싱 실패:', e);
+				}
+			}
+			
+			copyToClipboard(promptText).then(success => {
+				if (success) {
+					showMessage(`Veo2 구조화 프롬프트 (${imageId})가 복사되었습니다.`, 'success');
+				}
+			});
+		} catch (error) {
+			console.error('Veo2 프롬프트 복사 오류:', error);
+			showMessage('프롬프트 복사 중 오류가 발생했습니다.', 'error');
+		}
 	}
 
 	// 영상 프롬프트 수정
@@ -9347,6 +9476,9 @@ function rebindPromptButtons() {
 
 // 전역 함수로 등록
 window.rebindPromptButtons = rebindPromptButtons;
+
+// Veo2 구조화 프롬프트 복사 함수를 글로벌로 노출
+window.copyVeo2StructuredPrompt = copyVeo2StructuredPrompt;
 
 // 디버그 함수 - 현재 프롬프트 버튼 상태 확인
 window.debugPromptButtons = function() {
