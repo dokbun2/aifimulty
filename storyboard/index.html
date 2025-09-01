@@ -49,7 +49,7 @@
     <style>
         /* Additional styles for storyboard - matching concept art */
         body {
-            padding-top: 60px;
+            padding-top: 48px; /* Only nav height, no gap */
         }
         
         /* Storyboard Header - Matching Concept Art Header */
@@ -60,8 +60,9 @@
             padding: 12px 0;
             border-bottom: 1px solid rgba(255,255,255,0.08);
             position: sticky;
-            top: 48px;
+            top: 48px; /* Directly attached to nav */
             z-index: 100;
+            margin-top: 0; /* Remove any margin */
         }
         
         .storyboard-header-content {
@@ -145,26 +146,63 @@
             display: flex;
             gap: 30px;
             max-width: 1440px;
-            margin: 30px auto;
+            margin: 9px auto 30px auto; /* Top margin matches sidebar top position */
             padding: 0 22px;
             overflow-x: hidden;  /* Prevent horizontal scrolling */
+            position: relative; /* For sidebar positioning */
+            align-items: flex-start; /* Align items at the top */
         }
         
         /* Sidebar - Matching Concept Art */
         .storyboard-sidebar {
             width: 300px;
-            flex-shrink: 0;
+            position: fixed;
+            top: 125px; /* 48px (nav) + 40px (header height) + 52px (extra space) */
+            left: calc(50% - 720px + 22px); /* Center aligned with max-width 1440px container */
+            z-index: 50;
+            height: calc(100vh - 160px);
+        }
+        
+        /* Fallback for smaller screens */
+        @media (max-width: 1484px) {
+            .storyboard-sidebar {
+                left: 22px; /* Use padding value for smaller screens */
+            }
+        }
+        
+        /* Mobile responsive - reset to normal flow */
+        @media (max-width: 768px) {
+            .storyboard-sidebar {
+                position: relative;
+                width: 100%;
+                top: auto;
+                left: auto;
+                height: auto;
+                margin-bottom: 20px;
+            }
+            
+            .storyboard-content {
+                margin-left: 0;
+            }
+            
+            .storyboard-main-layout {
+                flex-direction: column;
+            }
+            
+            .nav-section {
+                height: 400px; /* Fixed height for mobile */
+            }
         }
         
         .nav-section {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
+            border-radius: 5px;
             padding: 20px;
             margin-bottom: 20px;
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            height: calc(100vh - 180px);  /* 전체 섹션 높이 설정 */
+            height: 100%;  /* Use full height of parent */
             display: flex;
             flex-direction: column;
             overflow: hidden;  /* 컨테이너 밖으로 나가는 것 방지 */
@@ -325,13 +363,15 @@
             flex: 1;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
+            border-radius: 5px;
             padding: 30px;
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             min-height: 600px;
             overflow-x: hidden;  /* Prevent horizontal scrolling */
             overflow-y: auto;
+            margin-left: 310px; /* 300px (sidebar width) + 30px (gap) */
+            margin-top: 0; /* Remove any top margin */
         }
         
         .content-header {

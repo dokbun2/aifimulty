@@ -6,8 +6,9 @@ body {
     color: rgba(255, 255, 255, 0.9) !important;
     padding-top: 0 !important;
     margin: 0 !important;
-    overflow: hidden !important;
-    height: 100vh !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important; /* Changed from hidden to auto */
+    min-height: 100vh !important; /* Changed from height to min-height */
 }
 
 /* Apple Navigation Bar */
@@ -76,7 +77,7 @@ body {
     display: flex !important;
     flex-direction: column !important;
     width: 100% !important;
-    height: 100vh !important;
+    min-height: 100vh !important; /* Changed from height to min-height */
     position: relative !important;
     margin: 0 !important;
     padding-top: 48px !important;
@@ -88,13 +89,13 @@ body {
 .main-layout {
     display: flex !important;
     width: 100% !important;
-    flex: 1 !important;
     position: relative !important;
     gap: 20px !important;
     padding: 20px !important;
+    padding-left: 360px !important; /* 320px (sidebar width) + 20px (gap) + 20px (padding) */
     margin: 0 !important;
     box-sizing: border-box !important;
-    min-height: 0 !important;
+    align-items: flex-start !important;
 }
 
 /* Navigation Sidebar Apple Style */
@@ -105,18 +106,19 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     border-radius: 20px !important;
     width: 320px !important;
-    position: relative !important;
-    flex-shrink: 0 !important;
-    align-self: stretch !important;
+    position: fixed !important; /* Changed to fixed for absolute positioning */
+    left: 20px !important; /* Match the padding of main-layout */
+    top: 68px !important; /* 48px nav + 20px padding */
+    bottom: 20px !important; /* Match bottom padding */
     overflow-y: auto !important;
     overflow-x: hidden !important;
     padding: 0 !important;
     display: flex !important;
     flex-direction: column !important;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
-    max-height: calc(100vh - 88px) !important; /* 48px nav + 20px padding top + 20px padding bottom */
     scrollbar-width: thin !important;
     scrollbar-color: rgba(255, 255, 255, 0.2) rgba(255, 255, 255, 0.05) !important;
+    z-index: 100 !important; /* Ensure it stays above other content */
 }
 
 /* Custom Scrollbar for Navigation Container */
@@ -349,10 +351,8 @@ body {
     margin: 0 !important;
     padding: 0 !important;
     flex: 1 !important;
-    align-self: stretch !important;
     box-sizing: border-box !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
+    overflow: visible !important; /* Changed from auto to visible for sticky to work */
     border-radius: 20px !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
@@ -369,7 +369,6 @@ body {
     padding: 0 !important;
     display: flex !important;
     flex-direction: column !important;
-    min-height: 100vh !important;
 }
 
 .content-header {
@@ -672,12 +671,17 @@ body {
 @media (max-width: 768px) {
     .main-layout {
         flex-direction: column !important;
+        padding-left: 20px !important; /* Reset padding for mobile */
     }
     
     .navigation {
+        position: relative !important; /* Change back to relative on mobile */
         width: 100% !important;
         height: auto !important;
         max-height: 40vh !important;
+        left: auto !important;
+        top: auto !important;
+        bottom: auto !important;
         border-right: none !important;
         border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
     }
