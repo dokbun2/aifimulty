@@ -2578,6 +2578,11 @@ function createTestData() {
 						}
 
 						if (videoDataUpdated) {
+							// Stage 7 데이터를 localStorage에 저장
+							const jsonFileName = getProjectFileName();
+							localStorage.setItem(`stage7VideoPrompts_${jsonFileName}`, JSON.stringify(window.stage7VideoPrompts));
+							debugLog('✅ Stage 7 데이터를 localStorage에 저장했습니다.');
+							
 							currentData.current_stage_name = "video_prompt_generation";
 							currentData.timestamp = new Date().toISOString();
 							updated = true;
@@ -9231,6 +9236,59 @@ try {
                                 const jsonFileName = getProjectFileName();
                                 localStorage.setItem(`stage7VideoPrompts_${jsonFileName}`, JSON.stringify(window.stage7VideoPrompts));
                                 debugLog(`✅ ${successCount}개의 Stage 7 파일을 성공적으로 로드했습니다. (총 ${jsonFiles.length}개 중)`);
+                                
+                                // Stage 7 데이터를 currentData.breakdown_data.shots에 병합
+                                if (currentData && currentData.breakdown_data && currentData.breakdown_data.shots) {
+                                    let mergedCount = 0;
+                                    
+                                    currentData.breakdown_data.shots.forEach(shot => {
+                                        const shotId = shot.id;
+                                        const stage7Data = window.stage7VideoPrompts[shotId];
+                                        
+                                        if (stage7Data) {
+                                            // video_prompts 초기화
+                                            if (!shot.video_prompts) {
+                                                shot.video_prompts = {};
+                                            }
+                                            
+                                            // 각 이미지의 비디오 프롬프트 병합
+                                            Object.keys(stage7Data).forEach(imageId => {
+                                                const promptData = stage7Data[imageId];
+                                                
+                                                if (promptData.prompts) {
+                                                    // 각 AI 도구의 프롬프트 병합
+                                                    Object.keys(promptData.prompts).forEach(aiTool => {
+                                                        const key = `${aiTool}_${imageId}`;
+                                                        shot.video_prompts[key] = {
+                                                            ...promptData.prompts[aiTool]
+                                                        };
+                                                        debugLog(`✅ Stage 7 비디오 프롬프트 병합: ${shotId} - ${key}`);
+                                                    });
+                                                }
+                                                
+                                                // video_design의 extracted_image_info 처리
+                                                if (promptData.extracted_data) {
+                                                    if (!shot.video_design) shot.video_design = {};
+                                                    if (!shot.video_design.extracted_image_info) {
+                                                        shot.video_design.extracted_image_info = [];
+                                                    }
+                                                    shot.video_design.extracted_image_info.push({
+                                                        image_id: imageId,
+                                                        description: promptData.image_reference?.description || ''
+                                                    });
+                                                }
+                                            });
+                                            
+                                            mergedCount++;
+                                        }
+                                    });
+                                    
+                                    if (mergedCount > 0) {
+                                        debugLog(`✅ ${mergedCount}개의 샷에 Stage 7 비디오 프롬프트를 병합했습니다.`);
+                                        saveDataToLocalStorage();
+                                        updateUI();
+                                    }
+                                }
                             } else {
                                 showMessage('Stage 7 형식의 JSON 파일을 찾을 수 없습니다.', 'warning');
                             }
