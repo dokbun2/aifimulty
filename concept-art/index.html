@@ -46,7 +46,7 @@
     <style>
         /* Additional styles for concept art page */
         body {
-            padding-top: 60px; /* 네비게이션 바 높이만큼 패딩 추가 */
+            padding-top: 48px; /* 네비게이션 바 높이만큼 패딩 추가 */
         }
         
         /* Reference Images Apple Style */
@@ -350,21 +350,79 @@
             display: flex;
             gap: 30px;
             max-width: 1440px;
-            margin: 30px auto;
+            margin: 9px auto 30px auto; /* Reduced top margin to get closer to header */
             padding: 0 22px;
+            position: relative;
+            align-items: flex-start;
         }
         
         .concept-sidebar {
             width: 300px;
-            flex-shrink: 0;
+            position: fixed;
+            top: 125px; /* Reduced to bring closer to header */
+            left: calc(50% - 720px + 22px); /* Center aligned with max-width 1440px container */
+            z-index: 50;
+            height: calc(100vh - 80px);
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.2) rgba(255, 255, 255, 0.05);
+        }
+        
+        /* Custom scrollbar for sidebar */
+        .concept-sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .concept-sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+        
+        .concept-sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            transition: background 0.3s ease;
+        }
+        
+        .concept-sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Fallback for smaller screens */
+        @media (max-width: 1484px) {
+            .concept-sidebar {
+                left: 22px; /* Use padding value for smaller screens */
+            }
+        }
+        
+        /* Mobile responsive - reset to normal flow */
+        @media (max-width: 768px) {
+            .concept-sidebar {
+                position: relative;
+                width: 100%;
+                top: auto;
+                left: auto;
+                height: auto;
+                margin-bottom: 20px;
+            }
+            
+            .concept-content {
+                margin-left: 0;
+            }
+            
+            .concept-main-layout {
+                flex-direction: column;
+                margin-top: 30px;
+            }
         }
         
         .concept-category {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
+            border-radius: 5px;
             padding: 20px;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
         }
@@ -408,10 +466,12 @@
             flex: 1;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
+            border-radius: 5px;
             padding: 30px;
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
+            margin-left: 310px; /* 300px sidebar + 30px gap */
+            margin-top: 0;
         }
         
         .concept-tabs {
