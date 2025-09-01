@@ -1264,14 +1264,21 @@ function createTestData() {
 					const jsonFileName = getProjectFileName();
 					
 					// Universal/Nanobana 데이터 저장 확인
-					const universalData = currentData.breakdown_data?.shots?.map(shot => ({
+					const universalNanobanaData = currentData.breakdown_data?.shots?.map(shot => ({
 						shotId: shot.id,
 						universal: shot.image_design?.ai_generated_images?.universal,
-						nanobana: shot.image_design?.ai_generated_images?.nanobana
-					})).filter(item => item.universal?.some(img => img?.url) || item.nanobana?.some(img => img?.url));
+						nanobana: shot.image_design?.ai_generated_images?.nanobana,
+						universalPrompt: shot.image_prompts?.universal,
+						nanobanaPrompt: shot.image_prompts?.nanobana
+					})).filter(item => 
+						item.universal?.some(img => img?.url) || 
+						item.nanobana?.some(img => img?.url) ||
+						item.universalPrompt?.main_prompt ||
+						item.nanobanaPrompt?.main_prompt
+					);
 					
-					if (universalData.length > 0) {
-						debugLog('💾 Universal/Nanobana 데이터 저장 중:', universalData);
+					if (universalNanobanaData.length > 0) {
+						debugLog('💾 Universal/Nanobana 데이터 저장 중:', universalNanobanaData);
 					}
 					
 					const dataString = JSON.stringify(currentData);
@@ -8888,8 +8895,18 @@ try {
                                                                 };
                                                                 
                                                                 // universal은 universal로만 저장 (midjourney로 복사하지 않음)
-                                                            } else if (aiTool === 'universal_translated') {
-                                                                // universal_translated는 이미 universal에서 처리됨
+                                                            } else if (aiTool === 'nanobana') {
+                                                                const nanobanaPrompt = typeof promptData === 'string' ? promptData : (promptData.prompt || promptData);
+                                                                const nanobanaTranslated = firstImageData.prompts.nanobana_translated || '';
+                                                                
+                                                                shot.image_prompts.nanobana = {
+                                                                    main_prompt: nanobanaPrompt,
+                                                                    main_prompt_translated: nanobanaTranslated,
+                                                                    parameters: ''
+                                                                };
+                                                                debugLog(`✅ Nanobana 프롬프트가 샷 ${shot.id}에 병합됨:`, nanobanaPrompt.substring(0, 50) + '...');
+                                                            } else if (aiTool === 'universal_translated' || aiTool === 'nanobana_translated') {
+                                                                // universal_translated와 nanobana_translated는 이미 처리됨
                                                                 return;
                                                             } else if (aiTool === 'midjourney') {
                                                                 shot.image_prompts.midjourney = {
@@ -9066,8 +9083,18 @@ try {
                                                             main_prompt_translated: universalTranslated,
                                                             parameters: csvParams
                                                         };
-                                                    } else if (aiTool === 'universal_translated') {
-                                                        // universal_translated는 이미 universal에서 처리됨
+                                                    } else if (aiTool === 'nanobana') {
+                                                        const nanobanaPrompt = typeof promptData === 'string' ? promptData : (promptData.prompt || promptData);
+                                                        const nanobanaTranslated = firstImageData.prompts.nanobana_translated || '';
+                                                        
+                                                        shot.image_prompts.nanobana = {
+                                                            main_prompt: nanobanaPrompt,
+                                                            main_prompt_translated: nanobanaTranslated,
+                                                            parameters: ''
+                                                        };
+                                                        debugLog(`✅ Nanobana 프롬프트가 샷 ${shot.id}에 병합됨:`, nanobanaPrompt.substring(0, 50) + '...');
+                                                    } else if (aiTool === 'universal_translated' || aiTool === 'nanobana_translated') {
+                                                        // universal_translated와 nanobana_translated는 이미 처리됨
                                                         return;
                                                     } else if (promptData && typeof promptData === 'object') {
                                                         // 기존 형식 처리 (호환성)
