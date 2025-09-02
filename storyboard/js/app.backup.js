@@ -6619,9 +6619,9 @@ else {
 let aiGroupedHtml = '';
 if (selectedPlanData && selectedPlanData.images) {
 			const aiTools = [
-				{ id: 'luma', name: 'Luma AI', color: '#FF8C00' },
-				{ id: 'kling', name: 'Kling AI', color: '#1E90FF' },
-				{ id: 'veo2', name: 'Google Veo 2', color: '#9370DB' },
+				{ id: 'luma', name: '일반프롬프트', color: '#FF8C00' },
+				{ id: 'kling', name: '범용프롬프트', color: '#1E90FF' },
+				{ id: 'veo2', name: 'VEO프롬프트', color: '#9370DB' },
 				{ id: 'runway', name: 'Runway ML', color: '#3CB371' }
 			];
 
@@ -6708,7 +6708,7 @@ if (selectedPlanData && selectedPlanData.images) {
 											<div class="kling-structured-prompt" style="background: #1e2d3d; border: 1px solid #4a90e2; border-radius: 4px; padding: 10px; margin-top: 5px; font-family: 'Courier New', monospace; font-size: 0.85rem; max-height: 150px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; line-height: 1.4; color: #a0d0ff;">${klingStructuredPrompt}</div>
 											<button class="copy-btn btn-small" style="margin-top: 5px;"
 												onclick="copyVideoPrompt('${klingStructuredPrompt.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, "\\n")}', 'Kling Structured', '${imageId}')">
-												Kling 프롬프트 복사
+												프롬프트 복사
 											</button>
 										</div>
 									` : ''}

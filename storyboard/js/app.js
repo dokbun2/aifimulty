@@ -6893,10 +6893,10 @@ else {
 let aiGroupedHtml = '';
 if (selectedPlanData && selectedPlanData.images) {
 			const aiTools = [
-				{ id: 'luma', name: 'Luma AI', color: '#FF8C00' },
-				{ id: 'kling', name: 'Kling AI', color: '#1E90FF' },
-				{ id: 'veo2', name: 'Google Veo 2', color: '#9370DB' },
-				{ id: 'runway', name: 'Runway ML', color: '#3CB371' }
+				{ id: 'luma', name: 'BASIC PROMPT', color: '#FF8C00' },
+				{ id: 'kling', name: 'UNIVERSAL PROMPT', color: '#1E90FF' },
+				{ id: 'veo2', name: 'VEO PROMPT', color: '#9370DB' },
+				{ id: 'runway', name: 'RW PROMPT', color: '#3CB371' }
 			];
 
 			aiGroupedHtml = '<div class="video-ai-container">';
@@ -6978,21 +6978,21 @@ if (selectedPlanData && selectedPlanData.images) {
 									${promptTranslated ? `<div style="margin-top: 5px; font-size: 0.85rem; color: #999;">번역: ${promptTranslated}</div>` : ''}
 									${klingStructuredPrompt ? `
 										<div style="margin-top: 10px;">
-											<label style="font-size: 0.85rem; color: #FFD700; font-weight: 600;">Kling 구조화 프롬프트:</label>
+											<label style="font-size: 0.85rem; color: #FFD700; font-weight: 600;">UNIVERSAL PROMPT :</label>
 											<div class="kling-structured-prompt" style="background: #1e2d3d; border: 1px solid #4a90e2; border-radius: 4px; padding: 10px; margin-top: 5px; font-family: 'Courier New', monospace; font-size: 0.85rem; max-height: 150px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; line-height: 1.4; color: #a0d0ff;">${klingStructuredPrompt}</div>
 											<button class="copy-btn btn-small" style="margin-top: 5px;"
 												onclick="copyVideoPrompt('${klingStructuredPrompt.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, "\\n")}', 'Kling Structured', '${imageId}')">
-												Kling 프롬프트 복사
+												프롬프트 복사
 											</button>
 										</div>
 									` : ''}
 									${veo2StructuredPrompt ? `
 										<div style="margin-top: 10px;">
-											<label style="font-size: 0.85rem; color: #9370DB; font-weight: 600;">Veo2 구조화 프롬프트 (prompt_object_v6):</label>
+											<label style="font-size: 0.85rem; color: #9370DB; font-weight: 600;">Veo 구조화 프롬프트 :</label>
 											<div class="veo2-structured-prompt" style="background: #2d1e3d; border: 1px solid #9370DB; border-radius: 4px; padding: 10px; margin-top: 5px; font-family: 'Courier New', monospace; font-size: 0.75rem; max-height: 200px; overflow-y: auto; white-space: pre; word-break: break-word; line-height: 1.4; color: #d0a0ff;">${veo2StructuredPrompt.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
 											<button class="copy-btn btn-small" style="margin-top: 5px; background: #9370DB;"
 												onclick="copyVeo2StructuredPrompt('${shot.id}', '${ai.id}', '${imageId}', event)">
-												Veo2 구조화 프롬프트 복사
+												Veo 구조화 프롬프트 복사
 											</button>
 										</div>
 									` : ''}
@@ -7473,10 +7473,10 @@ try {
 	// 이미지별 AI 카드 생성
 	function createVideoAICards(shotId, imageId, videoPromptsForImage, videoUrls) {
 		const aiTools = [
-			{ id: 'luma', name: 'Luma AI' },
-			{ id: 'kling', name: 'Kling AI' },
-			{ id: 'veo2', name: 'Google Veo 2' },
-			{ id: 'runway', name: 'Runway ML' }
+			{ id: 'luma', name: 'BASIC PROMPT' },
+			{ id: 'kling', name: 'UNIVERSAL PROMPT' },
+			{ id: 'veo2', name: 'VEO Prompt' },
+			{ id: 'runway', name: 'RW PROMPT' }
 		];
 
 		return aiTools.map(ai => {
