@@ -2476,3 +2476,176 @@ body {
 #tools > div > div.tools-grid > div:nth-child(3) > div > a:nth-child(1) {
   display: none !important;
 }
+
+/* ==========================================
+   AIFI 바나나 버튼 스타일
+   ========================================== */
+.banana-button-wrapper {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.banana-button {
+  background: linear-gradient(135deg, 
+    rgba(255, 193, 7, 0.12) 0%, 
+    rgba(255, 235, 59, 0.08) 100%);
+  border: 1px solid rgba(255, 193, 7, 0.2);
+  border-radius: 20px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-decoration: none;
+  color: var(--dark-text);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  min-width: 300px;
+  box-shadow: 0 4px 20px rgba(255, 193, 7, 0.1),
+              inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.banana-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 193, 7, 0.1), 
+    transparent);
+  transition: left 0.6s;
+}
+
+.banana-button:hover::before {
+  left: 100%;
+}
+
+.banana-button:hover {
+  background: linear-gradient(135deg, 
+    rgba(255, 193, 7, 0.2) 0%, 
+    rgba(255, 235, 59, 0.15) 100%);
+  border-color: rgba(255, 193, 7, 0.4);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 12px 40px rgba(255, 193, 7, 0.2),
+              inset 0 2px 4px rgba(255, 255, 255, 0.1),
+              0 0 60px rgba(255, 193, 7, 0.1);
+}
+
+.banana-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, 
+    rgba(255, 193, 7, 0.2) 0%, 
+    rgba(255, 235, 59, 0.15) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.banana-emoji {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.banana-content {
+  flex: 1;
+}
+
+.banana-content h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--dark-text);
+  margin: 0 0 4px 0;
+}
+
+.banana-content p {
+  font-size: 14px;
+  color: var(--dark-text-secondary);
+  margin: 0;
+}
+
+.banana-arrow {
+  font-size: 18px;
+  color: rgba(255, 193, 7, 0.8);
+  transition: all 0.3s;
+  flex-shrink: 0;
+}
+
+.banana-button:hover .banana-arrow {
+  transform: translateX(4px);
+  color: rgba(255, 193, 7, 1);
+}
+
+.banana-button:hover .banana-content h3 {
+  color: #FFC107;
+  text-shadow: 0 0 20px rgba(255, 193, 7, 0.3);
+}
+
+.banana-button:hover .banana-icon-wrapper {
+  background: linear-gradient(135deg, 
+    rgba(255, 193, 7, 0.3) 0%, 
+    rgba(255, 235, 59, 0.2) 100%);
+  border-color: rgba(255, 193, 7, 0.5);
+  box-shadow: 0 4px 15px rgba(255, 193, 7, 0.2);
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .banana-button {
+    min-width: 280px;
+    padding: 18px 20px;
+    gap: 14px;
+  }
+  
+  .banana-icon-wrapper {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .banana-emoji {
+    font-size: 22px;
+  }
+  
+  .banana-content h3 {
+    font-size: 16px;
+  }
+  
+  .banana-content p {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .banana-button {
+    min-width: 260px;
+    padding: 16px 18px;
+    gap: 12px;
+  }
+  
+  .banana-icon-wrapper {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .banana-emoji {
+    font-size: 20px;
+  }
+  
+  .banana-content h3 {
+    font-size: 15px;
+  }
+  
+  .banana-content p {
+    font-size: 12px;
+  }
+}
