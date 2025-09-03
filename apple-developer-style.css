@@ -1807,6 +1807,8 @@ body {
   margin-top: 16px;
   width: 100%;
   max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .stage-upload-card {
@@ -1821,6 +1823,7 @@ body {
   align-items: center;
   gap: 16px;
   min-width: 0; /* 모바일 반응형을 위해 min-width 제거 */
+  height: 80px; /* 모든 카드 높이 통일 */
 }
 
 .stage-upload-card:hover {
@@ -2482,9 +2485,9 @@ body {
    ========================================== */
 .banana-button-wrapper {
   margin-top: 24px;
-  display: flex;
-  justify-content: center;
+  display: block;
   width: 100%;
+  grid-column: 1 / -1; /* 그리드에서 전체 열 차지 */
 }
 
 .banana-button {
@@ -2504,7 +2507,7 @@ body {
   overflow: hidden;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  min-width: 300px;
+  width: 100%;
   box-shadow: 0 4px 20px rgba(255, 193, 7, 0.1),
               inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
@@ -2601,8 +2604,14 @@ body {
 
 /* 반응형 디자인 */
 @media (max-width: 768px) {
+  .banana-button-wrapper {
+    width: 100%;
+    margin-top: 20px;
+    grid-column: 1 / -1; /* 모바일에서도 전체 열 차지 */
+  }
+  
   .banana-button {
-    min-width: 280px;
+    width: 100%;
     padding: 18px 20px;
     gap: 14px;
   }
@@ -2626,8 +2635,14 @@ body {
 }
 
 @media (max-width: 480px) {
+  .banana-button-wrapper {
+    width: 100%;
+    margin-top: 18px;
+    grid-column: 1 / -1; /* 작은 모바일에서도 전체 열 차지 */
+  }
+  
   .banana-button {
-    min-width: 260px;
+    width: 100%;
     padding: 16px 18px;
     gap: 12px;
   }
