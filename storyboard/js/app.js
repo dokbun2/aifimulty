@@ -4917,41 +4917,50 @@ const csvMapping = shot.csv_mapping || {};
 debugLog('🔍 Stage 5 CSV 데이터 확인:', shot.id, Object.keys(csvMapping).length, 'images');
 
 // Stage 6 데이터에서 이미지별 프롬프트 가져오기
-// v1.1.0 형식인 경우 shot.image_prompts를 직접 사용
 let shotStage6Data = {};
-if (shot.image_prompts) {
-    // v1.1.0 형식: shot.image_prompts를 직접 사용
-    debugLog('📌 v1.1.0 형식 image_prompts 사용');
-    // 모든 플랜 이미지에 대해 동일한 프롬프트를 사용하도록 설정
-    shotStage6Data = {};
-    // Plan별 이미지 ID에 동일한 프롬프트 데이터 매핑
-    if (imageDesignPlans) {
+
+// 먼저 window.stage6ImagePrompts에서 직접 가져오기 (Stage 6 JSON 파일로부터 로드된 데이터)
+const stage6Data = window.stage6ImagePrompts || {};
+shotStage6Data = stage6Data[shot.id] || {};
+
+// Stage 6 데이터 디버깅
+if (Object.keys(shotStage6Data).length > 0) {
+    debugLog('📌 Stage 6 데이터 로드됨:', shot.id);
+    Object.keys(shotStage6Data).forEach(imageId => {
+        const imageData = shotStage6Data[imageId];
+        if (imageData && imageData.prompts) {
+            // 각 이미지별로 다른 프롬프트가 있는지 확인
+            if (imageData.prompts.universal) {
+                const universalPrompt = typeof imageData.prompts.universal === 'string' 
+                    ? imageData.prompts.universal.substring(0, 50) + '...' 
+                    : (imageData.prompts.universal.prompt || '').substring(0, 50) + '...';
+                debugLog(`  ✅ Universal 프롬프트 (${imageId}): ${universalPrompt}`);
+            }
+            if (imageData.prompts.nanobana) {
+                const nanobanaPrompt = typeof imageData.prompts.nanobana === 'string'
+                    ? imageData.prompts.nanobana.substring(0, 50) + '...'
+                    : (imageData.prompts.nanobana.prompt || '').substring(0, 50) + '...';
+                console.log(`🎯 Nanobana 프롬프트 (${imageId}):`, nanobanaPrompt);
+            }
+        }
+    });
+} else {
+    console.log(`⚠️ Stage 6 데이터가 없음: ${shot.id}`, {
+        stage6DataKeys: Object.keys(stage6Data),
+        shotIdExists: !!stage6Data[shot.id],
+        windowStage6Exists: !!window.stage6ImagePrompts
+    });
+    
+    // Stage 6 데이터가 없고 shot.image_prompts가 있는 경우 (v1.1.0 호환성)
+    // 이 경우 모든 이미지가 같은 프롬프트를 갖게 됨 (폴백)
+    if (shot.image_prompts && imageDesignPlans) {
+        debugLog('⚠️ Stage 6 데이터 없음 - shot.image_prompts 사용 (모든 이미지에 동일한 프롬프트 적용)');
         Object.keys(imageDesignPlans).forEach(planId => {
             const plan = imageDesignPlans[planId];
             if (plan && plan.images) {
                 plan.images.forEach(img => {
                     shotStage6Data[img.id] = { prompts: shot.image_prompts };
                 });
-            }
-        });
-    }
-} else {
-    // 기존 Stage 6 데이터 방식
-    const stage6Data = window.stage6ImagePrompts || {};
-    shotStage6Data = stage6Data[shot.id] || {};
-    
-    // Stage 6 데이터 디버깅
-    if (Object.keys(shotStage6Data).length > 0) {
-        debugLog('📌 Stage 6 데이터 로드됨:', shot.id);
-        Object.keys(shotStage6Data).forEach(imageId => {
-            const imageData = shotStage6Data[imageId];
-            if (imageData.prompts) {
-                if (imageData.prompts.universal) {
-                    debugLog(`  ✅ Universal 프롬프트: ${imageId}`);
-                }
-                if (imageData.prompts.nanobana) {
-                    debugLog(`  ✅ Nanobana 프롬프트: ${imageId}`);
-                }
             }
         });
     }
@@ -5115,8 +5124,19 @@ let aiSectionsHtml = '';
 						if (!imageStage6Data.prompts && Object.keys(shotStage6Data).length > 0) {
 							// Stage 6 이미지 ID 패턴: S01.01-A-01, S01.01-B-01, S01.01-single-01
 							// planImage.planId (single, A, B, C)와 인덱스를 사용해서 찾기
-							const planPrefix = planImage.planId === 'single' ? 'single' : 
-							                  (planImage.planId.startsWith('plan_') ? planImage.planId.replace('plan_', '').toUpperCase() : planImage.planId.toUpperCase());
+							let planPrefix = '';
+							if (planImage.planId === 'single') {
+								planPrefix = 'single';
+							} else if (planImage.planId === 'plan_a' || planImage.planId === 'A' || planImage.planId === 'a') {
+								planPrefix = 'A';
+							} else if (planImage.planId === 'plan_b' || planImage.planId === 'B' || planImage.planId === 'b') {
+								planPrefix = 'B';
+							} else if (planImage.planId === 'plan_c' || planImage.planId === 'C' || planImage.planId === 'c') {
+								planPrefix = 'C';
+							} else {
+								planPrefix = planImage.planId.toUpperCase();
+							}
+							
 							const imageIndex = String(imgIdx + 1).padStart(2, '0');
 							
 							// 가능한 ID 패턴들 시도
@@ -5202,7 +5222,19 @@ let aiSectionsHtml = '';
 						if (!imageStage6Data.prompts && Object.keys(shotStage6Data).length > 0) {
 							// Stage 6 이미지 ID 패턴: S01.01-A-01, S01.01-B-01, S01.01-single-01
 							// planImage.planId (A, B, C, single)와 인덱스를 사용해서 찾기
-							const planPrefix = planImage.planId === 'single' ? 'single' : planImage.planId.toUpperCase();
+							let planPrefix = '';
+							if (planImage.planId === 'single') {
+								planPrefix = 'single';
+							} else if (planImage.planId === 'plan_a' || planImage.planId === 'A' || planImage.planId === 'a') {
+								planPrefix = 'A';
+							} else if (planImage.planId === 'plan_b' || planImage.planId === 'B' || planImage.planId === 'b') {
+								planPrefix = 'B';
+							} else if (planImage.planId === 'plan_c' || planImage.planId === 'C' || planImage.planId === 'c') {
+								planPrefix = 'C';
+							} else {
+								planPrefix = planImage.planId.toUpperCase();
+							}
+							
 							const imageIndex = String(imgIdx + 1).padStart(2, '0');
 							
 							// 가능한 ID 패턴들 시도
@@ -5213,10 +5245,40 @@ let aiSectionsHtml = '';
 								dataLookupId  // 원래 ID도 시도
 							];
 							
+							// 디버깅: Universal과 Nanobana에 대해 가능한 ID 패턴들 출력
+							if (ai.id === 'universal' || ai.id === 'nanobana') {
+								console.log(`🔍 ${ai.name} ID 매칭 시도:`, {
+									originalId: imageId,
+									planId: planImage.planId,
+									planPrefix: planPrefix,
+									imageIndex: imageIndex,
+									possibleIds: possibleIds,
+									availableKeys: Object.keys(shotStage6Data).slice(0, 10) // 처음 10개만 표시
+								});
+							}
+							
 							for (const possibleId of possibleIds) {
 								if (shotStage6Data[possibleId]) {
 									dataLookupId = possibleId;
 									imageStage6Data = shotStage6Data[possibleId];
+									if (ai.id === 'universal' || ai.id === 'nanobana') {
+										console.log(`✅ ${ai.name} ID 매칭 성공: ${possibleId}`);
+										// 매칭된 데이터의 실제 프롬프트 내용도 확인
+										if (imageStage6Data.prompts) {
+											if (ai.id === 'universal' && imageStage6Data.prompts.universal) {
+												const preview = typeof imageStage6Data.prompts.universal === 'string'
+													? imageStage6Data.prompts.universal.substring(0, 80)
+													: (imageStage6Data.prompts.universal.prompt || '').substring(0, 80);
+												console.log(`   📝 Universal 프롬프트 찾음: "${preview}..."`);
+											}
+											if (ai.id === 'nanobana' && imageStage6Data.prompts.nanobana) {
+												const preview = typeof imageStage6Data.prompts.nanobana === 'string'
+													? imageStage6Data.prompts.nanobana.substring(0, 80)
+													: (imageStage6Data.prompts.nanobana.prompt || '').substring(0, 80);
+												console.log(`   📝 Nanobana 프롬프트 찾음: "${preview}..."`);
+											}
+										}
+									}
 									break;
 								}
 							}
