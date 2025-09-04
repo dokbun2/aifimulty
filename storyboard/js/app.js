@@ -4987,19 +4987,71 @@ if (complexity === 'simple' && imageDesignPlans.single) {
 } 
 // Complex 샷인 경우
 else {
-    selectedPlanData = imageDesignPlans[selectedPlan] || imageDesignPlans.A || {};
-    debugLog('📸 선택된 플랜:', selectedPlan, 'images:', selectedPlanData.images?.length);
+    // C 플랜 데이터가 있는지 확인 (이미지 프롬프트 기준)
+    const hasCPlanImages = imageDesignPlans.C && imageDesignPlans.C.images && imageDesignPlans.C.images.length > 0;
+    
+    // C 플랜이 선택되었는데 데이터가 없으면 B로 폴백하고 실제 데이터도 변경
+    let actualSelectedPlan = selectedPlan;
+    if ((selectedPlan === 'C' || selectedPlan === 'plan_c' || selectedPlan === 'plan_complex') && !hasCPlanImages) {
+        console.warn(`⚠️ 이미지 탭: C 플랜 데이터가 없어 B 플랜으로 전환합니다.`);
+        actualSelectedPlan = 'B';
+        // 실제 데이터도 B로 변경
+        shot.image_design.selected_plan = 'B';
+        shot._imageCPlanFallback = true;
+        // 변경 사항 저장
+        if (window.saveDataToLocalStorage) {
+            window.saveDataToLocalStorage();
+        }
+    }
+    
+    selectedPlanData = imageDesignPlans[actualSelectedPlan] || imageDesignPlans.A || {};
+    debugLog('📸 선택된 플랜:', actualSelectedPlan, 'images:', selectedPlanData.images?.length);
+    
+    // C 플랜 데이터 없음 경고 메시지
+    let warningMessage = '';
+    if ((selectedPlan === 'C' || selectedPlan === 'plan_c' || selectedPlan === 'plan_complex') && !hasCPlanImages) {
+        warningMessage = `
+            <div class="warning-message" style="background: linear-gradient(135deg, #ff6b35, #ff8c42); color: white; padding: 20px; border-radius: 12px; margin: 15px 0; box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);">
+                <h4 style="margin: 0 0 10px 0; font-size: 1.2rem;">⚠️ C 플랜 이미지 데이터가 없습니다</h4>
+                <p style="margin: 5px 0; font-size: 0.95rem;">현재 선택된 Complex(C) 플랜의 이미지 데이터가 없습니다.</p>
+                <p style="margin: 10px 0 0 0; font-size: 0.9rem; opacity: 0.95;">
+                    <strong>해결 방법:</strong><br>
+                    1. Stage 5-6에서 C 플랜 이미지를 생성하세요<br>
+                    2. 또는 플랜 A나 B를 선택하여 기존 데이터를 사용하세요
+                </p>
+            </div>
+        `;
+    } else if (shot._imageCPlanFallback && actualSelectedPlan === 'B') {
+        warningMessage = `
+            <div class="info-message" style="background: linear-gradient(135deg, #4a90e2, #5ba3f5); color: white; padding: 15px; border-radius: 12px; margin: 15px 0; box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);">
+                <h4 style="margin: 0 0 8px 0; font-size: 1.1rem;">ℹ️ B 플랜으로 자동 전환됨</h4>
+                <p style="margin: 5px 0; font-size: 0.9rem;">C 플랜 이미지 데이터가 없어 B 플랜으로 자동 전환되었습니다.</p>
+                <p style="margin: 8px 0 0 0; font-size: 0.85rem; opacity: 0.9;">
+                    C 플랜을 사용하려면 Stage 5-6에서 이미지 데이터를 생성해주세요.
+                </p>
+            </div>
+        `;
+    }
+    
     planSelectorHtml = `
         <div class="image-design-plan-selector">
             <h4>🖌️ 이미지 설계 플랜 선택</h4>
+            ${warningMessage}
             <div class="plan-tabs">
                 ${['A', 'B', 'C'].map(planId => {
                     const plan = imageDesignPlans[planId];
-                    if (!plan) return '';
+                    const hasData = plan && plan.images && plan.images.length > 0;
+                    const isDisabled = planId === 'C' && !hasData;
+                    
+                    if (!plan && planId !== 'C') return ''; // A, B 플랜이 없으면 숨김
+                    
                     return `
-                        <div class="plan-tab ${selectedPlan === planId ? 'active' : ''}" 
-                             onclick="selectImagePlan('${shot.id}', '${planId}')">
-                            Plan ${planId} - ${plan.description || '설명 없음'}
+                        <div class="plan-tab ${actualSelectedPlan === planId ? 'active' : ''} ${isDisabled ? 'disabled' : ''}" 
+                             ${isDisabled ? '' : `onclick="selectImagePlan('${shot.id}', '${planId}')"`}
+                             style="${isDisabled ? 'opacity: 0.5; cursor: not-allowed; border: 1px dashed #ff6b35;' : ''}">
+                            <span>Plan ${planId}</span>
+                            ${plan ? `<span style="font-size: 0.85rem; opacity: 0.9;"> - ${plan.description || '설명 없음'}</span>` : ''}
+                            ${isDisabled ? '<small style="display: block; color: #ff6b35; margin-top: 5px;">Stage 6에서 생성 필요</small>' : ''}
                         </div>
                     `;
                 }).join('')}
@@ -5007,8 +5059,35 @@ else {
             
             ${['A', 'B', 'C'].map(planId => {
                 const plan = imageDesignPlans[planId];
+                const isActive = actualSelectedPlan === planId;
+                
+                // C 플랜이 선택되었는데 데이터가 없는 경우 (실제로는 B로 전환됨)
+                if (planId === 'C' && !hasCPlanImages) {
+                    // C 플랜 컨텐츠는 표시하지 않음 (B 플랜이 표시될 것)
+                    return `
+                        <div class="plan-content" 
+                             id="plan-content-${planId}" 
+                             style="display: none;">
+                            <div class="plan-info" style="background: #1a1a1a; border: 2px dashed rgba(255, 107, 53, 0.5); border-radius: 12px; padding: 40px; text-align: center;">
+                                <h5 style="color: #ff6b35; margin-bottom: 20px; font-size: 1.3rem;">⚠️ Plan C: 데이터 없음</h5>
+                                <p style="color: #999; margin-bottom: 15px; font-size: 1rem;">C 플랜 이미지 데이터가 없습니다.</p>
+                                <div style="background: rgba(255, 107, 53, 0.15); border: 1px solid rgba(255, 107, 53, 0.4); border-radius: 8px; padding: 20px; margin-top: 20px;">
+                                    <p style="color: #ff8c42; font-weight: bold; font-size: 1.1rem; margin-bottom: 12px;">
+                                        📝 Stage 6에서 JSON을 생성해주세요
+                                    </p>
+                                    <p style="color: #ddd; font-size: 0.95rem; line-height: 1.6;">
+                                        Stage 6 이미지 프롬프트 생성 페이지에서<br>
+                                        C 플랜 프롬프트를 생성하고 JSON을 내보낸 후<br>
+                                        이곳에서 가져오기를 통해 적용하세요
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
                 if (!plan) return '';
-                const isActive = selectedPlan === planId;
+                
                 return `
                     <div class="plan-content ${isActive ? 'active' : ''}" 
                          id="plan-content-${planId}" 
@@ -5037,11 +5116,69 @@ else {
 }
 
 // AI별 프롬프트 및 생성된 이미지 섹션
-const imageAIs = [
-    { id: 'universal', name: 'Universal' },  // universal 프롬프트 지원 추가
-    { id: 'nanobana', name: 'Nanobana' },    // nanobana 프롬프트 지원 추가
-    { id: 'midjourney', name: 'Midjourney' },
-    { id: 'ideogram', name: 'Ideogram' },
+// C 플랜이 선택되었는데 이미지가 없는 경우 처리
+let aiPromptsHtml = '';
+
+// C 플랜이 없어서 B 플랜으로 폴백된 경우 안내 메시지 표시
+const showCPlanWarning = shot._imageCPlanFallback && actualSelectedPlan === 'B';
+
+if (showCPlanWarning) {
+    // 영상 프롬프트와 유사한 스타일의 안내 박스
+    aiPromptsHtml = `
+        <div class="ai-prompts-section" style="margin-top: 30px;">
+            <h3>🎨 AI 이미지 프롬프트</h3>
+            
+            <!-- B 플랜으로 자동 전환됨 알림 (파란색 박스) -->
+            <div style="background: linear-gradient(135deg, #007AFF, #0051D5); border-radius: 12px; padding: 20px; margin-bottom: 20px; color: white;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                    <span style="font-size: 24px;">ℹ️</span>
+                    <h4 style="margin: 0; font-size: 1.1rem;">B 플랜으로 자동 전환됨</h4>
+                </div>
+                <p style="margin: 0 0 8px 0; opacity: 0.95;">C 플랜 데이터가 없어 B 플랜으로 자동 전환되었습니다.</p>
+                <p style="margin: 0; font-size: 0.9rem; opacity: 0.85;">C 플랜을 사용하려면 Stage 6에서 이미지 프롬프트를 생성해주세요.</p>
+            </div>
+            
+            ${selectedPlanData && selectedPlanData.images && selectedPlanData.images.length > 0 ? `
+                <!-- B 플랜 프롬프트 정상 표시 -->
+                <div style="padding: 20px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px;">
+                    <h5 style="margin-bottom: 15px; color: #fff;">현재 B 플랜 프롬프트</h5>
+                    <div class="plan-images-list">
+                        ${selectedPlanData.images.map((img, idx) => `
+                            <div style="margin-bottom: 15px; padding: 12px; background: rgba(0, 0, 0, 0.3); border-radius: 8px;">
+                                <strong style="color: #007AFF;">${img.id || `이미지 ${idx + 1}`}:</strong>
+                                <span style="color: #ccc; display: block; margin-top: 5px;">${img.description || '설명 없음'}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+    `;
+} else if ((selectedPlan === 'C' || selectedPlan === 'plan_c' || selectedPlan === 'plan_complex') && 
+    (!selectedPlanData || !selectedPlanData.images || selectedPlanData.images.length === 0)) {
+    // C 플랜이 선택되었지만 데이터가 전혀 없는 경우 (이론적으로는 B로 폴백되어야 하지만 혹시나)
+    aiPromptsHtml = `
+        <div class="ai-prompts-section" style="margin-top: 30px;">
+            <h3>🎨 AI 이미지 프롬프트</h3>
+            <div style="background: #1a1a1a; border: 1px dashed rgba(255, 107, 53, 0.5); border-radius: 12px; padding: 40px; text-align: center;">
+                <p style="color: #ff6b35; font-size: 1.1rem; margin-bottom: 15px;">⚠️ C 플랜 이미지 프롬프트 데이터가 없습니다</p>
+                <div style="background: rgba(255, 107, 53, 0.1); border: 1px solid rgba(255, 107, 53, 0.3); border-radius: 8px; padding: 15px; margin-top: 15px;">
+                    <p style="color: #ff8c42; font-weight: bold; margin-bottom: 10px;">📝 Stage 6에서 JSON을 생성해주세요</p>
+                    <p style="color: #ccc; font-size: 0.9rem; line-height: 1.5;">
+                        Stage 6에서 C 플랜 이미지 프롬프트를 생성한 후<br>
+                        JSON 파일을 가져와서 적용하세요
+                    </p>
+                </div>
+            </div>
+        </div>
+    `;
+} else {
+    // 정상적인 AI 프롬프트 표시
+    const imageAIs = [
+        { id: 'universal', name: 'Universal' },  // universal 프롬프트 지원 추가
+        { id: 'nanobana', name: 'Nanobana' },    // nanobana 프롬프트 지원 추가
+        { id: 'midjourney', name: 'Midjourney' },
+        { id: 'ideogram', name: 'Ideogram' },
     { id: 'leonardo', name: 'Leonardo' },
     { id: 'imagefx', name: 'ImageFx' },
 			{ id: 'openart', name: 'OpenArt' }
@@ -5639,85 +5776,6 @@ let aiSectionsHtml = '';
 				}
 			}
 
-// 참조 이미지 섹션
-let referenceSlotsHtml = '';
-for (let i = 0; i < 3; i++) {
-    const refData = referenceImagesData[i] || { url: '', description: '', type: 'composition' };
-    const uniqueRefId = `${shot.id}-ref${i}`;
-    referenceSlotsHtml += `
-        <div class="reference-image-slot">
-            <div class="reference-preview" id="ref-preview-${uniqueRefId}">
-                ${refData.url ? 
-                    `<img src="${refData.url}" alt="참조 ${i+1}" style="cursor: pointer;" onclick="openImageModal('${refData.url}')">` : 
-                    `<div style="color:#ccc;font-size:0.8rem;">참조 ${i+1} URL</div>`
-                }
-            </div>
-            <div class="form-group">
-                <label class="form-label">URL:</label>
-                <input type="text" class="form-input" 
-                       value="${refData.url || ''}" 
-                       placeholder="참조 ${i+1} URL" 
-                       onchange="updateReferenceImage('${shot.id}', ${i}, 'url', this.value)">
-            </div>
-            <div class="form-group">
-                <label class="form-label">설명:</label>
-                <textarea class="form-textarea" 
-                          onchange="updateReferenceImage('${shot.id}', ${i}, 'description', this.value)">${refData.description || ''}</textarea>
-            </div>
-            <div class="form-group">
-                <label class="form-label">유형:</label>
-                <select class="form-select" 
-                        onchange="updateReferenceImage('${shot.id}', ${i}, 'type', this.value)">
-                    <option value="composition" ${refData.type === 'composition' ? 'selected' : ''}>구도</option>
-                    <option value="style" ${refData.type === 'style' ? 'selected' : ''}>스타일</option>
-                    <option value="lighting" ${refData.type === 'lighting' ? 'selected' : ''}>조명</option>
-                    <option value="mood" ${refData.type === 'mood' ? 'selected' : ''}>분위기</option>
-                </select>
-            </div>
-        </div>`;
-}
-
-// 메인 이미지 섹션 (2개)
-let referenceSlotsHtmlDuplicate = '';
-// 메인 이미지 데이터 가져오기 (없으면 빈 데이터로 초기화)
-const mainImagesData = shot.main_images || [];
-for (let i = 0; i < 2; i++) {
-    const mainData = mainImagesData[i] || { url: '', description: '', type: 'composition' };
-    const uniqueRefId = `${shot.id}-ref-dup${i}`;
-    referenceSlotsHtmlDuplicate += `
-        <div class="reference-image-slot">
-            <div class="reference-preview" id="ref-preview-${uniqueRefId}">
-                ${mainData.url ? 
-                    `<img src="${mainData.url}" alt="메인 ${i+1}" style="cursor: pointer;" onclick="openImageModal('${mainData.url}')">` : 
-                    `<div style="color:#ccc;font-size:0.8rem;">메인 ${i+1} URL</div>`
-                }
-            </div>
-            <div class="form-group">
-                <label class="form-label">URL:</label>
-                <input type="text" class="form-input" 
-                       value="${mainData.url || ''}" 
-                       placeholder="메인 ${i+1} URL (Dropbox 링크 자동 변환)" 
-                       onchange="updateMainImage('${shot.id}', ${i}, 'url', this.value)"
-                       title="Dropbox 링크(dl=0)를 입력하면 자동으로 이미지 표시용(raw=1)으로 변환됩니다">
-            </div>
-            <div class="form-group">
-                <label class="form-label">설명:</label>
-                <textarea class="form-textarea" 
-                          onchange="updateMainImage('${shot.id}', ${i}, 'description', this.value)">${mainData.description || ''}</textarea>
-            </div>
-            <div class="form-group">
-                <label class="form-label">유형:</label>
-                <select class="form-select" 
-                        onchange="updateMainImage('${shot.id}', ${i}, 'type', this.value)">
-                    <option value="composition" ${mainData.type === 'composition' ? 'selected' : ''}>구도</option>
-                    <option value="style" ${mainData.type === 'style' ? 'selected' : ''}>스타일</option>
-                    <option value="lighting" ${mainData.type === 'lighting' ? 'selected' : ''}>조명</option>
-                    <option value="mood" ${mainData.type === 'mood' ? 'selected' : ''}>분위기</option>
-                </select>
-            </div>
-        </div>`;
-}
-
 // Universal과 Nanobana를 분리하여 상단에 표시
 let otherAIsHtml = '';
 
@@ -5877,11 +5935,79 @@ universalNanobanaHtml += `
         </div>
     </div>
 `;
+    
+    // aiPromptsHtml에 aiSectionsHtml 할당
+    aiPromptsHtml = aiSectionsHtml;
+    } // else 블록 닫기 (C 플랜 데이터 체크)
 
-// 기타 AI 도구들은 기존 aiSectionsHtml 사용 (모든 AI 포함)
-otherAIsHtml = aiSectionsHtml;
+    // 기타 AI 도구들은 기존 aiPromptsHtml 사용
+    otherAIsHtml = aiPromptsHtml;
 
-const tabHtml = `
+    // 메인 이미지 섹션 (2개) - tabHtml보다 먼저 정의
+    let referenceSlotsHtmlDuplicate = '';
+    // 메인 이미지 데이터 가져오기 (없으면 빈 데이터로 초기화)
+    const mainImagesData = shot.main_images || [];
+    for (let i = 0; i < 2; i++) {
+        const mainData = mainImagesData[i] || { url: '', description: '', type: 'composition' };
+        const uniqueRefId = `${shot.id}-ref-dup${i}`;
+        referenceSlotsHtmlDuplicate += `
+        <div class="reference-image-slot">
+            <div class="reference-preview" id="ref-preview-${uniqueRefId}">
+                ${mainData.url ? 
+                    `<img src="${mainData.url}" alt="메인 ${i+1}" style="cursor: pointer;" onclick="openImageModal('${mainData.url}')">` : 
+                    `<div style="color:#ccc;font-size:0.8rem;">메인 ${i+1} URL</div>`
+                }
+            </div>
+            <div class="reference-details">
+                <input type="url" class="reference-url" placeholder="메인 이미지 ${i+1} URL" 
+                       value="${mainData.url || ''}" 
+                       onchange="updateMainImageUrl('${shot.id}', ${i}, this.value)"
+                       title="메인 이미지 URL을 입력하세요">
+                <textarea class="reference-desc" placeholder="메인 이미지 ${i+1} 설명" 
+                          onchange="updateMainImageDescription('${shot.id}', ${i}, this.value)">${mainData.description || ''}</textarea>
+                <select class="reference-type" onchange="updateMainImageType('${shot.id}', ${i}, this.value)">
+                    <option value="composition" ${mainData.type === 'composition' ? 'selected' : ''}>구도</option>
+                    <option value="style" ${mainData.type === 'style' ? 'selected' : ''}>스타일</option>
+                    <option value="lighting" ${mainData.type === 'lighting' ? 'selected' : ''}>조명</option>
+                    <option value="mood" ${mainData.type === 'mood' ? 'selected' : ''}>분위기</option>
+                </select>
+            </div>
+        </div>`;
+    }
+
+    // 참조 이미지 섹션 (3개)
+    let referenceSlotsHtml = '';
+    // 참조 이미지 데이터 가져오기 (4913번 줄에서 이미 선언됨)
+    // const referenceImagesData = shot.reference_images || [];
+    for (let i = 0; i < 3; i++) {
+        const refData = referenceImagesData[i] || { url: '', description: '', type: 'composition' };
+        const uniqueRefId = `${shot.id}-ref${i}`;
+        referenceSlotsHtml += `
+        <div class="reference-image-slot">
+            <div class="reference-preview" id="ref-preview-${uniqueRefId}">
+                ${refData.url ? 
+                    `<img src="${refData.url}" alt="참조 ${i+1}" style="cursor: pointer;" onclick="openImageModal('${refData.url}')">` : 
+                    `<div style="color:#ccc;font-size:0.8rem;">참조 ${i+1} URL</div>`
+                }
+            </div>
+            <div class="reference-details">
+                <input type="url" class="reference-url" placeholder="참조 이미지 ${i+1} URL" 
+                       value="${refData.url || ''}" 
+                       onchange="updateReferenceImageUrl('${shot.id}', ${i}, this.value)"
+                       title="참조 이미지 URL을 입력하세요">
+                <textarea class="reference-desc" placeholder="참조 이미지 ${i+1} 설명" 
+                          onchange="updateReferenceImageDescription('${shot.id}', ${i}, this.value)">${refData.description || ''}</textarea>
+                <select class="reference-type" onchange="updateReferenceImageType('${shot.id}', ${i}, this.value)">
+                    <option value="composition" ${refData.type === 'composition' ? 'selected' : ''}>구도</option>
+                    <option value="style" ${refData.type === 'style' ? 'selected' : ''}>스타일</option>
+                    <option value="lighting" ${refData.type === 'lighting' ? 'selected' : ''}>조명</option>
+                    <option value="mood" ${refData.type === 'mood' ? 'selected' : ''}>분위기</option>
+                </select>
+            </div>
+        </div>`;
+    }
+
+    const tabHtml = `
     ${planSelectorHtml}
     
     <!-- AI 도구 섹션 (Universal, Nanobana 포함) -->
@@ -5907,20 +6033,20 @@ const tabHtml = `
         <div class="reference-image-slots-grid">${referenceSlotsHtml}</div>
     </div>`;
 
-// AI 이미지 데이터 확인 및 재검증
-if (selectedPlanData && selectedPlanData.images) {
+    // AI 이미지 데이터 확인 및 재검증
+    if (selectedPlanData && selectedPlanData.images) {
     debugLog('🎨 AI 이미지 데이터 검증:', {
         shotId: shot.id,
         planImages: selectedPlanData.images.length,
         universalData: aiGeneratedImages.universal
-    });
-}
+        });
+    }
 
-// Universal과 Nanobana의 DOM이 렌더링된 후 값과 미리보기 업데이트
-// 참고: Universal과 Nanobana는 이미 HTML 생성 시 값이 설정되므로 별도 복원 불필요
-// HTML에서 value="${universalData.url || ''}" 형태로 이미 설정됨
+    // Universal과 Nanobana의 DOM이 렌더링된 후 값과 미리보기 업데이트
+    // 참고: Universal과 Nanobana는 이미 HTML 생성 시 값이 설정되므로 별도 복원 불필요
+    // HTML에서 value="${universalData.url || ''}" 형태로 이미 설정됨
 
-return tabHtml;
+    return tabHtml;
     
     } catch (error) {
 console.error('❌ createShotImageTab 오류:', error);
@@ -5933,6 +6059,18 @@ return `<div class="info-section"><h3>이미지 탭 로드 오류</h3><p>${error
     try {
 const shot = currentData.breakdown_data.shots.find(s => s.id === shotId);
 if (!shot) return showMessage('샷 데이터를 찾을 수 없습니다.', 'error');
+
+// C 플랜을 선택하려는 경우, 데이터가 있는지 확인
+if (planId === 'C') {
+    const imageDesign = shot.image_design || {};
+    const imageDesignPlans = imageDesign.plans || {};
+    const hasCPlanImages = imageDesignPlans.C && imageDesignPlans.C.images && imageDesignPlans.C.images.length > 0;
+    
+    if (!hasCPlanImages) {
+        showMessage('C 플랜 데이터가 없습니다. Stage 6에서 JSON을 생성해주세요.', 'warning');
+        return; // C 플랜 선택을 막음
+    }
+}
 
 if (!shot.image_design) shot.image_design = {};
 shot.image_design.selected_plan = planId; // 이제 'A', 'B', 'C'가 들어옴
@@ -6516,6 +6654,248 @@ try {
 		input.click();
 	}
 
+	// 메인 이미지 URL 업데이트
+	function updateMainImageUrl(shotId, index, newUrl) {
+		console.log('🎨 updateMainImageUrl 호출:', { shotId, index, newUrl });
+		try {
+			const shot = currentData.breakdown_data.shots.find(s => s.id === shotId);
+			if (!shot) {
+				console.error('샷 데이터를 찾을 수 없습니다:', shotId);
+				return showMessage('샷 데이터를 찾을 수 없습니다.', 'error');
+			}
+
+			// 메인 이미지 배열 초기화
+			if (!shot.main_images) {
+				shot.main_images = [];
+			}
+
+			// 배열 크기 확보
+			while (shot.main_images.length <= index) {
+				shot.main_images.push({ url: '', description: '', type: 'composition' });
+			}
+
+			// Dropbox URL 변환
+			const processedUrl = convertDropboxUrl(newUrl);
+			console.log('🔄 URL 변환 결과:', { original: newUrl, processed: processedUrl });
+			
+			// URL 업데이트
+			shot.main_images[index].url = processedUrl;
+
+			// 저장
+			saveDataToLocalStorage();
+
+			// 미리보기 업데이트
+			const previewId = `ref-preview-${shot.id}-ref-dup${index}`;
+			console.log('🖼️ 미리보기 요소 ID:', previewId);
+			const previewElement = document.getElementById(previewId);
+			
+			if (previewElement) {
+				console.log('✅ 미리보기 요소 찾음');
+				if (processedUrl) {
+					previewElement.innerHTML = `<img src="${processedUrl}" alt="메인 ${index+1}" style="cursor: pointer; max-width: 100%; max-height: 100%;" onclick="openImageModal('${processedUrl}')" onerror="console.error('이미지 로드 실패:', this.src)">`;
+				} else {
+					previewElement.innerHTML = `<div style="color:#ccc;font-size:0.8rem;">메인 ${index+1} URL</div>`;
+				}
+			} else {
+				console.error('❌ 미리보기 요소를 찾을 수 없습니다:', previewId);
+			}
+
+			console.log('✅ 메인 이미지 URL 업데이트 완료:', { shotId, index, newUrl: processedUrl });
+			
+		} catch (error) {
+			console.error('메인 이미지 URL 업데이트 오류:', error);
+			showMessage('메인 이미지 URL 업데이트 실패', 'error');
+		}
+	}
+	
+	// 전역 함수로 등록
+	window.updateMainImageUrl = updateMainImageUrl;
+
+	// 메인 이미지 설명 업데이트
+	function updateMainImageDescription(shotId, index, newDescription) {
+		try {
+			const shot = currentData.breakdown_data.shots.find(s => s.id === shotId);
+			if (!shot) return showMessage('샷 데이터를 찾을 수 없습니다.', 'error');
+
+			// 메인 이미지 배열 초기화
+			if (!shot.main_images) {
+				shot.main_images = [];
+			}
+
+			// 배열 크기 확보
+			while (shot.main_images.length <= index) {
+				shot.main_images.push({ url: '', description: '', type: 'composition' });
+			}
+
+			// 설명 업데이트
+			shot.main_images[index].description = newDescription;
+
+			// 저장
+			saveDataToLocalStorage();
+			debugLog('✅ 메인 이미지 설명 업데이트:', { shotId, index, newDescription });
+			
+		} catch (error) {
+			console.error('메인 이미지 설명 업데이트 오류:', error);
+			showMessage('메인 이미지 설명 업데이트 실패', 'error');
+		}
+	}
+	
+	// 전역 함수로 등록
+	window.updateMainImageDescription = updateMainImageDescription;
+
+	// 메인 이미지 타입 업데이트
+	function updateMainImageType(shotId, index, newType) {
+		try {
+			const shot = currentData.breakdown_data.shots.find(s => s.id === shotId);
+			if (!shot) return showMessage('샷 데이터를 찾을 수 없습니다.', 'error');
+
+			// 메인 이미지 배열 초기화
+			if (!shot.main_images) {
+				shot.main_images = [];
+			}
+
+			// 배열 크기 확보
+			while (shot.main_images.length <= index) {
+				shot.main_images.push({ url: '', description: '', type: 'composition' });
+			}
+
+			// 타입 업데이트
+			shot.main_images[index].type = newType;
+
+			// 저장
+			saveDataToLocalStorage();
+			debugLog('✅ 메인 이미지 타입 업데이트:', { shotId, index, newType });
+			
+		} catch (error) {
+			console.error('메인 이미지 타입 업데이트 오류:', error);
+			showMessage('메인 이미지 타입 업데이트 실패', 'error');
+		}
+	}
+	
+	// 전역 함수로 등록
+	window.updateMainImageType = updateMainImageType;
+
+	// 참조 이미지 URL 업데이트
+	function updateReferenceImageUrl(shotId, index, newUrl) {
+		console.log('📌 updateReferenceImageUrl 호출:', { shotId, index, newUrl });
+		try {
+			const shot = currentData.breakdown_data.shots.find(s => s.id === shotId);
+			if (!shot) {
+				console.error('샷 데이터를 찾을 수 없습니다:', shotId);
+				return showMessage('샷 데이터를 찾을 수 없습니다.', 'error');
+			}
+
+			// 참조 이미지 배열 초기화
+			if (!shot.reference_images) {
+				shot.reference_images = [];
+			}
+
+			// 배열 크기 확보
+			while (shot.reference_images.length <= index) {
+				shot.reference_images.push({ url: '', description: '', type: 'composition' });
+			}
+
+			// Dropbox URL 변환
+			const processedUrl = convertDropboxUrl(newUrl);
+			console.log('🔄 URL 변환 결과:', { original: newUrl, processed: processedUrl });
+			
+			// URL 업데이트
+			shot.reference_images[index].url = processedUrl;
+
+			// 저장
+			saveDataToLocalStorage();
+
+			// 미리보기 업데이트
+			const previewId = `ref-preview-${shot.id}-ref${index}`;
+			console.log('🖼️ 미리보기 요소 ID:', previewId);
+			const previewElement = document.getElementById(previewId);
+			
+			if (previewElement) {
+				console.log('✅ 미리보기 요소 찾음');
+				if (processedUrl) {
+					previewElement.innerHTML = `<img src="${processedUrl}" alt="참조 ${index+1}" style="cursor: pointer; max-width: 100%; max-height: 100%;" onclick="openImageModal('${processedUrl}')" onerror="console.error('이미지 로드 실패:', this.src)">`;
+				} else {
+					previewElement.innerHTML = `<div style="color:#ccc;font-size:0.8rem;">참조 ${index+1} URL</div>`;
+				}
+			} else {
+				console.error('❌ 미리보기 요소를 찾을 수 없습니다:', previewId);
+			}
+
+			console.log('✅ 참조 이미지 URL 업데이트 완료:', { shotId, index, newUrl: processedUrl });
+			
+		} catch (error) {
+			console.error('참조 이미지 URL 업데이트 오류:', error);
+			showMessage('참조 이미지 URL 업데이트 실패', 'error');
+		}
+	}
+	
+	// 전역 함수로 등록
+	window.updateReferenceImageUrl = updateReferenceImageUrl;
+
+	// 참조 이미지 설명 업데이트
+	function updateReferenceImageDescription(shotId, index, newDescription) {
+		try {
+			const shot = currentData.breakdown_data.shots.find(s => s.id === shotId);
+			if (!shot) return showMessage('샷 데이터를 찾을 수 없습니다.', 'error');
+
+			// 참조 이미지 배열 초기화
+			if (!shot.reference_images) {
+				shot.reference_images = [];
+			}
+
+			// 배열 크기 확보
+			while (shot.reference_images.length <= index) {
+				shot.reference_images.push({ url: '', description: '', type: 'composition' });
+			}
+
+			// 설명 업데이트
+			shot.reference_images[index].description = newDescription;
+
+			// 저장
+			saveDataToLocalStorage();
+			debugLog('✅ 참조 이미지 설명 업데이트:', { shotId, index, newDescription });
+			
+		} catch (error) {
+			console.error('참조 이미지 설명 업데이트 오류:', error);
+			showMessage('참조 이미지 설명 업데이트 실패', 'error');
+		}
+	}
+	
+	// 전역 함수로 등록
+	window.updateReferenceImageDescription = updateReferenceImageDescription;
+
+	// 참조 이미지 타입 업데이트
+	function updateReferenceImageType(shotId, index, newType) {
+		try {
+			const shot = currentData.breakdown_data.shots.find(s => s.id === shotId);
+			if (!shot) return showMessage('샷 데이터를 찾을 수 없습니다.', 'error');
+
+			// 참조 이미지 배열 초기화
+			if (!shot.reference_images) {
+				shot.reference_images = [];
+			}
+
+			// 배열 크기 확보
+			while (shot.reference_images.length <= index) {
+				shot.reference_images.push({ url: '', description: '', type: 'composition' });
+			}
+
+			// 타입 업데이트
+			shot.reference_images[index].type = newType;
+
+			// 저장
+			saveDataToLocalStorage();
+			debugLog('✅ 참조 이미지 타입 업데이트:', { shotId, index, newType });
+			
+		} catch (error) {
+			console.error('참조 이미지 타입 업데이트 오류:', error);
+			showMessage('참조 이미지 타입 업데이트 실패', 'error');
+		}
+	}
+	
+	// 전역 함수로 등록
+	window.updateReferenceImageType = updateReferenceImageType;
+
 	// 이미지별 설명 업데이트 (새로운 구조)
 	function updateImageDescription(shotId, aiType, imageId, newDescription) {
 		try {
@@ -6976,7 +7356,27 @@ const imageDesign = shot.image_design || {};
 
 		// 영상 탭에서 선택된 플랜 확인 (없으면 이미지 탭의 선택 사용)
 		const videoSelectedPlan = window.videoTabSelectedPlans?.[shot.id];
-		const selectedPlan = videoSelectedPlan || imageDesign.selected_plan || 'A';
+		let selectedPlan = videoSelectedPlan || imageDesign.selected_plan || 'A';
+		
+		// C 플랜이 선택되었는데 데이터가 없으면 B로 폴백
+		if (selectedPlan === 'C' || selectedPlan === 'plan_complex') {
+			const hasCPlanData = shot.video_prompts?.by_image_id && 
+				Object.keys(shot.video_prompts.by_image_id).some(imageId => 
+					imageId.includes('-C-') && imageId.startsWith(shot.id)
+				);
+			
+			if (!hasCPlanData) {
+				console.warn(`⚠️ C 플랜 데이터가 없어 B 플랜으로 전환합니다.`);
+				selectedPlan = 'B';
+				// 자동 전환 알림을 위한 플래그 설정
+				shot._cPlanFallback = true;
+			}
+		}
+		
+		// plan_a, plan_b 형식을 A, B로 변환
+		if (selectedPlan.startsWith('plan_')) {
+			selectedPlan = selectedPlan.split('_')[1].toUpperCase();
+		}
 
 		const complexity = imageDesign.complexity || 'complex';
 		// video_prompts는 shot 내부 또는 breakdown_data에 있을 수 있음
@@ -7005,24 +7405,79 @@ if (complexity === 'simple' && imageDesignPlans.single) {
 } 
 // Complex 샷인 경우
 else {
+    // 실제로 사용 가능한 플랜 확인 (비디오 프롬프트 데이터가 있는지 체크)
+    const availablePlans = [];
+    ['A', 'B', 'C'].forEach(planId => {
+        const plan = imageDesignPlans[planId];
+        if (plan) {
+            // 해당 플랜의 비디오 프롬프트 데이터가 있는지 확인
+            const hasPlanData = videoPrompts.by_image_id && 
+                Object.keys(videoPrompts.by_image_id).some(imageId => 
+                    imageId.includes(`-${planId}-`) && imageId.startsWith(shot.id)
+                );
+            
+            if (hasPlanData || planId === 'A' || planId === 'B') {
+                // A, B는 기본적으로 보여주되, C는 데이터가 있을 때만
+                availablePlans.push({ id: planId, plan: plan, hasData: hasPlanData });
+            } else if (planId === 'C') {
+                // C 플랜이지만 데이터가 없는 경우
+                availablePlans.push({ id: planId, plan: plan, hasData: false, disabled: true });
+            }
+        }
+    });
+    
     selectedPlanData = imageDesignPlans[selectedPlan] || imageDesignPlans.A || {};
     planSelectorHtml = `
         <div class="image-design-plan-selector">
             <h4>🎬 영상 설계 플랜 선택</h4>
             <div class="plan-tabs">
-                ${['A', 'B', 'C'].map(planId => {
-                    const plan = imageDesignPlans[planId];
-                    if (!plan) return '';
+                ${availablePlans.map(({ id: planId, plan, hasData, disabled }) => {
+                    const isDisabled = disabled && !hasData;
                     return `
-                        <div class="plan-tab ${selectedPlan === planId ? 'active' : ''}" 
-                             onclick="selectVideoPlan('${shot.id}', '${planId}')">
-                            <h5>플랜 ${planId}</h5>
+                        <div class="plan-tab ${selectedPlan === planId ? 'active' : ''} ${isDisabled ? 'disabled' : ''}" 
+                             ${isDisabled ? '' : `onclick="selectVideoPlan('${shot.id}', '${planId}')"`}
+                             style="${isDisabled ? 'opacity: 0.5; cursor: not-allowed; border: 1px dashed #ff6b35;' : ''}">
+                            <h5>플랜 ${planId} ${isDisabled ? '(데이터 없음)' : ''}</h5>
                             <p>${plan.description || '설명 없음'}</p>
                             <span class="image-count">이미지 ${plan.images?.length || 0}개</span>
+                            ${isDisabled ? '<small style="color: #ff6b35; display: block; margin-top: 5px;">Stage 7에서 생성 필요</small>' : ''}
                         </div>
                     `;
                 }).join('')}
             </div>
+        </div>
+    `;
+}
+
+// Complex 플랜인데 C 플랜 데이터가 없는 경우 경고 표시
+let warningHtml = '';
+const hasCPlanWarning = shot.video_prompts?.warnings?.some(w => w.type === 'missing_c_plan');
+const missingCPlan = shot.video_prompts?.missing_c_plan;
+const cPlanFallback = shot._cPlanFallback;
+
+// C 플랜 데이터 없음 경고
+if ((hasCPlanWarning || missingCPlan) && selectedPlan === 'C') {
+    warningHtml = `
+        <div class="warning-message" style="background: linear-gradient(135deg, #ff6b35, #ff8c42); color: white; padding: 20px; border-radius: 12px; margin: 15px 0; box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);">
+            <h4 style="margin: 0 0 10px 0; font-size: 1.2rem;">⚠️ C 플랜 데이터가 없습니다</h4>
+            <p style="margin: 5px 0; font-size: 0.95rem;">현재 선택된 Complex(C) 플랜의 비디오 프롬프트 데이터가 없습니다.</p>
+            <p style="margin: 10px 0 0 0; font-size: 0.9rem; opacity: 0.95;">
+                <strong>해결 방법:</strong><br>
+                1. Stage 7에서 C 플랜 비디오 프롬프트를 생성하세요<br>
+                2. 또는 플랜 A나 B를 선택하여 기존 데이터를 사용하세요
+            </p>
+        </div>
+    `;
+}
+// C 플랜에서 B 플랜으로 자동 전환된 경우 안내
+else if (cPlanFallback && selectedPlan === 'B') {
+    warningHtml = `
+        <div class="info-message" style="background: linear-gradient(135deg, #4a90e2, #5ba3f5); color: white; padding: 15px; border-radius: 12px; margin: 15px 0; box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);">
+            <h4 style="margin: 0 0 8px 0; font-size: 1.1rem;">ℹ️ B 플랜으로 자동 전환됨</h4>
+            <p style="margin: 5px 0; font-size: 0.9rem;">C 플랜 데이터가 없어 B 플랜으로 자동 전환되었습니다.</p>
+            <p style="margin: 8px 0 0 0; font-size: 0.85rem; opacity: 0.9;">
+                C 플랜을 사용하려면 Stage 7에서 비디오 프롬프트를 생성해주세요.
+            </p>
         </div>
     `;
 }
@@ -7047,21 +7502,37 @@ if (selectedPlanData && selectedPlanData.images) {
 					// Stage 7 JSON과 호환을 위해 여러 형식의 imageId 시도
 					const imageId = image.id || `IMG_${index + 1}`;
 					
-					// 직접 shot.video_prompts에서 kling_이미지ID 패턴 검색
+					// 선택된 플랜에 맞는 image_id 생성
+					const planLetter = selectedPlan === 'single' ? 'A' : selectedPlan;
+					const formattedImageId = `${shot.id}-${planLetter}-${String(index + 1).padStart(2, '0')}`;
+					
+					// 직접 shot.video_prompts에서 프롬프트 검색
 					let promptData = null;
 					
-					// 방법 1: AI도구명_이미지ID 패턴으로 직접 검색
-					const directKeys = Object.keys(videoPrompts || {}).filter(k => k.startsWith(`${ai.id}_`));
-					if (directKeys.length > 0 && index < directKeys.length) {
-						// 순서대로 매칭 (첫 번째 이미지는 첫 번째 kling_ 키에 매칭)
-						const key = directKeys[index];
-						promptData = videoPrompts[key];
-						debugLog(`✅ 직접 매칭: ${key}에서 프롬프트 발견`);
+					// 방법 1: by_image_id에서 찾기 (새로운 형식)
+					if (videoPrompts.by_image_id && videoPrompts.by_image_id[formattedImageId]) {
+						const prompts = videoPrompts.by_image_id[formattedImageId];
+						if (prompts && prompts[ai.id]) {
+							promptData = prompts[ai.id];
+							debugLog(`✅ by_image_id에서 ${formattedImageId}의 ${ai.id} 프롬프트 발견`);
+						}
 					}
 					
-					// 방법 2: 기존 findVideoPromptsForImage 사용
+					// 방법 2: AI도구명_이미지ID 패턴으로 직접 검색 (레거시)
+					if (!promptData) {
+						const directKeys = Object.keys(videoPrompts || {}).filter(k => k.startsWith(`${ai.id}_`));
+						if (directKeys.length > 0 && index < directKeys.length) {
+							// 순서대로 매칭 (첫 번째 이미지는 첫 번째 kling_ 키에 매칭)
+							const key = directKeys[index];
+							promptData = videoPrompts[key];
+							debugLog(`✅ 직접 매칭: ${key}에서 프롬프트 발견`);
+						}
+					}
+					
+					// 방법 3: 기존 findVideoPromptsForImage 사용
 					if (!promptData) {
 						const alternativeImageIds = [
+							formattedImageId,
 							imageId,
 							`${shot.id}-${imageId}`,
 							`${shot.id}-A-${String(index + 1).padStart(2, '0')}`,
@@ -7079,7 +7550,27 @@ if (selectedPlanData && selectedPlanData.images) {
 						}
 					}
 
-					if (promptData) {
+					// C 플랜이 선택되었는데 데이터가 없는 경우 빈 프롬프트 표시
+					if (!promptData && selectedPlan === 'C') {
+						aiHasContent = true; // 빈 영역도 표시해야 함
+						aiImagesHtml += `
+							<div class="ai-video-image-item" style="background: #1a1a1a; border: 1px dashed rgba(255, 107, 53, 0.5); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+								<h6 style="color: #ccc; margin-bottom: 10px;">📸 ${formattedImageId}: C 플랜 데이터 없음</h6>
+								<div class="prompt-section" style="margin-bottom: 10px;">
+									<div style="background: #242424; border: 1px dashed rgba(255, 107, 53, 0.3); border-radius: 4px; padding: 20px; text-align: center;">
+										<p style="color: #ff6b35; margin: 0 0 10px 0; font-size: 0.95rem;">⚠️ C 플랜 프롬프트 데이터가 없습니다</p>
+										<p style="color: #999; font-size: 0.85rem; margin: 0;">Stage 7에서 C 플랜 데이터를 생성하거나<br>다른 플랜(A 또는 B)을 선택해주세요</p>
+									</div>
+								</div>
+								<div class="video-url-section">
+									<label style="font-size: 0.85rem; color: #999;">생성된 영상 URL:</label>
+									<input type="url" class="form-input" style="font-size: 0.9rem; opacity: 0.5;" 
+										   placeholder="C 플랜 데이터 필요" 
+										   disabled>
+								</div>
+							</div>
+						`;
+					} else if (promptData) {
 						aiHasContent = true;
 						const prompt = promptData.prompt_en || promptData.main_prompt || '';
 						const promptTranslated = promptData.prompt_translated || promptData.main_prompt_translated || '';
@@ -7204,6 +7695,7 @@ return `
         </p>
     </div>
     ${planSelectorHtml}
+    ${warningHtml}
     ${aiGroupedHtml}
 `;
     } catch (e) {
@@ -7459,7 +7951,29 @@ try {
 		debugLog('🎬 findVideoPromptsForImage 호출:', { shotId, imageId });
 		debugLog('🎬 전달받은 videoPrompts:', videoPrompts ? Object.keys(videoPrompts).slice(0, 5) : 'null');
 		
-		// 1. Stage 7 형식의 영상 프롬프트 데이터가 있는 경우 우선 확인
+		// 1. 새로운 Stage 7 형식 (by_image_id) 확인
+		if (videoPrompts && videoPrompts.by_image_id && videoPrompts.by_image_id[imageId]) {
+			debugLog('🎬 by_image_id에서 프롬프트 발견:', imageId);
+			return videoPrompts.by_image_id[imageId];
+		}
+		
+		// 2. 현재 선택된 플랜과 매칭되는 image_id 패턴 확인
+		if (videoPrompts && videoPrompts.by_image_id) {
+			// imageId에서 플랜 추출 (예: S01.01-B-01 → B)
+			const match = imageId.match(/-([A-C])-/);
+			if (match) {
+				const planLetter = match[1];
+				// 해당 플랜의 모든 이미지 확인
+				for (const [storedId, prompts] of Object.entries(videoPrompts.by_image_id)) {
+					if (storedId.includes(`-${planLetter}-`) && storedId.startsWith(shotId)) {
+						debugLog(`🎬 플랜 ${planLetter} 매칭 프롬프트 발견:`, storedId);
+						return prompts;
+					}
+				}
+			}
+		}
+		
+		// 3. Stage 7 형식의 영상 프롬프트 데이터가 있는 경우 확인
 		if (window.stage7VideoPrompts && window.stage7VideoPrompts[shotId]) {
 			debugLog('🎬 window.stage7VideoPrompts에서 찾기 시도...');
 			const imagePromptData = window.stage7VideoPrompts[shotId][imageId];
@@ -7469,7 +7983,7 @@ try {
 			}
 		}
 
-		// 2. 전달받은 videoPrompts에서 데이터 확인
+		// 4. 전달받은 videoPrompts에서 데이터 확인 (레거시)
 		if (videoPrompts && typeof videoPrompts === 'object') {
 			debugLog('🎬 전달받은 videoPrompts에서 검색...');
 			

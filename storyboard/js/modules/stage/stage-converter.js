@@ -191,36 +191,132 @@
                 throw new Error('필수 데이터가 없습니다.');
             }
             
-            // 샷별로 비디오 프롬프트 적용
-            Object.keys(promptData).forEach(shotId => {
-                const shot = currentData.breakdown_data?.shots?.find(s => s.id === shotId);
-                if (shot) {
-                    if (!shot.video_prompts) {
-                        shot.video_prompts = {};
-                    }
-                    // kling_structured_prompt를 포함한 모든 프롬프트 데이터 병합
-                    const videoPromptData = promptData[shotId];
+            // promptData가 배열 형태인지 확인
+            if (Array.isArray(promptData)) {
+                console.log('📋 Stage 7 배열 형식 데이터 감지');
+                
+                // 배열의 각 항목을 처리
+                promptData.forEach(item => {
+                    const shotId = item.shot_id;
+                    const imageId = item.image_id;
+                    const prompts = item.prompts;
                     
-                    // 각 AI 도구의 프롬프트 확인 및 저장
-                    Object.keys(videoPromptData).forEach(aiTool => {
-                        if (!shot.video_prompts[aiTool]) {
-                            shot.video_prompts[aiTool] = {};
+                    if (!shotId || !imageId || !prompts) {
+                        console.warn('⚠️ 필수 필드 누락:', item);
+                        return;
+                    }
+                    
+                    // 해당 샷 찾기
+                    const shot = currentData.breakdown_data?.shots?.find(s => s.id === shotId);
+                    if (shot) {
+                        // video_prompts 초기화
+                        if (!shot.video_prompts) {
+                            shot.video_prompts = {};
                         }
-                        // kling_structured_prompt 포함 모든 필드 저장
-                        shot.video_prompts[aiTool] = {
-                            ...shot.video_prompts[aiTool],
-                            ...videoPromptData[aiTool]
-                        };
-                    });
-                }
-            });
+                        
+                        // image_id별로 프롬프트 저장
+                        if (!shot.video_prompts.by_image_id) {
+                            shot.video_prompts.by_image_id = {};
+                        }
+                        
+                        // 선택된 플랜 확인
+                        const selectedPlan = shot.image_design?.selected_plan || 'plan_a';
+                        const planLetter = selectedPlan.split('_')[1]; // 'a', 'b', 또는 'complex'
+                        
+                        // Complex 플랜인데 C 플랜 데이터가 없는 경우 체크
+                        if (selectedPlan === 'plan_complex') {
+                            // 현재 샷에 C 플랜 데이터가 있는지 확인
+                            const hasCPlanData = promptData.some(item => 
+                                item.shot_id === shotId && item.image_id.includes('-C-')
+                            );
+                            
+                            if (!hasCPlanData && !imageId.includes('-C-')) {
+                                console.warn(`⚠️ Complex 플랜이 선택되었지만 ${shotId}에 C 플랜 데이터가 없습니다.`);
+                                
+                                // 안내 메시지를 shot에 저장
+                                if (!shot.video_prompts.warnings) {
+                                    shot.video_prompts.warnings = [];
+                                }
+                                
+                                // 중복 경고 방지
+                                const existingWarning = shot.video_prompts.warnings.find(w => 
+                                    w.type === 'missing_c_plan' && w.shotId === shotId
+                                );
+                                
+                                if (!existingWarning) {
+                                    shot.video_prompts.warnings.push({
+                                        type: 'missing_c_plan',
+                                        shotId: shotId,
+                                        message: `C 플랜이 선택되었지만 해당 데이터가 없습니다. Stage 7에서 C 플랜 비디오 프롬프트를 생성해주세요.`,
+                                        timestamp: new Date().toISOString()
+                                    });
+                                }
+                                
+                                // C 플랜 데이터 플레이스홀더 생성
+                                if (!shot.video_prompts.missing_c_plan) {
+                                    shot.video_prompts.missing_c_plan = true;
+                                }
+                            }
+                        }
+                        
+                        // image_id별로 프롬프트 저장
+                        shot.video_prompts.by_image_id[imageId] = prompts;
+                        
+                        // 현재 선택된 플랜에 맞는 프롬프트를 메인으로 설정
+                        const currentPlanLetter = planLetter === 'complex' ? 'c' : planLetter;
+                        const expectedPattern = `-${currentPlanLetter.toUpperCase()}-`;
+                        
+                        if (imageId.includes(expectedPattern)) {
+                            console.log(`✅ ${shotId}에 ${imageId} 프롬프트 적용 (${selectedPlan})`);
+                            
+                            // 메인 프롬프트로 설정
+                            Object.keys(prompts).forEach(aiTool => {
+                                if (!shot.video_prompts[aiTool]) {
+                                    shot.video_prompts[aiTool] = {};
+                                }
+                                shot.video_prompts[aiTool] = {
+                                    ...shot.video_prompts[aiTool],
+                                    ...prompts[aiTool],
+                                    _source_image_id: imageId // 디버깅용
+                                };
+                            });
+                        }
+                    } else {
+                        console.warn(`⚠️ 샷 ID ${shotId}를 찾을 수 없습니다.`);
+                    }
+                });
+                
+            } else if (typeof promptData === 'object') {
+                // 기존 객체 형식 처리 (하위 호환성)
+                console.log('📋 Stage 7 객체 형식 데이터 처리');
+                
+                Object.keys(promptData).forEach(shotId => {
+                    const shot = currentData.breakdown_data?.shots?.find(s => s.id === shotId);
+                    if (shot) {
+                        if (!shot.video_prompts) {
+                            shot.video_prompts = {};
+                        }
+                        const videoPromptData = promptData[shotId];
+                        
+                        Object.keys(videoPromptData).forEach(aiTool => {
+                            if (!shot.video_prompts[aiTool]) {
+                                shot.video_prompts[aiTool] = {};
+                            }
+                            shot.video_prompts[aiTool] = {
+                                ...shot.video_prompts[aiTool],
+                                ...videoPromptData[aiTool]
+                            };
+                        });
+                    }
+                });
+            }
             
             // Stage 7 데이터 저장
             if (window.DataStorage?.saveStageData) {
                 window.DataStorage.saveStageData(7, promptData, currentData);
             }
             
-            console.log('✅ Stage 7 프롬프트 처리 완료 (kling_structured_prompt 포함)');
+            console.log('✅ Stage 7 프롬프트 처리 완료 (shot_id/image_id 매칭)');
             return currentData;
             
         } catch (error) {
@@ -250,10 +346,22 @@
                 return window.StageConverter.processStage6ImagePrompts(prompts, jsonData);
             }
             
-            // Stage 7 감지
-            if (jsonData.stage === 7 || jsonData.stage7_video_prompts) {
-                const prompts = jsonData.stage7_video_prompts || jsonData;
-                return window.StageConverter.processStage7VideoPrompts(prompts, jsonData);
+            // Stage 7 감지 - 배열 형식 우선 확인
+            if (jsonData.stage === 7 || jsonData.video_prompts || jsonData.stage7_video_prompts) {
+                // video_prompts 배열이 직접 있는 경우 (새로운 형식)
+                if (jsonData.video_prompts && Array.isArray(jsonData.video_prompts)) {
+                    console.log('🎬 Stage 7 배열 형식 감지 - video_prompts 필드');
+                    return window.StageConverter.processStage7VideoPrompts(jsonData.video_prompts, jsonData);
+                }
+                // stage7_video_prompts가 있는 경우 (레거시)
+                else if (jsonData.stage7_video_prompts) {
+                    const prompts = jsonData.stage7_video_prompts;
+                    return window.StageConverter.processStage7VideoPrompts(prompts, jsonData);
+                }
+                // stage가 7인 경우 전체 데이터 확인
+                else if (jsonData.stage === 7) {
+                    return window.StageConverter.processStage7VideoPrompts(jsonData, jsonData);
+                }
             }
             
             // 기본 데이터 반환

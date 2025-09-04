@@ -21,29 +21,70 @@
                 // Import/Export 모듈 사용
                 if (window.DataImportExport?.importJSON) {
                     window.DataImportExport.importJSON(file, function(jsonData) {
+                        console.log('📁 JSON 파일 로드 시작:', file.name);
+                        console.log('📊 로드된 데이터:', jsonData);
+                        
                         // Stage 감지 및 처리
                         if (window.StageConverter?.detectAndProcessStage) {
                             jsonData = window.StageConverter.detectAndProcessStage(jsonData);
+                            console.log('🔄 Stage 처리 완료:', jsonData);
                         }
                         
                         // 데이터 저장
                         window.currentData = jsonData;
+                        console.log('💾 currentData 설정 완료');
                         
                         // localStorage에 저장
-                        if (window.DataStorage?.saveDataToLocalStorage) {
+                        // app.js의 saveDataToLocalStorage 우선 사용 (전역 currentData 사용)
+                        if (window.saveDataToLocalStorage) {
+                            window.saveDataToLocalStorage();
+                        } else if (window.DataStorage?.saveDataToLocalStorage) {
+                            // 모듈의 함수 사용 시 데이터 전달
                             window.DataStorage.saveDataToLocalStorage(jsonData);
                         }
                         
                         // UI 업데이트
-                        if (window.NavigationUI?.updateNavigation) {
+                        console.log('🖼️ UI 업데이트 시작');
+                        
+                        // 메인 app.js의 updateSidebar 함수 호출
+                        if (window.updateSidebar) {
+                            console.log('✅ updateSidebar 호출');
+                            window.updateSidebar();
+                        } else if (window.NavigationUI?.updateNavigation) {
+                            console.log('✅ NavigationUI.updateNavigation 호출');
                             window.NavigationUI.updateNavigation(jsonData);
+                        } else {
+                            console.warn('⚠️ 사이드바 업데이트 함수를 찾을 수 없습니다');
                         }
+                        
+                        // 헤더 정보 업데이트
                         if (window.ContentDisplay?.updateHeaderInfo) {
+                            console.log('✅ ContentDisplay.updateHeaderInfo 호출');
                             window.ContentDisplay.updateHeaderInfo(jsonData);
                         }
+                        
+                        // 컨텐츠 영역 초기화
                         if (window.ContentDisplay?.clearContent) {
+                            console.log('✅ ContentDisplay.clearContent 호출');
                             window.ContentDisplay.clearContent();
                         }
+                        
+                        // 첫 번째 샷 표시 (있을 경우)
+                        if (jsonData?.breakdown_data?.shots?.length > 0) {
+                            const firstShot = jsonData.breakdown_data.shots[0];
+                            console.log('📌 첫 번째 샷 표시:', firstShot.id);
+                            if (window.showShotContent) {
+                                window.showShotContent(firstShot.id);
+                            } else {
+                                console.warn('⚠️ showShotContent 함수를 찾을 수 없습니다');
+                            }
+                        } else {
+                            console.log('ℹ️ 표시할 샷이 없습니다');
+                        }
+                        
+                        // 성공 메시지
+                        const showMessage = window.AppUtils?.showMessage || window.showMessage;
+                        showMessage?.('데이터가 성공적으로 로드되었습니다', 'success');
                     });
                 }
                 

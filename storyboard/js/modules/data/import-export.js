@@ -23,7 +23,32 @@
             try {
                 const jsonData = JSON.parse(e.target.result);
                 
-                // 데이터 유효성 검증
+                // Stage 7 비디오 프롬프트 파일 감지 (특별 처리)
+                if (jsonData.stage === 7 && jsonData.video_prompts && Array.isArray(jsonData.video_prompts)) {
+                    console.log('🎬 Stage 7 비디오 프롬프트 파일 감지');
+                    
+                    // 현재 프로젝트 데이터가 있으면 병합, 없으면 기본 구조 생성
+                    let mergedData = window.currentData || {
+                        project_info: { name: 'Imported_Project' },
+                        breakdown_data: { sequences: [], shots: [] }
+                    };
+                    
+                    // Stage 7 데이터를 현재 데이터와 병합
+                    if (window.StageConverter?.processStage7VideoPrompts) {
+                        mergedData = window.StageConverter.processStage7VideoPrompts(jsonData.video_prompts, mergedData);
+                    }
+                    
+                    // 콜백 함수 실행
+                    if (callback && typeof callback === 'function') {
+                        callback(mergedData);
+                    }
+                    
+                    const showMessage = window.AppUtils?.showMessage || window.showMessage || alert;
+                    showMessage(`Stage 7 비디오 프롬프트가 성공적으로 로드되었습니다: ${file.name}`, 'success');
+                    return;
+                }
+                
+                // 일반 프로젝트 데이터 검증
                 if (!jsonData.project_info || !jsonData.breakdown_data) {
                     throw new Error('잘못된 JSON 형식입니다.');
                 }
