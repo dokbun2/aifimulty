@@ -5100,14 +5100,41 @@ let aiSectionsHtml = '';
 					}
 					
 					// 선택된 도구 목록이 없으면 프롬프트가 있는 도구만 표시
-					return allPlanImages.some(planImage => {
+					return allPlanImages.some((planImage, imgIdx) => {
 						const imageId = planImage.id;
 						// 데이터 조회를 위한 ID 매핑
 						// Stage 6에서는 각 Plan별로 고유한 ID를 이미 가지고 있음
-						// 따라서 ID 변환 없이 그대로 사용
+						// image_design_plans의 이미지 ID와 Stage 6의 이미지 ID가 다를 수 있으므로 매칭 필요
 						let dataLookupId = imageId;
 						
-						const imageStage6Data = shotStage6Data[dataLookupId] || {};
+						// Stage 6 데이터에서 매칭되는 이미지 찾기
+						// 1. 먼저 정확한 ID 매칭 시도
+						let imageStage6Data = shotStage6Data[dataLookupId] || {};
+						
+						// 2. 정확한 매칭이 없으면 플랜과 인덱스 기반으로 찾기
+						if (!imageStage6Data.prompts && Object.keys(shotStage6Data).length > 0) {
+							// Stage 6 이미지 ID 패턴: S01.01-A-01, S01.01-B-01, S01.01-single-01
+							// planImage.planId (single, A, B, C)와 인덱스를 사용해서 찾기
+							const planPrefix = planImage.planId === 'single' ? 'single' : 
+							                  (planImage.planId.startsWith('plan_') ? planImage.planId.replace('plan_', '').toUpperCase() : planImage.planId.toUpperCase());
+							const imageIndex = String(imgIdx + 1).padStart(2, '0');
+							
+							// 가능한 ID 패턴들 시도
+							const possibleIds = [
+								`${shot.id}-${planPrefix}-${imageIndex}`,  // S01.01-A-01
+								`${shot.id}-${planPrefix.toLowerCase()}-${imageIndex}`,  // S01.01-a-01
+								`${shot.id}-${planPrefix}_${imageIndex}`,  // S01.01-A_01
+								dataLookupId  // 원래 ID도 시도
+							];
+							
+							for (const possibleId of possibleIds) {
+								if (shotStage6Data[possibleId]) {
+									dataLookupId = possibleId;
+									imageStage6Data = shotStage6Data[possibleId];
+									break;
+								}
+							}
+						}
 						const imageCsvData = csvMapping[dataLookupId] || {};
 						
 						// Stage 5 CSV 데이터 확인
@@ -5164,11 +5191,50 @@ let aiSectionsHtml = '';
 						// 데이터 조회를 위한 ID 매핑
 						// Stage 6에서는 각 Plan별로 고유한 ID를 이미 가지고 있음
 						// 예: S01.01-A-01 (Plan A), S01.01-B-01 (Plan B), S01.01-C-01 (Plan C)
-						// 따라서 ID 변환 없이 그대로 사용
+						// image_design_plans의 이미지 ID와 Stage 6의 이미지 ID가 다를 수 있으므로 매칭 필요
 						let dataLookupId = imageId;
 						
-						// 직접 해당 ID의 데이터를 조회 (JSON에 이미 플랜별로 저장됨)
-						const imageStage6Data = shotStage6Data[dataLookupId] || {};
+						// Stage 6 데이터에서 매칭되는 이미지 찾기
+						// 1. 먼저 정확한 ID 매칭 시도
+						let imageStage6Data = shotStage6Data[dataLookupId] || {};
+						
+						// 2. 정확한 매칭이 없으면 플랜과 인덱스 기반으로 찾기
+						if (!imageStage6Data.prompts && Object.keys(shotStage6Data).length > 0) {
+							// Stage 6 이미지 ID 패턴: S01.01-A-01, S01.01-B-01, S01.01-single-01
+							// planImage.planId (A, B, C, single)와 인덱스를 사용해서 찾기
+							const planPrefix = planImage.planId === 'single' ? 'single' : planImage.planId.toUpperCase();
+							const imageIndex = String(imgIdx + 1).padStart(2, '0');
+							
+							// 가능한 ID 패턴들 시도
+							const possibleIds = [
+								`${shot.id}-${planPrefix}-${imageIndex}`,  // S01.01-A-01
+								`${shot.id}-${planPrefix.toLowerCase()}-${imageIndex}`,  // S01.01-a-01  
+								`${shot.id}-${planPrefix}_${imageIndex}`,  // S01.01-A_01
+								dataLookupId  // 원래 ID도 시도
+							];
+							
+							for (const possibleId of possibleIds) {
+								if (shotStage6Data[possibleId]) {
+									dataLookupId = possibleId;
+									imageStage6Data = shotStage6Data[possibleId];
+									break;
+								}
+							}
+						}
+						
+						// 디버깅: Stage 6 데이터 키와 이미지 ID 매칭 확인
+						if (ai.id === 'nanobana' && imgIdx === 0) {
+							console.log(`🔍 나노바나나 데이터 조회 디버깅:`, {
+								shotId: shot.id,
+								originalImageId: imageId,
+								dataLookupId: dataLookupId,
+								planId: planImage.planId,
+								imageIndex: imgIdx,
+								availableKeysInStage6: Object.keys(shotStage6Data),
+								hasDataForThisImage: !!imageStage6Data.prompts,
+								nanobanaPrompt: imageStage6Data.prompts?.nanobana
+							});
+						}
 						const imageCsvData = csvMapping[dataLookupId] || {};
 						debugLog(`  🖼️ AI: ${ai.name}, Plan ${planImage.planId}, Image ${imgIdx + 1}:`, imageId, 'has Stage6:', !!imageStage6Data.prompts, 'has Stage5:', !!imageCsvData.SCENE);
 						
@@ -5279,6 +5345,11 @@ let aiSectionsHtml = '';
 								translatedPrompt = imagePrompts.prompt_translated || imagePrompts.main_prompt_translated || '';
 								parameters = imagePrompts.parameters || '';
 							}
+							
+							// 프롬프트가 여전히 비어있으면 기본값 설정하지 않음 (플레이스홀더 텍스트 제거)
+							if (!mainPrompt) {
+								mainPrompt = '';  // [Image #] 같은 플레이스홀더 제거
+							}
 						} 
 						// nanobana 프롬프트 특별 처리
 						else if (ai.id === 'nanobana') {
@@ -5307,6 +5378,11 @@ let aiSectionsHtml = '';
 								mainPrompt = imagePrompts.prompt || imagePrompts.main_prompt || '';
 								translatedPrompt = imagePrompts.prompt_translated || imagePrompts.main_prompt_translated || '';
 								parameters = imagePrompts.parameters || '';
+							}
+							
+							// 프롬프트가 여전히 비어있으면 기본값 설정하지 않음 (플레이스홀더 텍스트 제거)
+							if (!mainPrompt) {
+								mainPrompt = '';  // [Image #] 같은 플레이스홀더 제거
 							}
 						} else {
 							mainPrompt = imagePrompts.prompt || imagePrompts.main_prompt || '';
