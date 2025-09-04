@@ -5015,9 +5015,14 @@ else {
     }
     
     console.log('🔍 C 플랜 데이터 체크:', {
+        shotId: shot.id,
         hasStructure: !!(imageDesignPlans.C && imageDesignPlans.C.images),
+        cPlanImages: imageDesignPlans.C?.images,
         hasPrompts: hasCPlanImages,
-        shotStage6DataKeys: Object.keys(shotStage6Data)
+        shotStage6DataKeys: Object.keys(shotStage6Data),
+        shotStage6Data: shotStage6Data,
+        selectedPlan: selectedPlan,
+        actualSelectedPlan: actualSelectedPlan
     });
     
     // C 플랜이 선택되었는데 데이터가 없으면 B로 폴백하고 실제 데이터도 변경
@@ -5069,11 +5074,28 @@ else {
                 ${['A', 'B', 'C'].map(planId => {
                     const plan = imageDesignPlans[planId];
                     const hasData = plan && plan.images && plan.images.length > 0;
-                    // C 플랜은 hasCPlanImages 변수를 사용해서 Stage 6 프롬프트까지 체크
-                    const isDisabled = planId === 'C' && !hasCPlanImages;
-                    const isActive = actualSelectedPlan === planId;
                     
-                    if (!plan && planId !== 'C') return ''; // A, B 플랜이 없으면 숨김
+                    // C 플랜 비활성화 조건을 더 명확하게
+                    let isDisabled = false;
+                    let displayText = '';
+                    
+                    if (planId === 'C') {
+                        // C 플랜은 항상 표시하되, 데이터가 없으면 비활성화
+                        // Stage 5 플랜 구조와 Stage 6 프롬프트 데이터 모두 확인
+                        if (!hasCPlanImages) {
+                            isDisabled = true;
+                            displayText = 'Stage 6에서 생성 필요';
+                        }
+                        
+                        console.log(`플랜 C 체크 - plan: ${!!plan}, images: ${plan?.images?.length}, hasCPlanImages: ${hasCPlanImages}, isDisabled: ${isDisabled}`);
+                    } else {
+                        // A, B 플랜은 데이터가 없으면 숨김
+                        if (!plan || !plan.images || plan.images.length === 0) {
+                            return '';
+                        }
+                    }
+                    
+                    const isActive = actualSelectedPlan === planId;
                     
                     // 플랜 탭 스타일링 개선 - 영상 탭과 동일한 스타일 적용
                     const tabStyles = isDisabled 
@@ -5091,9 +5113,10 @@ else {
                                 ${planId === 'A' ? '전체 연출 통합' : planId === 'B' ? '2단계 분할' : '3단계 분할'}
                             </div>
                             <div style="font-size: 0.8rem; margin-top: 5px; ${isDisabled ? 'color: #555;' : 'opacity: 0.8;'}">
-                                ${plan && !isDisabled ? `이미지 ${plan.images?.length || 0}개` : isDisabled ? 
-                                    '<span style="color: #ff6b35; font-weight: 500;">Stage 6에서 생성 필요</span>' : 
-                                    (planId === 'C' ? '이미지 3개' : '')}
+                                ${isDisabled && displayText ? 
+                                    `<span style="color: #ff6b35; font-weight: 500;">${displayText}</span>` : 
+                                    (plan && !isDisabled ? `이미지 ${plan.images?.length || 0}개` : 
+                                    (planId === 'C' && !isDisabled ? '이미지 3개' : ''))}
                             </div>
                         </div>
                     `;
