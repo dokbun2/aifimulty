@@ -4987,11 +4987,40 @@ if (complexity === 'simple' && imageDesignPlans.single) {
 } 
 // Complex 샷인 경우
 else {
-    // C 플랜 데이터가 있는지 확인 (이미지 프롬프트 기준)
-    const hasCPlanImages = imageDesignPlans.C && imageDesignPlans.C.images && imageDesignPlans.C.images.length > 0;
+    // actualSelectedPlan을 먼저 초기화
+    let actualSelectedPlan = selectedPlan;
+    
+    // C 플랜 데이터가 있는지 확인 (Stage 5 플랜 구조 + Stage 6 프롬프트 모두 확인)
+    let hasCPlanImages = false;
+    
+    // Stage 5 플랜 구조가 있는지 먼저 확인
+    if (imageDesignPlans.C && imageDesignPlans.C.images && imageDesignPlans.C.images.length > 0) {
+        // Stage 6 프롬프트 데이터가 실제로 있는지 확인
+        const cPlanImages = imageDesignPlans.C.images;
+        let hasAnyPrompt = false;
+        
+        for (const img of cPlanImages) {
+            if (shotStage6Data[img.id] && shotStage6Data[img.id].prompts) {
+                // 최소한 하나의 AI 도구에 대한 프롬프트가 있는지 확인
+                const prompts = shotStage6Data[img.id].prompts;
+                if (prompts.universal || prompts.nanobana || prompts.midjourney || 
+                    prompts.ideogram || prompts.leonardo || prompts.imagefx) {
+                    hasAnyPrompt = true;
+                    break;
+                }
+            }
+        }
+        
+        hasCPlanImages = hasAnyPrompt;
+    }
+    
+    console.log('🔍 C 플랜 데이터 체크:', {
+        hasStructure: !!(imageDesignPlans.C && imageDesignPlans.C.images),
+        hasPrompts: hasCPlanImages,
+        shotStage6DataKeys: Object.keys(shotStage6Data)
+    });
     
     // C 플랜이 선택되었는데 데이터가 없으면 B로 폴백하고 실제 데이터도 변경
-    let actualSelectedPlan = selectedPlan;
     if ((selectedPlan === 'C' || selectedPlan === 'plan_c' || selectedPlan === 'plan_complex') && !hasCPlanImages) {
         console.warn(`⚠️ 이미지 탭: C 플랜 데이터가 없어 B 플랜으로 전환합니다.`);
         actualSelectedPlan = 'B';
@@ -5036,22 +5065,36 @@ else {
     planSelectorHtml = `
         <div class="image-design-plan-selector">
             <h4>🖌️ 이미지 설계 플랜 선택</h4>
-            ${warningMessage}
-            <div class="plan-tabs">
+            <div class="plan-tabs" style="display: flex; gap: 10px; margin: 15px 0;">
                 ${['A', 'B', 'C'].map(planId => {
                     const plan = imageDesignPlans[planId];
                     const hasData = plan && plan.images && plan.images.length > 0;
-                    const isDisabled = planId === 'C' && !hasData;
+                    // C 플랜은 hasCPlanImages 변수를 사용해서 Stage 6 프롬프트까지 체크
+                    const isDisabled = planId === 'C' && !hasCPlanImages;
+                    const isActive = actualSelectedPlan === planId;
                     
                     if (!plan && planId !== 'C') return ''; // A, B 플랜이 없으면 숨김
                     
+                    // 플랜 탭 스타일링 개선 - 영상 탭과 동일한 스타일 적용
+                    const tabStyles = isDisabled 
+                        ? 'background: rgba(255, 255, 255, 0.03); border: 1px dashed rgba(255, 107, 53, 0.4); cursor: not-allowed;'
+                        : isActive 
+                            ? 'background: linear-gradient(135deg, #007AFF, #0051D5); color: white; border: 1px solid #0051D5;'
+                            : 'background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); color: #ccc; cursor: pointer;';
+                    
                     return `
-                        <div class="plan-tab ${actualSelectedPlan === planId ? 'active' : ''} ${isDisabled ? 'disabled' : ''}" 
+                        <div class="plan-tab ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}" 
                              ${isDisabled ? '' : `onclick="selectImagePlan('${shot.id}', '${planId}')"`}
-                             style="${isDisabled ? 'opacity: 0.5; cursor: not-allowed; border: 1px dashed #ff6b35;' : ''}">
-                            <span>Plan ${planId}</span>
-                            ${plan ? `<span style="font-size: 0.85rem; opacity: 0.9;"> - ${plan.description || '설명 없음'}</span>` : ''}
-                            ${isDisabled ? '<small style="display: block; color: #ff6b35; margin-top: 5px;">Stage 6에서 생성 필요</small>' : ''}
+                             style="flex: 1; padding: 15px; text-align: center; border-radius: 10px; transition: all 0.3s ease; ${tabStyles}">
+                            <div style="font-weight: bold; font-size: 1rem; margin-bottom: 5px; ${isDisabled ? 'color: #666;' : ''}">플랜 ${planId}</div>
+                            <div style="font-size: 0.85rem; ${isDisabled ? 'color: #555;' : 'opacity: 0.9;'}">
+                                ${planId === 'A' ? '전체 연출 통합' : planId === 'B' ? '2단계 분할' : '3단계 분할'}
+                            </div>
+                            <div style="font-size: 0.8rem; margin-top: 5px; ${isDisabled ? 'color: #555;' : 'opacity: 0.8;'}">
+                                ${plan && !isDisabled ? `이미지 ${plan.images?.length || 0}개` : isDisabled ? 
+                                    '<span style="color: #ff6b35; font-weight: 500;">Stage 6에서 생성 필요</span>' : 
+                                    (planId === 'C' ? '이미지 3개' : '')}
+                            </div>
                         </div>
                     `;
                 }).join('')}
@@ -6064,7 +6107,31 @@ if (!shot) return showMessage('샷 데이터를 찾을 수 없습니다.', 'erro
 if (planId === 'C') {
     const imageDesign = shot.image_design || {};
     const imageDesignPlans = imageDesign.plans || {};
-    const hasCPlanImages = imageDesignPlans.C && imageDesignPlans.C.images && imageDesignPlans.C.images.length > 0;
+    
+    // Stage 6 데이터 가져오기
+    const stage6Data = window.stage6ImagePrompts || {};
+    const shotStage6Data = stage6Data[shot.id] || {};
+    
+    // Stage 5 플랜 구조와 Stage 6 프롬프트 데이터 모두 확인
+    let hasCPlanImages = false;
+    
+    if (imageDesignPlans.C && imageDesignPlans.C.images && imageDesignPlans.C.images.length > 0) {
+        const cPlanImages = imageDesignPlans.C.images;
+        let hasAnyPrompt = false;
+        
+        for (const img of cPlanImages) {
+            if (shotStage6Data[img.id] && shotStage6Data[img.id].prompts) {
+                const prompts = shotStage6Data[img.id].prompts;
+                if (prompts.universal || prompts.nanobana || prompts.midjourney || 
+                    prompts.ideogram || prompts.leonardo || prompts.imagefx) {
+                    hasAnyPrompt = true;
+                    break;
+                }
+            }
+        }
+        
+        hasCPlanImages = hasAnyPrompt;
+    }
     
     if (!hasCPlanImages) {
         showMessage('C 플랜 데이터가 없습니다. Stage 6에서 JSON을 생성해주세요.', 'warning');
@@ -8212,7 +8279,8 @@ try {
 				}
 				window.videoTabSelectedPlans[shotId] = planId;
 
-				showMessage(`플랜 ${planId}의 영상 프롬프트를 표시합니다.`, 'info');
+				// showMessage 제거 - 사용자 요청
+				// showMessage(`플랜 ${planId}의 영상 프롬프트를 표시합니다.`, 'info');
 
 				// 영상 탭 다시 렌더링
 				const videoTab = document.getElementById('tab-video');
