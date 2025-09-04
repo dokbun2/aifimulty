@@ -36,12 +36,141 @@
     <!-- Mobile Video Fix -->
     <link rel="stylesheet" href="mobile-video-fix.css">
     
+    <style>
+        /* 비밀번호 모달 스타일 */
+        .password-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .password-modal.show {
+            display: flex;
+        }
+        
+        .password-modal-content {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+        
+        .password-modal h3 {
+            color: #fff;
+            font-size: 24px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .password-modal p {
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .password-input-wrapper {
+            position: relative;
+            margin-bottom: 30px;
+        }
+        
+        .password-input {
+            width: 100%;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            text-align: center;
+            letter-spacing: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .password-input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #007AFF;
+            box-shadow: 0 0 20px rgba(0, 122, 255, 0.3);
+        }
+        
+        .password-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+            letter-spacing: normal;
+        }
+        
+        .password-modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .password-modal-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .password-modal-btn-confirm {
+            background: linear-gradient(135deg, #007AFF, #0051D5);
+            color: white;
+        }
+        
+        .password-modal-btn-confirm:hover {
+            background: linear-gradient(135deg, #0051D5, #003FA3);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 122, 255, 0.4);
+        }
+        
+        .password-modal-btn-cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .password-modal-btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .password-error {
+            color: #ff6b35;
+            font-size: 13px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .password-error.show {
+            display: block;
+        }
+    </style>
+    
     <!-- Prefetch prompt builders for faster loading -->
     <link rel="prefetch" href="prompt-builder.html">
     <link rel="prefetch" href="video-prompt-builder.html">
     
     <!-- Tabler Icons Library -->
     <script src="tabler-icons.js"></script>
+    <!-- Configuration -->
+    <script src="config.js"></script>
 </head>
 <body>
     <!-- Navigation -->
@@ -290,7 +419,7 @@
                     
                     <!-- AIFI 바나나 버튼 -->
                     <div class="banana-button-wrapper">
-                        <a href="https://aifibana.netlify.app/" target="_blank" class="banana-button">
+                        <a href="#" onclick="openBananaPage(event)" class="banana-button">
                             <div class="banana-icon-wrapper">
                                 <span class="banana-emoji">🍌</span>
                             </div>
@@ -668,6 +797,73 @@
     <!-- Scripts -->
     <script src="script.js"></script>
     <script>
+        // 바나나 페이지 열기 함수 (모달 표시)
+        function openBananaPage(event) {
+            event.preventDefault();
+            
+            // 모달 표시
+            const modal = document.getElementById('passwordModal');
+            const input = document.getElementById('passwordInput');
+            const error = document.getElementById('passwordError');
+            
+            modal.classList.add('show');
+            input.value = '';
+            error.classList.remove('show');
+            input.focus();
+        }
+        
+        // 비밀번호 확인 함수
+        function checkPassword() {
+            const input = document.getElementById('passwordInput');
+            const error = document.getElementById('passwordError');
+            const password = input.value;
+            
+            // 비밀번호 검증
+            if (window.AIFI_CONFIG && window.AIFI_CONFIG.validateBananaPassword(password)) {
+                // 비밀번호가 맞으면 모달 닫고 새 탭에서 페이지 열기
+                closePasswordModal();
+                window.open('https://aifibana.netlify.app/', '_blank');
+            } else {
+                // 비밀번호가 틀리면 에러 메시지 표시
+                error.classList.add('show');
+                input.value = '';
+                input.focus();
+            }
+        }
+        
+        // 모달 닫기 함수
+        function closePasswordModal() {
+            const modal = document.getElementById('passwordModal');
+            const input = document.getElementById('passwordInput');
+            const error = document.getElementById('passwordError');
+            
+            modal.classList.remove('show');
+            input.value = '';
+            error.classList.remove('show');
+        }
+        
+        // Enter 키로 비밀번호 확인
+        document.addEventListener('DOMContentLoaded', function() {
+            const passwordInput = document.getElementById('passwordInput');
+            if (passwordInput) {
+                passwordInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        checkPassword();
+                    }
+                });
+            }
+            
+            // 모달 외부 클릭으로 닫기
+            const modal = document.getElementById('passwordModal');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closePasswordModal();
+                    }
+                });
+            }
+        })
+        
         // 함수들이 제대로 로드되었는지 확인
         window.addEventListener('load', function() {
             console.log('🔍 페이지 로드 완료');
@@ -944,5 +1140,21 @@
             }
         });
     </script>
+    <!-- 비밀번호 입력 모달 -->
+    <div id="passwordModal" class="password-modal">
+        <div class="password-modal-content">
+            <h3>🍌 AIFI 바나나</h3>
+            <p>특별한 AI 도구 모음에 접근하려면<br>비밀번호를 입력하세요</p>
+            <div class="password-input-wrapper">
+                <input type="password" class="password-input" id="passwordInput" placeholder="비밀번호 입력" maxlength="10">
+                <div class="password-error" id="passwordError">비밀번호가 일치하지 않습니다</div>
+            </div>
+            <div class="password-modal-buttons">
+                <button class="password-modal-btn password-modal-btn-cancel" onclick="closePasswordModal()">취소</button>
+                <button class="password-modal-btn password-modal-btn-confirm" onclick="checkPassword()">확인</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
