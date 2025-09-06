@@ -1059,15 +1059,24 @@ const uiRenderer = {
         imageSection.className = 'image-display-section';
         imageSection.style.marginTop = '2rem';
         // 메인 이미지 URL 처리
-        let mainImageUrl = concept.main_image_url;
-        if (mainImageUrl && mainImageUrl.includes('dropbox.com')) {
-            mainImageUrl = this.convertDropboxUrl(mainImageUrl);
+        let displayImageUrl = '';
+        const originalImageUrl = concept.main_image_url || '';
+        
+        if (originalImageUrl) {
+            // 드롭박스 URL인 경우 변환
+            if (originalImageUrl.includes('dropbox.com')) {
+                displayImageUrl = imageManager.convertDropboxUrl(originalImageUrl);
+            } else {
+                displayImageUrl = originalImageUrl;
+            }
         }
         
         imageSection.innerHTML = `
-            <div class="image-container">
-                ${mainImageUrl ? 
-                    `<img src="${mainImageUrl}" alt="${concept.name}" onclick="ConceptArtManager.openImageModal('${mainImageUrl}')" />` : 
+            <div class="image-container" id="main-image-container">
+                ${displayImageUrl ? 
+                    `<img src="${displayImageUrl}" alt="${concept.name || 'Image'}" 
+                          onclick="ConceptArtManager.openImageModal('${displayImageUrl}')" 
+                          onerror="this.onerror=null; this.src='${originalImageUrl}'; this.style.border='1px solid red';" />` : 
                     '<div class="no-image-message">이미지를 추가하려면 아래 URL을 입력하세요</div>'}
             </div>
         `;
@@ -1076,13 +1085,14 @@ const uiRenderer = {
         // 이미지 URL 입력 섹션 (번역본 프롬프트 아래로 이동)
         const imageUrlSection = document.createElement('div');
         imageUrlSection.className = 'image-url-section';
+        imageUrlSection.style.display = 'block'; // 항상 표시되도록 명시적으로 설정
         imageUrlSection.innerHTML = `
             <div class="image-url-input-group">
                 <input type="url" 
                        class="image-url-input" 
                        id="main-image-url-input" 
                        placeholder="이미지 URL을 입력하세요 (예: https://example.com/image.jpg)" 
-                       value="${concept.main_image_url || ''}">
+                       value="${originalImageUrl}">
                 <button class="btn-apply-url" onclick="ConceptArtManager.applyMainImageUrl()">적용</button>
             </div>
         `;
@@ -2725,28 +2735,41 @@ window.ConceptArtManager = {
                 return;
             }
             
-            // 현재 컨셉에 메인 이미지 URL 저장
+            // 현재 컨셉에 메인 이미지 URL 저장 (원본 URL 저장)
             concept.main_image_url = url;
             this.currentConcept = concept;
             
-            // 이미지 컨테이너 업데이트
-            const imageContainer = document.querySelector('.image-container');
+            // 이미지 컨테이너 업데이트 (ID로 정확히 찾기)
+            const imageContainer = document.getElementById('main-image-container') || document.querySelector('.image-container');
             if (imageContainer) {
                 if (url) {
                     // 드롭박스 URL 변환
                     let displayUrl = url;
                     if (url.includes('dropbox.com')) {
                         displayUrl = imageManager.convertDropboxUrl(url);
+                        console.log('Dropbox URL 변환:', url, '->', displayUrl);
                     }
-                    imageContainer.innerHTML = `<img src="${displayUrl}" alt="${concept.name_kr || concept.name || 'Image'}" onclick="ConceptArtManager.openImageModal('${displayUrl}')" onerror="this.onerror=null; this.src='${url}'; this.style.border='1px solid red';" />`;
+                    
+                    // 이미지 HTML 생성
+                    const imgHtml = `<img src="${displayUrl}" 
+                                          alt="${concept.name_kr || concept.name || 'Image'}" 
+                                          onclick="ConceptArtManager.openImageModal('${displayUrl}')" 
+                                          onerror="this.onerror=null; this.src='${url}'; this.style.border='1px solid red';" 
+                                          style="max-width: 100%; max-height: 500px; object-fit: contain; cursor: pointer;" />`;
+                    imageContainer.innerHTML = imgHtml;
                 } else {
                     imageContainer.innerHTML = '<div class="no-image-message">이미지를 추가하려면 아래 URL을 입력하세요</div>';
                 }
+            } else {
+                console.error('이미지 컨테이너를 찾을 수 없습니다.');
             }
             
             // 로컬 스토리지에 저장
             dataManager.saveToLocalStorage();
             utils.showToast('이미지 URL이 적용되었습니다.');
+            
+            // 디버깅: 저장된 데이터 확인
+            console.log('저장된 메인 이미지 URL:', concept.main_image_url);
         } catch (error) {
             console.error('메인 이미지 URL 적용 중 오류:', error);
             utils.showToast('이미지 적용 중 오류가 발생했습니다.');
