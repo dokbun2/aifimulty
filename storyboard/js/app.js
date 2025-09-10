@@ -7518,7 +7518,7 @@ const imageDesign = shot.image_design || {};
 		const videoSelectedPlan = window.videoTabSelectedPlans?.[shot.id];
 		let selectedPlan = videoSelectedPlan || imageDesign.selected_plan || 'A';
 		
-		// C 플랜이 선택되었는데 데이터가 없으면 B로 폴백
+		// C 플랜이 선택되었는데 Stage 7 데이터가 없어도 Stage 5 데이터로 표시
 		if (selectedPlan === 'C' || selectedPlan === 'plan_complex') {
 			const hasCPlanData = shot.video_prompts?.by_image_id && 
 				Object.keys(shot.video_prompts.by_image_id).some(imageId => 
@@ -7526,10 +7526,9 @@ const imageDesign = shot.image_design || {};
 				);
 			
 			if (!hasCPlanData) {
-				console.warn(`⚠️ C 플랜 데이터가 없어 B 플랜으로 전환합니다.`);
-				selectedPlan = 'B';
-				// 자동 전환 알림을 위한 플래그 설정
-				shot._cPlanFallback = true;
+				console.log(`ℹ️ 영상 탭: C 플랜 Stage 5 데이터로 표시합니다. (Stage 7 프롬프트는 미생성)`);
+				// C 플랜 그대로 유지 (폴백하지 않음)
+				shot._cPlanNoStage7Data = true;
 			}
 		}
 		
@@ -7581,7 +7580,7 @@ else {
                 id: planId, 
                 plan: plan, 
                 hasData: hasPlanData,
-                disabled: planId === 'C' && !hasPlanData // C 플랜만 데이터 없으면 비활성화
+                disabled: false // Stage 5 데이터가 있으면 모든 플랜 활성화 (Stage 7은 선택사항)
             });
         }
     });
@@ -7610,10 +7609,10 @@ else {
                             <div style="font-size: 0.85rem; ${isDisabled ? 'color: #555;' : 'opacity: 0.9;'}">
                                 ${planId === 'A' ? '전체 연출 통합' : planId === 'B' ? '2단계 분할' : '3단계 분할'}
                             </div>
-                            <div style="font-size: 0.8rem; margin-top: 5px; ${isDisabled ? 'color: #555;' : 'opacity: 0.8;'}">
-                                ${isDisabled ? 
-                                    '<span style="color: #ff6b35; font-weight: 500;">Stage 7에서 생성 필요</span>' : 
-                                    `이미지 ${plan.images?.length || 0}개`}
+                            <div style="font-size: 0.8rem; margin-top: 5px; opacity: 0.8;">
+                                이미지 ${plan.images?.length || 0}개
+                                ${!hasData && planId === 'C' ? 
+                                    '<br><span style="color: #ffa500; font-size: 0.75rem;">(Stage 7 프롬프트 미생성)</span>' : ''}
                             </div>
                         </div>
                     `;
