@@ -1705,6 +1705,16 @@ function createTestData() {
            debugLog('  - schema_version:', newData.schema_version);
            debugLog('  - breakdown_data 존재:', !!newData.breakdown_data);
            debugLog('  - video_prompts 존재:', !!newData.video_prompts, typeof newData.video_prompts);
+           
+           // Stage 5 데이터를 로드할 때 Stage 7 캐시 초기화
+           if (newData.stage === 5 || (newData.breakdown_data && !newData.video_prompts)) {
+               debugLog('🧹 Stage 5 데이터 로드 - Stage 7 캐시 초기화');
+               window.stage7VideoPrompts = {};
+               const jsonFileName = getProjectFileName();
+               if (jsonFileName) {
+                   localStorage.removeItem(`stage7VideoPrompts_${jsonFileName}`);
+               }
+           }
            if (newData.video_prompts) {
                if (Array.isArray(newData.video_prompts)) {
                    debugLog('  - video_prompts 배열:', newData.video_prompts.length, '개');
@@ -7611,8 +7621,6 @@ else {
                             </div>
                             <div style="font-size: 0.8rem; margin-top: 5px; opacity: 0.8;">
                                 이미지 ${plan.images?.length || 0}개
-                                ${!hasData && planId === 'C' ? 
-                                    '<br><span style="color: #ffa500; font-size: 0.75rem;">(Stage 7 프롬프트 미생성)</span>' : ''}
                             </div>
                         </div>
                     `;
@@ -7662,7 +7670,7 @@ if (selectedPlanData && selectedPlanData.images) {
 				{ id: 'luma', name: 'BASIC PROMPT', color: '#FF8C00' },
 				{ id: 'kling', name: 'UNIVERSAL PROMPT', color: '#1E90FF' },
 				{ id: 'veo2', name: 'VEO PROMPT', color: '#9370DB' },
-				{ id: 'runway', name: 'RW PROMPT', color: '#3CB371' }
+				{ id: 'runway', name: 'RUNWAY PROMPT', color: '#3CB371' }
 			];
 
 			aiGroupedHtml = '<div class="video-ai-container">';
@@ -7723,26 +7731,11 @@ if (selectedPlanData && selectedPlanData.images) {
 						}
 					}
 
-					// C 플랜이 선택되었는데 데이터가 없는 경우 빈 프롬프트 표시
+					// C 플랜이 선택되었는데 Stage 7 데이터가 없는 경우
+					// Stage 5에 플랜 C 데이터가 있는지 확인
 					if (!promptData && selectedPlan === 'C') {
-						aiHasContent = true; // 빈 영역도 표시해야 함
-						aiImagesHtml += `
-							<div class="ai-video-image-item" style="background: #1a1a1a; border: 1px dashed rgba(255, 107, 53, 0.5); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-								<h6 style="color: #ccc; margin-bottom: 10px;">📸 ${formattedImageId}: C 플랜 데이터 없음</h6>
-								<div class="prompt-section" style="margin-bottom: 10px;">
-									<div style="background: #242424; border: 1px dashed rgba(255, 107, 53, 0.3); border-radius: 4px; padding: 20px; text-align: center;">
-										<p style="color: #ff6b35; margin: 0 0 10px 0; font-size: 0.95rem;">⚠️ C 플랜 프롬프트 데이터가 없습니다</p>
-										<p style="color: #999; font-size: 0.85rem; margin: 0;">Stage 7에서 C 플랜 데이터를 생성하거나<br>다른 플랜(A 또는 B)을 선택해주세요</p>
-									</div>
-								</div>
-								<div class="video-url-section">
-									<label style="font-size: 0.85rem; color: #999;">생성된 영상 URL:</label>
-									<input type="url" class="form-input" style="font-size: 0.9rem; opacity: 0.5;" 
-										   placeholder="C 플랜 데이터 필요" 
-										   disabled>
-								</div>
-							</div>
-						`;
+						// Stage 7 프롬프트가 없으면 아무것도 표시하지 않음 (섹션 전체 숨김)
+						aiHasContent = false;
 					} else if (promptData) {
 						aiHasContent = true;
 						const prompt = promptData.prompt_en || promptData.main_prompt || '';
@@ -8301,7 +8294,7 @@ try {
 			{ id: 'luma', name: 'BASIC PROMPT' },
 			{ id: 'kling', name: 'UNIVERSAL PROMPT' },
 			{ id: 'veo2', name: 'VEO Prompt' },
-			{ id: 'runway', name: 'RW PROMPT' }
+			{ id: 'runway', name: 'RUNWAY PROMPT' }
 		];
 
 		return aiTools.map(ai => {
