@@ -5015,12 +5015,14 @@ else {
     // actualSelectedPlan을 먼저 초기화
     let actualSelectedPlan = selectedPlan;
     
-    // C 플랜 데이터가 있는지 확인 (Stage 5 플랜 구조 + Stage 6 프롬프트 모두 확인)
+    // C 플랜 데이터가 있는지 확인 (Stage 5 플랜 구조만 확인 - Stage 6는 선택사항)
     let hasCPlanImages = false;
     
-    // Stage 5 플랜 구조가 있는지 먼저 확인
+    // Stage 5 플랜 구조가 있는지 확인 (이것만으로 충분)
     if (imageDesignPlans.C && imageDesignPlans.C.images && imageDesignPlans.C.images.length > 0) {
-        // Stage 6 프롬프트 데이터가 실제로 있는지 확인
+        hasCPlanImages = true;  // Stage 5 데이터가 있으면 C 플랜 활성화
+        
+        // Stage 6 프롬프트 데이터는 있으면 추가로 사용, 없어도 OK
         const cPlanImages = imageDesignPlans.C.images;
         let hasAnyPrompt = false;
         
@@ -5036,7 +5038,8 @@ else {
             }
         }
         
-        hasCPlanImages = hasAnyPrompt;
+        // Stage 6 프롬프트 데이터 유무를 별도 변수로 저장 (참고용)
+        shot._hasStage6CPrompts = hasAnyPrompt;
     }
     
     console.log('🔍 C 플랜 데이터 체크:', {
@@ -5051,12 +5054,12 @@ else {
     });
     
     // C 플랜이 선택되었는데 데이터가 없으면 B로 폴백하고 실제 데이터도 변경
+    // 이제 Stage 5 데이터만 있어도 C 플랜을 사용할 수 있으므로 이 조건 제거
     if ((selectedPlan === 'C' || selectedPlan === 'plan_c' || selectedPlan === 'plan_complex') && !hasCPlanImages) {
-        console.warn(`⚠️ 이미지 탭: C 플랜 데이터가 없어 B 플랜으로 전환합니다.`);
-        actualSelectedPlan = 'B';
-        // 실제 데이터도 B로 변경
-        shot.image_design.selected_plan = 'B';
-        shot._imageCPlanFallback = true;
+        // Stage 5 데이터가 있으면 C 플랜 그대로 사용
+        console.log(`ℹ️ 이미지 탭: C 플랜 Stage 5 데이터로 표시합니다.`);
+        actualSelectedPlan = 'C';
+        shot._imageCPlanFallback = false;
         // 변경 사항 저장
         if (window.saveDataToLocalStorage) {
             window.saveDataToLocalStorage();
@@ -5105,17 +5108,14 @@ else {
                     let displayText = '';
                     
                     if (planId === 'C') {
-                        // C 플랜은 Stage 5 데이터가 있으면 표시
+                        // C 플랜은 Stage 5 데이터가 있으면 표시 및 활성화
                         if (!plan || !plan.images || plan.images.length === 0) {
                             // C 플랜 데이터가 전혀 없으면 숨김
                             return '';
                         }
-                        // Stage 6 프롬프트 데이터 확인 (선택적)
-                        if (!hasCPlanImages) {
-                            // Stage 5 데이터는 있지만 Stage 6 프롬프트가 없는 경우
-                            // 여전히 표시하되 일부 기능만 제한
-                            displayText = `이미지 ${plan.images?.length || 0}개`;
-                        }
+                        // Stage 5 데이터가 있으면 항상 활성화 (Stage 6는 선택사항)
+                        isDisabled = false;
+                        displayText = `이미지 ${plan.images?.length || 0}개`;
                         
                         console.log(`플랜 C 체크 - plan: ${!!plan}, images: ${plan?.images?.length}, hasCPlanImages: ${hasCPlanImages}, isDisabled: ${isDisabled}`);
                     } else {
@@ -6182,10 +6182,13 @@ if (planId === 'C') {
     const stage6Data = window.stage6ImagePrompts || {};
     const shotStage6Data = stage6Data[shot.id] || {};
     
-    // Stage 5 플랜 구조와 Stage 6 프롬프트 데이터 모두 확인
+    // Stage 5 플랜 구조만 확인 (Stage 6는 선택사항)
     let hasCPlanImages = false;
     
     if (imageDesignPlans.C && imageDesignPlans.C.images && imageDesignPlans.C.images.length > 0) {
+        hasCPlanImages = true;  // Stage 5 데이터가 있으면 C 플랜 활성화
+        
+        // Stage 6 프롬프트 데이터는 있으면 추가로 사용, 없어도 OK
         const cPlanImages = imageDesignPlans.C.images;
         let hasAnyPrompt = false;
         
@@ -6200,11 +6203,12 @@ if (planId === 'C') {
             }
         }
         
-        hasCPlanImages = hasAnyPrompt;
+        // Stage 6 프롬프트 데이터 유무를 별도 변수로 저장 (참고용)
+        shot._hasStage6CPrompts = hasAnyPrompt;
     }
     
     if (!hasCPlanImages) {
-        showMessage('C 플랜 데이터가 없습니다. Stage 6에서 JSON을 생성해주세요.', 'warning');
+        showMessage('C 플랜 구조가 Stage 5 JSON에 없습니다.', 'warning');
         return; // C 플랜 선택을 막음
     }
 }
