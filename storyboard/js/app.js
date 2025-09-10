@@ -7489,7 +7489,26 @@ if (modal && (
     debugLog('🎥 createShotVideoTab 시작 (이미지별 영상 프롬프트 표시)');
     try {
 const imageDesign = shot.image_design || {};
-		const imageDesignPlans = imageDesign.plans || {};
+
+		// Stage 5 데이터의 플랜 키 정규화 (plan_a -> A, plan_b -> B, plan_c -> C)
+		// Stage 5 JSON이 shot.image_design_plans 직접 사용하는 경우도 처리
+		const rawPlans = shot.image_design_plans || imageDesign.plans || {};
+		const imageDesignPlans = {};
+
+		// 플랜 키를 정규화 (plan_a -> A, plan_b -> B, plan_c -> C)
+		Object.keys(rawPlans).forEach(key => {
+			if (key === 'plan_a' || key === 'A') {
+				imageDesignPlans.A = rawPlans[key];
+			} else if (key === 'plan_b' || key === 'B') {
+				imageDesignPlans.B = rawPlans[key];
+			} else if (key === 'plan_c' || key === 'C') {
+				imageDesignPlans.C = rawPlans[key];
+			} else if (key === 'single') {
+				imageDesignPlans.single = rawPlans[key];
+			} else {
+				imageDesignPlans[key] = rawPlans[key];
+			}
+		});
 
 		// 영상 탭에서 선택된 플랜 확인 (없으면 이미지 탭의 선택 사용)
 		const videoSelectedPlan = window.videoTabSelectedPlans?.[shot.id];
@@ -7546,20 +7565,20 @@ else {
     const availablePlans = [];
     ['A', 'B', 'C'].forEach(planId => {
         const plan = imageDesignPlans[planId];
-        if (plan) {
+        if (plan && plan.images && plan.images.length > 0) {
             // 해당 플랜의 비디오 프롬프트 데이터가 있는지 확인
             const hasPlanData = videoPrompts.by_image_id && 
                 Object.keys(videoPrompts.by_image_id).some(imageId => 
                     imageId.includes(`-${planId}-`) && imageId.startsWith(shot.id)
                 );
             
-            if (hasPlanData || planId === 'A' || planId === 'B') {
-                // A, B는 기본적으로 보여주되, C는 데이터가 있을 때만
-                availablePlans.push({ id: planId, plan: plan, hasData: hasPlanData });
-            } else if (planId === 'C') {
-                // C 플랜이지만 데이터가 없는 경우
-                availablePlans.push({ id: planId, plan: plan, hasData: false, disabled: true });
-            }
+            // 모든 플랜을 표시하되, 데이터 유무를 표시
+            availablePlans.push({ 
+                id: planId, 
+                plan: plan, 
+                hasData: hasPlanData,
+                disabled: planId === 'C' && !hasPlanData // C 플랜만 데이터 없으면 비활성화
+            });
         }
     });
     
@@ -7567,17 +7586,31 @@ else {
     planSelectorHtml = `
         <div class="image-design-plan-selector">
             <h4>🎬 영상 설계 플랜 선택</h4>
-            <div class="plan-tabs">
+            <div class="plan-tabs" style="display: flex; gap: 10px; margin: 15px 0;">
                 ${availablePlans.map(({ id: planId, plan, hasData, disabled }) => {
                     const isDisabled = disabled && !hasData;
+                    const isActive = selectedPlan === planId;
+                    
+                    // 플랜 탭 스타일링 - 이미지 탭과 동일한 스타일 적용
+                    const tabStyles = isDisabled 
+                        ? 'background: rgba(255, 255, 255, 0.03); border: 1px dashed rgba(255, 107, 53, 0.4); cursor: not-allowed;'
+                        : isActive 
+                            ? 'background: linear-gradient(135deg, #007AFF, #0051D5); color: white; border: 1px solid #0051D5;'
+                            : 'background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); color: #ccc; cursor: pointer;';
+                    
                     return `
-                        <div class="plan-tab ${selectedPlan === planId ? 'active' : ''} ${isDisabled ? 'disabled' : ''}" 
+                        <div class="plan-tab ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}" 
                              ${isDisabled ? '' : `onclick="selectVideoPlan('${shot.id}', '${planId}')"`}
-                             style="${isDisabled ? 'opacity: 0.5; cursor: not-allowed; border: 1px dashed #ff6b35;' : ''}">
-                            <h5>플랜 ${planId} ${isDisabled ? '(데이터 없음)' : ''}</h5>
-                            <p>${plan.description || '설명 없음'}</p>
-                            <span class="image-count">이미지 ${plan.images?.length || 0}개</span>
-                            ${isDisabled ? '<small style="color: #ff6b35; display: block; margin-top: 5px;">Stage 7에서 생성 필요</small>' : ''}
+                             style="flex: 1; padding: 15px; text-align: center; border-radius: 10px; transition: all 0.3s ease; ${tabStyles}">
+                            <div style="font-weight: bold; font-size: 1rem; margin-bottom: 5px; ${isDisabled ? 'color: #666;' : ''}">플랜 ${planId}</div>
+                            <div style="font-size: 0.85rem; ${isDisabled ? 'color: #555;' : 'opacity: 0.9;'}">
+                                ${planId === 'A' ? '전체 연출 통합' : planId === 'B' ? '2단계 분할' : '3단계 분할'}
+                            </div>
+                            <div style="font-size: 0.8rem; margin-top: 5px; ${isDisabled ? 'color: #555;' : 'opacity: 0.8;'}">
+                                ${isDisabled ? 
+                                    '<span style="color: #ff6b35; font-weight: 500;">Stage 7에서 생성 필요</span>' : 
+                                    `이미지 ${plan.images?.length || 0}개`}
+                            </div>
                         </div>
                     `;
                 }).join('')}
