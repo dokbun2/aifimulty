@@ -4881,7 +4881,32 @@ function createShotInfoTab(shot) {
     debugLog('🖼️ createShotImageTab 시작 (이미지별 프롬프트 표시)');
     try {
 const imageDesign = shot.image_design || {};
-const imageDesignPlans = imageDesign.plans || {};
+
+// Stage 5 데이터의 플랜 키 정규화 (plan_a -> A, plan_b -> B, plan_c -> C)
+// Stage 5 JSON이 shot.image_design_plans 직접 사용하는 경우도 처리
+const rawPlans = shot.image_design_plans || imageDesign.plans || {};
+const imageDesignPlans = {};
+
+// 디버그 로그 추가
+debugLog('📊 원본 플랜 키:', Object.keys(rawPlans));
+
+// 플랜 키를 정규화 (plan_a -> A, plan_b -> B, plan_c -> C)
+Object.keys(rawPlans).forEach(key => {
+    if (key === 'plan_a' || key === 'A') {
+        imageDesignPlans.A = rawPlans[key];
+    } else if (key === 'plan_b' || key === 'B') {
+        imageDesignPlans.B = rawPlans[key];
+    } else if (key === 'plan_c' || key === 'C') {
+        imageDesignPlans.C = rawPlans[key];
+    } else if (key === 'single') {
+        imageDesignPlans.single = rawPlans[key];
+    } else {
+        imageDesignPlans[key] = rawPlans[key];
+    }
+});
+
+debugLog('📊 정규화된 플랜 키:', Object.keys(imageDesignPlans));
+
 const selectedPlan = imageDesign.selected_plan || 'A';
 const complexity = imageDesign.complexity || 'complex';
 
@@ -5080,11 +5105,16 @@ else {
                     let displayText = '';
                     
                     if (planId === 'C') {
-                        // C 플랜은 항상 표시하되, 데이터가 없으면 비활성화
-                        // Stage 5 플랜 구조와 Stage 6 프롬프트 데이터 모두 확인
+                        // C 플랜은 Stage 5 데이터가 있으면 표시
+                        if (!plan || !plan.images || plan.images.length === 0) {
+                            // C 플랜 데이터가 전혀 없으면 숨김
+                            return '';
+                        }
+                        // Stage 6 프롬프트 데이터 확인 (선택적)
                         if (!hasCPlanImages) {
-                            isDisabled = true;
-                            displayText = 'Stage 6에서 생성 필요';
+                            // Stage 5 데이터는 있지만 Stage 6 프롬프트가 없는 경우
+                            // 여전히 표시하되 일부 기능만 제한
+                            displayText = `이미지 ${plan.images?.length || 0}개`;
                         }
                         
                         console.log(`플랜 C 체크 - plan: ${!!plan}, images: ${plan?.images?.length}, hasCPlanImages: ${hasCPlanImages}, isDisabled: ${isDisabled}`);
@@ -6129,7 +6159,24 @@ if (!shot) return showMessage('샷 데이터를 찾을 수 없습니다.', 'erro
 // C 플랜을 선택하려는 경우, 데이터가 있는지 확인
 if (planId === 'C') {
     const imageDesign = shot.image_design || {};
-    const imageDesignPlans = imageDesign.plans || {};
+    // Stage 5 JSON이 shot.image_design_plans 직접 사용하는 경우도 처리
+    const rawPlans = shot.image_design_plans || imageDesign.plans || {};
+    
+    // Stage 5 데이터의 플랜 키 정규화 (plan_a -> A, plan_b -> B, plan_c -> C)
+    const imageDesignPlans = {};
+    Object.keys(rawPlans).forEach(key => {
+        if (key === 'plan_a' || key === 'A') {
+            imageDesignPlans.A = rawPlans[key];
+        } else if (key === 'plan_b' || key === 'B') {
+            imageDesignPlans.B = rawPlans[key];
+        } else if (key === 'plan_c' || key === 'C') {
+            imageDesignPlans.C = rawPlans[key];
+        } else if (key === 'single') {
+            imageDesignPlans.single = rawPlans[key];
+        } else {
+            imageDesignPlans[key] = rawPlans[key];
+        }
+    });
     
     // Stage 6 데이터 가져오기
     const stage6Data = window.stage6ImagePrompts || {};
